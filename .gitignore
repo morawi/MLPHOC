@@ -1,0 +1,9 @@
+# ignore all bmp images
+*.bmp
+# ignore all png images
+*.png
+# ignore all tru files
+*.tru
+datasets/
+.idea
+*__
