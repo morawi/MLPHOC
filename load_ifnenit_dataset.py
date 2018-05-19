@@ -3,6 +3,7 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+from skimage import io
 from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
@@ -73,6 +74,8 @@ class IfnEnitDataset(Dataset):
                             # img_name = os.path.join(self.dir_bmp, id + '.bmp')
                             # image = io.imread(img_name)
                             # h, w = image.shape[:2]
+                            # if w == MAX_IMAGE_WIDTH:
+                            #     print("Image with max size: " + id)
                             # if h > self.h_max:
                             #     self.h_max = h
                             # if w > self.w_max:

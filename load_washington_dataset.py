@@ -2,6 +2,7 @@ from __future__ import print_function, division
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from skimage import io
 from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
