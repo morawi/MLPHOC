@@ -2,33 +2,17 @@ from __future__ import print_function, division
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import io, transform
 from torch.utils.data import Dataset, DataLoader
-
 from Word2PHOC import build_phoc as PHOC
+from PIL import Image, ImageOps
+from torchvision.transforms import Pad
 
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
 
-######################################################################
-# Dataset class
-# -------------
-#
-# ``torch.utils.data.Dataset`` is an abstract class representing a
-# dataset.
-# Your custom dataset should inherit ``Dataset`` and override the following
-# methods:
-#
-# -  ``__len__`` so that ``len(dataset)`` returns the size of the dataset.
-# -  ``__getitem__`` to support the indexing such that ``dataset[i]`` can
-#    be used to get :math:`i`\ th sample
-#
-# Let's create a dataset class for our face landmarks dataset. We will
-# read the csv in ``__init__`` but leave the reading of images to
-# ``__getitem__``. This is memory efficient because all the images are not
-# stored in the memory at once but read as required.
-#
+MAX_IMAGE_WIDTH = 551
+MAX_IMAGE_HEIGHT = 120
 
 class WashingtonDataset(Dataset):
 
@@ -47,6 +31,8 @@ class WashingtonDataset(Dataset):
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
+        # self.h_max = 0
+        # self.w_max = 0
 
         word_labels_file = open(txt_file, 'r')
         text_lines = word_labels_file.readlines()
@@ -60,76 +46,76 @@ class WashingtonDataset(Dataset):
 
             non_alphabet_word = False
             word_string = ''
-            for non_alphabet in letters:
-                if "s_" in non_alphabet:
-                    if "st" in non_alphabet:
-                        non_alphabet = non_alphabet[2] + "st"
-                    elif "nd" in non_alphabet:
-                        non_alphabet = non_alphabet[2] + "nd"
-                    elif "rd" in non_alphabet:
-                        non_alphabet = non_alphabet[2] + "rd"
-                    elif "th" in non_alphabet:
-                        non_alphabet = non_alphabet[2] + "th"
-                    elif non_alphabet == "s_et":
-                        non_alphabet = "et"
-                    elif non_alphabet == "s_s":
-                        non_alphabet = 's'
-                    elif non_alphabet == "s_0":
-                        non_alphabet = '0'
-                    elif non_alphabet == "s_1":
-                        non_alphabet = '1'
-                    elif non_alphabet == "s_2":
-                        non_alphabet = '2'
-                    elif non_alphabet == "s_3":
-                        non_alphabet = '3'
-                    elif non_alphabet == "s_4":
-                        non_alphabet = '4'
-                    elif non_alphabet == "s_5":
-                        non_alphabet = '5'
-                    elif non_alphabet == "s_6":
-                        non_alphabet = '6'
-                    elif non_alphabet == "s_7":
-                        non_alphabet = '7'
-                    elif non_alphabet == "s_8":
-                        non_alphabet = '8'
-                    elif non_alphabet == "s_9":
-                        non_alphabet = '9'
+            for letter in letters:
+                if "s_" in letter:
+                    if "st" in letter:
+                        letter = letter[2] + "st"
+                    elif "nd" in letter:
+                        letter = letter[2] + "nd"
+                    elif "rd" in letter:
+                        letter = letter[2] + "rd"
+                    elif "th" in letter:
+                        letter = letter[2] + "th"
+                    elif letter == "s_et":
+                        letter = "et"
+                    elif letter == "s_s":
+                        letter = 's'
+                    elif letter == "s_0":
+                        letter = '0'
+                    elif letter == "s_1":
+                        letter = '1'
+                    elif letter == "s_2":
+                        letter = '2'
+                    elif letter == "s_3":
+                        letter = '3'
+                    elif letter == "s_4":
+                        letter = '4'
+                    elif letter == "s_5":
+                        letter = '5'
+                    elif letter == "s_6":
+                        letter = '6'
+                    elif letter == "s_7":
+                        letter = '7'
+                    elif letter == "s_8":
+                        letter = '8'
+                    elif letter == "s_9":
+                        letter = '9'
                     else:
                         # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
                         if self.non_alphabet:
-                            if non_alphabet == "s_cm":
-                                non_alphabet = ','
-                            elif non_alphabet == "s_pt":
-                                non_alphabet = '.'
-                            elif non_alphabet == "s_sq":
-                                non_alphabet = ';'
-                            elif non_alphabet == "s_qo":
-                                non_alphabet = ':'
-                            elif non_alphabet == "s_mi":
-                                non_alphabet = '-'
-                            elif non_alphabet == "s_GW":
-                                non_alphabet = "GW"
-                            elif non_alphabet == "s_lb":
-                                non_alphabet = '£'
-                            elif non_alphabet == "s_bl":
-                                non_alphabet = '('
-                            elif non_alphabet == "s_br":
-                                non_alphabet = ')'
-                            elif non_alphabet == "s_qt":
-                                non_alphabet = "'"
-                            elif non_alphabet == "s_sl":
-                                non_alphabet = "|"  # 306-03-04
+                            if letter == "s_cm":
+                                letter = ','
+                            elif letter == "s_pt":
+                                letter = '.'
+                            elif letter == "s_sq":
+                                letter = ';'
+                            elif letter == "s_qo":
+                                letter = ':'
+                            elif letter == "s_mi":
+                                letter = '-'
+                            elif letter == "s_GW":
+                                letter = "GW"
+                            elif letter == "s_lb":
+                                letter = '£'
+                            elif letter == "s_bl":
+                                letter = '('
+                            elif letter == "s_br":
+                                letter = ')'
+                            elif letter == "s_qt":
+                                letter = "'"
+                            elif letter == "s_sl":
+                                letter = "|"  # 306-03-04
                             else:
-                                print(non_alphabet + "  in   " + id)
+                                print(letter + "  in   " + id)
                         else:
                             non_alphabet_word = True
                             continue
 
                 # Make sure to insert the letter in lower case
-                word_string += non_alphabet.lower()
+                word_string += letter.lower()
 
             if not non_alphabet_word:
-                # Comput the PHOC of the word:
+                # Compute the PHOC of the word:
                 phoc = PHOC(words=word_string)
                 # print(phoc)
                 # print('PHOCs has the size', np.shape(phoc))
@@ -137,16 +123,57 @@ class WashingtonDataset(Dataset):
                 self.word_id.append(id)
                 self.word_str.append(word_string)
 
+                # Check images max size = [551, 120]
+                # img_name = os.path.join(self.root_dir, id + '.png')
+                # image = io.imread(img_name)
+                # h, w = image.shape[:2]
+                # if h > self.h_max:
+                #     self.h_max = h
+                # if w > self.w_max:
+                #     self.w_max = w
+
     def __len__(self):
         return len(self.word_id)
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        image = np.invert(io.imread(img_name)) / 255
-        sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        image = Image.open(img_name)
+        if self.transform == 'fixed_size':
+            w, h = image.size
+            pad_width = MAX_IMAGE_WIDTH - w
+            if pad_width < 2:
+                pad_left = pad_width
+                pad_right = 0
+            else:
+                if pad_width % 2 == 0:
+                    pad_left = int(pad_width/2)
+                    pad_right = pad_left
+                else:
+                    pad_left = int(pad_width/2) + 1
+                    pad_right = pad_left - 1
 
-        if self.transform:
-            sample = self.transform(sample)
+            pad_height = MAX_IMAGE_HEIGHT - h
+            if pad_height < 2:
+                pad_top = pad_height
+                pad_bottom = 0
+            else:
+                if pad_height % 2 == 0:
+                    pad_top = int(pad_height/2)
+                    pad_bottom = pad_top
+                else:
+                    pad_top = int(pad_height/2) + 1
+                    pad_bottom = pad_top - 1
+
+            padding = (pad_left, pad_top, pad_right, pad_bottom)
+            tsfm = Pad(padding)
+
+            # Invert the input image and then
+            image = image.convert('L')
+            image = ImageOps.invert(image)
+            image = image.convert('1')
+            image = tsfm(image)
+
+            sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
 
         return sample
 
@@ -154,20 +181,21 @@ class WashingtonDataset(Dataset):
 # Test the Washington Dataset Loading
 
 washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/ground_truth/word_labels.txt',
-                                    root_dir='datasets/washingtondb-v1.0/data/word_images_normalized')
+                                       root_dir='datasets/washingtondb-v1.0/data/word_images_normalized',
+                                       transform='fixed_size', non_alphabet=False)
 
 fig = plt.figure()
 
 for i in range(len(washington_dataset)):
     sample = washington_dataset[i]
 
-    print(i, sample['image'].shape, len(sample['word']))
+    print(i, sample['image'].size, len(sample['word']))
 
     ax = plt.subplot(1, 4, i + 1)
     plt.tight_layout()
     ax.set_title(sample['word'])
     ax.axis('off')
-    plt.imshow(sample['image'], 'gray')
+    plt.imshow(np.asarray((sample['image'])), 'gray')
 
     if i == 3:
         plt.show()
