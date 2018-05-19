@@ -1,2 +1,2 @@
-# mcv-thesis
+# MLPHOC
  Towards Intelligent Multilingual Handwritten Recognition Systems
