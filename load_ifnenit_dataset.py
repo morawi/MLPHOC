@@ -33,8 +33,9 @@ class IfnEnitDataset(Dataset):
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
-        self.h_max = 0
-        self.w_max = 0
+        # self.h_max = 0
+        # self.w_max = 0
+        # self.counter = 0
 
         # Get all the '.tru' files from the folder
         tru_files = glob.glob(dir_tru + "*.tru")
@@ -42,6 +43,11 @@ class IfnEnitDataset(Dataset):
         for tru_file in tru_files:
             # Save the word ID
             id = os.path.splitext(os.path.basename(tru_file))[0]
+
+            # Check if we exclude this words because is too long
+            if id in globals.excluded_words_IFN_ENIT:
+                continue
+
             self.word_id.append(id)
 
             # Open the tru file
@@ -73,8 +79,9 @@ class IfnEnitDataset(Dataset):
                             # img_name = os.path.join(self.dir_bmp, id + '.bmp')
                             # image = io.imread(img_name)
                             # h, w = image.shape[:2]
-                            # if w == MAX_IMAGE_WIDTH:
+                            # if w == globals.MAX_IMAGE_WIDTH:
                             #     print("Image with max size: " + id)
+                            #     self.counter = self.counter + 1
                             # if h > self.h_max:
                             #     self.h_max = h
                             # if w > self.w_max:
