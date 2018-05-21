@@ -6,14 +6,14 @@ from skimage import io
 from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
-from torchvision.transforms import Pad
+from torchvision import transforms
+from transforms import PadImage
+
+import globals
 
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
-
-MAX_IMAGE_WIDTH = 551
-MAX_IMAGE_HEIGHT = 120
 
 class WashingtonDataset(Dataset):
 
@@ -139,51 +139,30 @@ class WashingtonDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
         image = Image.open(img_name)
-        if self.transform == 'fixed_size':
-            w, h = image.size
-            pad_width = MAX_IMAGE_WIDTH - w
-            if pad_width < 2:
-                pad_left = pad_width
-                pad_right = 0
-            else:
-                if pad_width % 2 == 0:
-                    pad_left = int(pad_width/2)
-                    pad_right = pad_left
-                else:
-                    pad_left = int(pad_width/2) + 1
-                    pad_right = pad_left - 1
+        # Invert the input image and then
+        image = image.convert('L')
+        image = ImageOps.invert(image)
+        image = image.convert('1')
 
-            pad_height = MAX_IMAGE_HEIGHT - h
-            if pad_height < 2:
-                pad_top = pad_height
-                pad_bottom = 0
-            else:
-                if pad_height % 2 == 0:
-                    pad_top = int(pad_height/2)
-                    pad_bottom = pad_top
-                else:
-                    pad_top = int(pad_height/2) + 1
-                    pad_bottom = pad_top - 1
+        if self.transform:
+            image = self.transform(image)
 
-            padding = (pad_left, pad_top, pad_right, pad_bottom)
-            tsfm = Pad(padding)
-
-            # Invert the input image and then
-            image = image.convert('L')
-            image = ImageOps.invert(image)
-            image = image.convert('1')
-            image = tsfm(image)
-
-            sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
 
         return sample
 
 
 # Test the Washington Dataset Loading
 
+mean = (0.5, 0.5, 0.5)
+std = (0.25, 0.25, 0.25)
+
+pad = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
+composed = transforms.Compose([pad, transforms.Normalize(mean, std)])
+
 washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/ground_truth/word_labels.txt',
                                        root_dir='datasets/washingtondb-v1.0/data/word_images_normalized',
-                                       transform='fixed_size', non_alphabet=False)
+                                       transform=composed, non_alphabet=False)
 
 fig = plt.figure()
 

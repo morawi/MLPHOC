@@ -7,14 +7,14 @@ from skimage import io
 from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
-from torchvision.transforms import Pad
+from torchvision import transforms
+from transforms import PadImage
+
+import globals
 
 # Ignore warnings
 import warnings
 warnings.filterwarnings("ignore")
-
-MAX_IMAGE_WIDTH = 1035
-MAX_IMAGE_HEIGHT = 226
 
 class IfnEnitDataset(Dataset):
 
@@ -58,7 +58,6 @@ class IfnEnitDataset(Dataset):
                             arabic_word = token.split(":")[1]
 
                             # Got an UNKNOWN UNIGRAM ERROR
-
                             # Compute the PHOC of the word:
                             # arabic_word = arabic_word.lower()
                             # phoc = PHOC(words=arabic_word)
@@ -87,50 +86,23 @@ class IfnEnitDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         image = Image.open(img_name)
-        if self.transform == 'fixed_size':
-            w, h = image.size
-            pad_width = MAX_IMAGE_WIDTH - w
-            if pad_width < 2:
-                pad_left = pad_width
-                pad_right = 0
-            else:
-                if pad_width % 2 == 0:
-                    pad_left = int(pad_width/2)
-                    pad_right = pad_left
-                else:
-                    pad_left = int(pad_width/2) + 1
-                    pad_right = pad_left - 1
+        if self.transform:
+            sample = self.transform(image)
 
-            pad_height = MAX_IMAGE_HEIGHT - h
-            if pad_height < 2:
-                pad_top = pad_height
-                pad_bottom = 0
-            else:
-                if pad_height % 2 == 0:
-                    pad_top = int(pad_height/2)
-                    pad_bottom = pad_top
-                else:
-                    pad_top = int(pad_height/2) + 1
-                    pad_bottom = pad_top - 1
-
-            padding = (pad_left, pad_top, pad_right, pad_bottom)
-            tsfm = Pad(padding)
-
-            # Invert the input image and then
-            image = image.convert('L')
-            image = ImageOps.invert(image)
-            image = image.convert('1')
-            image = tsfm(image)
-
-            sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
 
         return sample
 
 # Test the IFN/ENIT Dataset Loading
+mean = (0.5, 0.5, 0.5)
+std = (0.25, 0.25, 0.25)
+
+pad = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
+composed = transforms.Compose([pad, transforms.Normalize(mean, std)])
 
 ifnenit_dataset = IfnEnitDataset(dir_tru='datasets/ifnenit_v2.0p1e/data/set_a/tru/',
                                     dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
-                                 transform='fixed_size')
+                                 transform=composed)
 
 fig = plt.figure()
 
