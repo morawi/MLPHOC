@@ -158,7 +158,7 @@ class WashingtonDataset(Dataset):
 pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
 
 mean = (0.5, 0.5, 0.5) # https://github.com/Armour/pytorch-nn-practice/blob/master/utils/meanstd.py
-std = (0.25, 0.25, 0.5)              
+std = (0.25, 0.25, 0.25)              
 
 
 image_transfrom = transforms.Compose([pad_image,                                 
