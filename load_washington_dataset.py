@@ -154,29 +154,39 @@ class WashingtonDataset(Dataset):
 
 # Test the Washington Dataset Loading
 
-mean = (0.5, 0.5, 0.5)
-std = (0.25, 0.25, 0.25)
 
-pad = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
-composed = transforms.Compose([pad, transforms.Normalize(mean, std)])
+pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
 
+mean = (0.5, 0.5, 0.5) # https://github.com/Armour/pytorch-nn-practice/blob/master/utils/meanstd.py
+std = (0.25, 0.25, 0.5)              
+
+
+image_transfrom = transforms.Compose([pad_image,                                 
+                               transforms.Scale((globals.NEW_W, globals.NEW_H)), 
+                               transforms.ToTensor(),
+                               transforms.Normalize(mean, std)
+])
+        
+    
 washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/ground_truth/word_labels.txt',
                                        root_dir='datasets/washingtondb-v1.0/data/word_images_normalized',
-                                       transform=composed, non_alphabet=False)
+                                       transform=image_transfrom, 
+                                       non_alphabet=False)
 
-fig = plt.figure()
+dataloader = DataLoader(washington_dataset, batch_size=4,
+                        shuffle=True, num_workers=4)
 
-for i in range(len(washington_dataset)):
-    sample = washington_dataset[i]
+for i in range(len(washington_dataset)): # I removed subplot, as the plot is so small, and to see the image clearly 
+    plt.figure(i);  plt.xticks([]); plt.yticks([])
+    sample = washington_dataset[i]    
+    plt.imshow( sample['image'].numpy()[0,:,:] )
+    plt.show();
+    print(i, sample['image'].shape, "; ", sample['word'], "\n")
+    
+    if i == 3: break
 
-    print(i, sample['image'].size, len(sample['word']))
 
-    ax = plt.subplot(1, 4, i + 1)
-    plt.tight_layout()
-    ax.set_title(sample['word'])
-    ax.axis('off')
-    plt.imshow(np.asarray((sample['image'])), 'gray')
 
-    if i == 3:
-        plt.show()
-        break
+
+
+
