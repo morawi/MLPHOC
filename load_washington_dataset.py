@@ -169,18 +169,22 @@ class WashingtonDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        image = Image.open(img_name)
+        data = Image.open(img_name)
         # Invert the input image and then
-        image = image.convert('L')
-        image = ImageOps.invert(image)
-        image = image.convert('1')
+        data = data.convert('L')
+        data = ImageOps.invert(data)
+        data = data.convert('1')
 
         if self.transform:
-            image = self.transform(image)
+            data = self.transform(data)
 
-        sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        target = self.phoc_word[idx]
 
-        return sample
+        # sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        #
+        # return sample
+
+        return data, target
 
 # Test the Washington Dataset Loading
 
@@ -197,18 +201,20 @@ washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/grou
                                        train=True,
                                        transform=image_transfrom, 
                                        non_alphabet=False)
-
-dataloader = DataLoader(washington_dataset, batch_size=4,
-                        shuffle=True, num_workers=4)
+#
+# dataloader = DataLoader(washington_dataset, batch_size=4,
+#                         shuffle=True, num_workers=4)
 
 for i in range(len(washington_dataset)):
-    plt.figure(i);  plt.xticks([]); plt.yticks([])
-    sample = washington_dataset[i]    
-    plt.imshow( sample['image'].numpy()[0,:,:], 'gray')
-    plt.show();
-    print(i, sample['image'].shape, "; ", sample['word'], "\n")
+    for i in range(len(washington_dataset)):
+        plt.figure(i);
+        plt.xticks([]);
+        plt.yticks([])
+        data, target = washington_dataset[i]
+        plt.imshow(data.numpy()[0, :, :], 'gray')
+        plt.show();
     
-    if i == 3: break
+        if i == 2: break
 
 
 

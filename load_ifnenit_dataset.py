@@ -119,13 +119,15 @@ class IfnEnitDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
-        image = Image.open(img_name)
+        data = Image.open(img_name)
         if self.transform:
-            image = self.transform(image)
+            data = self.transform(data)
 
-        sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
-
-        return sample
+        target = self.phoc_word[idx]
+        # sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
+        #
+        # return sample
+        return data, target
 
 # Test the IFN/ENIT Dataset Loading
 
@@ -146,9 +148,8 @@ for i in range(len(ifnenit_dataset)):
     plt.figure(i);
     plt.xticks([]);
     plt.yticks([])
-    sample = ifnenit_dataset[i]
-    plt.imshow(sample['image'].numpy()[0, :, :], 'gray')
+    data, target = ifnenit_dataset[i]
+    plt.imshow(data.numpy()[0, :, :], 'gray')
     plt.show();
-    print(i, sample['image'].shape, "; ", sample['word'], "\n")
 
-    if i == 3: break
+    if i == 2: break
