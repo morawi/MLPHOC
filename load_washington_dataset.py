@@ -154,19 +154,13 @@ class WashingtonDataset(Dataset):
 
 # Test the Washington Dataset Loading
 
-
 pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
 
-mean = (0.5, 0.5, 0.5) # https://github.com/Armour/pytorch-nn-practice/blob/master/utils/meanstd.py
-std = (0.25, 0.25, 0.25)              
-
-
-image_transfrom = transforms.Compose([pad_image,                                 
-                               transforms.Scale((globals.NEW_W, globals.NEW_H)), 
-                               transforms.ToTensor(),
-                               transforms.Normalize(mean, std)
+image_transfrom = transforms.Compose([pad_image,
+                               transforms.ToPILImage(),
+                               transforms.Scale((globals.NEW_W, globals.NEW_H)),
+                               transforms.ToTensor()
 ])
-        
     
 washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/ground_truth/word_labels.txt',
                                        root_dir='datasets/washingtondb-v1.0/data/word_images_normalized',
@@ -176,10 +170,10 @@ washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/grou
 dataloader = DataLoader(washington_dataset, batch_size=4,
                         shuffle=True, num_workers=4)
 
-for i in range(len(washington_dataset)): # I removed subplot, as the plot is so small, and to see the image clearly 
+for i in range(len(washington_dataset)):
     plt.figure(i);  plt.xticks([]); plt.yticks([])
     sample = washington_dataset[i]    
-    plt.imshow( sample['image'].numpy()[0,:,:] )
+    plt.imshow( sample['image'].numpy()[0,:,:], 'gray')
     plt.show();
     print(i, sample['image'].shape, "; ", sample['word'], "\n")
     

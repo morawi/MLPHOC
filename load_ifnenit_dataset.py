@@ -94,36 +94,33 @@ class IfnEnitDataset(Dataset):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         image = Image.open(img_name)
         if self.transform:
-            sample = self.transform(image)
+            image = self.transform(image)
 
         sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
 
         return sample
 
 # Test the IFN/ENIT Dataset Loading
-mean = (0.5, 0.5, 0.5)
-std = (0.25, 0.25, 0.25)
 
-pad = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
-composed = transforms.Compose([pad, transforms.Normalize(mean, std)])
+pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
+
+image_transfrom = transforms.Compose([pad_image,
+                               transforms.ToPILImage(),
+                               transforms.Scale((globals.NEW_W, globals.NEW_H)),
+                               transforms.ToTensor()
+])
 
 ifnenit_dataset = IfnEnitDataset(dir_tru='datasets/ifnenit_v2.0p1e/data/set_a/tru/',
                                     dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
-                                 transform=composed)
-
-fig = plt.figure()
+                                 transform=image_transfrom)
 
 for i in range(len(ifnenit_dataset)):
+    plt.figure(i);
+    plt.xticks([]);
+    plt.yticks([])
     sample = ifnenit_dataset[i]
+    plt.imshow(sample['image'].numpy()[0, :, :], 'gray')
+    plt.show();
+    print(i, sample['image'].shape, "; ", sample['word'], "\n")
 
-    print(i, sample['image'].size, len(sample['word']))
-
-    ax = plt.subplot(1, 4, i + 1)
-    plt.tight_layout()
-    ax.set_title(sample['word'])
-    ax.axis('off')
-    plt.imshow(np.asarray((sample['image'])), 'gray')
-
-    if i == 3:
-        plt.show()
-        break
+    if i == 3: break

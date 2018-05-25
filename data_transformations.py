@@ -1,5 +1,6 @@
 from __future__ import print_function, division
 from torchvision import transforms
+import numpy as np
 
 #  Method to compute the padding odf the input image to the max image size
 def get_padding(image, output_size):
@@ -49,4 +50,6 @@ class PadImage(object):
         padding = get_padding(image, (self.output_max_width, self.output_max_height))
         tsfm = transforms.Pad(padding)
         image = tsfm(image)
+        image = np.array(image.getdata(),
+                    np.uint8).reshape(image.size[1], image.size[0], 1)
         return image
