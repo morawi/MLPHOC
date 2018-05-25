@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
 from torchvision import transforms
-from transforms import PadImage
+from data_transformations import PadImage
 
 import globals
 
