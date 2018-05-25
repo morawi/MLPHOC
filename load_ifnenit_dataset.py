@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 class IfnEnitDataset(Dataset):
 
-    def __init__(self, dir_tru, dir_bmp, transform=None):
+    def __init__(self, dir_tru, dir_bmp, train=True, transform=None):
         """
         Args:
             dir_tru (string): Directory with all the GT files.
@@ -29,10 +29,14 @@ class IfnEnitDataset(Dataset):
 
         self.dir_bmp = dir_bmp
         self.dir_tru = dir_tru
+        self.train = train  # training set or test set
         self.transform = transform
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
+        aux_word_id = []
+        aux_word_str = []
+        aux_phoc_word = []
         # self.h_max = 0
         # self.w_max = 0
         # self.counter = 0
@@ -47,9 +51,6 @@ class IfnEnitDataset(Dataset):
             # Check if we exclude this words because is too long
             if id in globals.excluded_words_IFN_ENIT:
                 continue
-
-            self.word_id.append(id)
-
             # Open the tru file
             tru = open(tru_file, 'r', encoding='cp1256')
             text_lines = tru.readlines()
@@ -71,9 +72,9 @@ class IfnEnitDataset(Dataset):
                             # print('PHOCs has the size', np.shape(phoc))
 
                             phoc = ''
-                            self.phoc_word.append(phoc)
-                            self.word_id.append(id)
-                            self.word_str.append(arabic_word)
+                            aux_phoc_word.append(phoc)
+                            aux_word_id.append(id)
+                            aux_word_str.append(arabic_word)
 
                             # Check images max size = [1035, 226]
                             # img_name = os.path.join(self.dir_bmp, id + '.bmp')
@@ -86,6 +87,32 @@ class IfnEnitDataset(Dataset):
                             #     self.h_max = h
                             # if w > self.w_max:
                             #     self.w_max = w
+
+        # Use a 80% of the dataset words for testing and the other 20% for testing
+        total_data = len(aux_word_id)
+        np.random.seed(0)
+        train_idx = np.random.choice(total_data, size=int(total_data * 0.8), replace=False)
+        train_idx = np.sort(train_idx)
+        test_idx = []
+        prev_num = -1
+        for idx in range(train_idx.shape[0]):
+            if idx != 0:
+                prev_num = train_idx[idx - 1]
+            while train_idx[idx] != prev_num + 1:
+                prev_num = prev_num + 1
+                test_idx.append(prev_num)
+        test_idx = np.sort(test_idx)
+
+        # Choose the training or the testing indexes
+        if self.train:
+            data_idx = train_idx
+        else:
+            data_idx = test_idx
+
+        for idx in data_idx:
+            self.phoc_word.append(aux_phoc_word[idx])
+            self.word_id.append(aux_word_id[idx])
+            self.word_str.append(aux_word_str[idx])
 
     def __len__(self):
         return len(self.word_id)
@@ -111,7 +138,8 @@ image_transfrom = transforms.Compose([pad_image,
 ])
 
 ifnenit_dataset = IfnEnitDataset(dir_tru='datasets/ifnenit_v2.0p1e/data/set_a/tru/',
-                                    dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
+                                dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
+                                 train=True,
                                  transform=image_transfrom)
 
 for i in range(len(ifnenit_dataset)):
