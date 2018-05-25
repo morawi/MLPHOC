@@ -123,10 +123,10 @@ class IfnEnitDataset(Dataset):
         if self.transform:
             data = self.transform(data)
 
-        target = self.phoc_word[idx]
-        # sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
-        #
-        # return sample
+        # For testing give a random label
+        target = np.random.randint(0,10)
+        # target = self.phoc_word[idx]
+
         return data, target
 
 # Test the IFN/ENIT Dataset Loading
@@ -143,6 +143,9 @@ ifnenit_dataset = IfnEnitDataset(dir_tru='datasets/ifnenit_v2.0p1e/data/set_a/tr
                                 dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
                                  train=True,
                                  transform=image_transfrom)
+
+dataloader = DataLoader(ifnenit_dataset, batch_size=4,
+                        shuffle=True, num_workers=4)
 
 for i in range(len(ifnenit_dataset)):
     plt.figure(i);

@@ -178,11 +178,9 @@ class WashingtonDataset(Dataset):
         if self.transform:
             data = self.transform(data)
 
-        target = self.phoc_word[idx]
-
-        # sample = {'image': image, 'phoc': self.phoc_word[idx], 'word': self.word_str[idx]}
-        #
-        # return sample
+        # For testing give a random label
+        target = np.random.randint(0,10)
+        # target = self.phoc_word[idx]
 
         return data, target
 
@@ -201,20 +199,19 @@ washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/grou
                                        train=True,
                                        transform=image_transfrom, 
                                        non_alphabet=False)
-#
-# dataloader = DataLoader(washington_dataset, batch_size=4,
-#                         shuffle=True, num_workers=4)
+
+dataloader = DataLoader(washington_dataset, batch_size=4,
+                        shuffle=True, num_workers=4)
 
 for i in range(len(washington_dataset)):
-    for i in range(len(washington_dataset)):
-        plt.figure(i);
-        plt.xticks([]);
-        plt.yticks([])
-        data, target = washington_dataset[i]
-        plt.imshow(data.numpy()[0, :, :], 'gray')
-        plt.show();
-    
-        if i == 2: break
+    plt.figure(i);
+    plt.xticks([]);
+    plt.yticks([])
+    data, target = washington_dataset[i]
+    plt.imshow(data.numpy()[0, :, :], 'gray')
+    plt.show();
+
+    if i == 2: break
 
 
 
