@@ -8,7 +8,7 @@ from torch.utils.data import Dataset, DataLoader
 from Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
 from torchvision import transforms
-from data_transformations import PadImage
+from data_transformations import PadImage, process_ifnedit_data
 
 import globals
 
@@ -37,56 +37,8 @@ class IfnEnitDataset(Dataset):
         aux_word_id = []
         aux_word_str = []
         aux_phoc_word = []
-        # self.h_max = 0
-        # self.w_max = 0
-        # self.counter = 0
 
-        # Get all the '.tru' files from the folder
-        tru_files = glob.glob(dir_tru + "*.tru")
-
-        for tru_file in tru_files:
-            # Save the word ID
-            id = os.path.splitext(os.path.basename(tru_file))[0]
-
-            # Check if we exclude this words because is too long
-            if id in globals.excluded_words_IFN_ENIT:
-                continue
-            # Open the tru file
-            tru = open(tru_file, 'r', encoding='cp1256')
-            text_lines = tru.readlines()
-            tru.close()
-            for line in text_lines:
-                # split using space to separate the ID from the letters and delete the \n
-                line = line[:-1].split(": ")
-                if line[0] == "LBL":
-                    tokens = line[1].split(";")
-                    for token in tokens:
-                        if "AW1" in str(token):
-                            arabic_word = token.split(":")[1]
-
-                            # Got an UNKNOWN UNIGRAM ERROR
-                            # Compute the PHOC of the word:
-                            # arabic_word = arabic_word.lower()
-                            # phoc = PHOC(words=arabic_word)
-                            # print(phoc)
-                            # print('PHOCs has the size', np.shape(phoc))
-
-                            phoc = ''
-                            aux_phoc_word.append(phoc)
-                            aux_word_id.append(id)
-                            aux_word_str.append(arabic_word)
-
-                            # Check images max size = [1035, 226]
-                            # img_name = os.path.join(self.dir_bmp, id + '.bmp')
-                            # image = io.imread(img_name)
-                            # h, w = image.shape[:2]
-                            # if w == globals.MAX_IMAGE_WIDTH:
-                            #     print("Image with max size: " + id)
-                            #     self.counter = self.counter + 1
-                            # if h > self.h_max:
-                            #     self.h_max = h
-                            # if w > self.w_max:
-                            #     self.w_max = w
+        process_ifnedit_data(dir_tru, aux_phoc_word, aux_word_id, aux_word_str)
 
         # Use a 80% of the dataset words for testing and the other 20% for testing
         total_data = len(aux_word_id)
