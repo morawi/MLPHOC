@@ -2,24 +2,31 @@ import numpy as np
 import logging
 import sys
 
-def build_phoc(words, split_character=None):
+def build_phoc(words, alphabet='multiple', split_character=None):
     '''  Calculate Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
-        words (str): words to calculate descriptor for                   
+        words (str): words to calculate descriptor for
+        alphabet (str): choose the alphabet to compute the PHOC
         split_character (str): special character to split the word strings into characters
         
     Returns:
         the PHOCs for the given words    '''
-    
+
+    logger = logging.getLogger('PHOCGenerator')
     # phoc_unigrams (str): string of all unigrams to use in the PHOC
-    phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789ابجدهوزطحيكلمنسعفصقرشتثخذضظغ'    
-    
+    if alphabet == 'english':
+        phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
+    elif alphabet == 'arabic':
+        phoc_unigrams ='0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ'''
+    elif alphabet == 'multiple':
+        phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ'''
+    else:
+        logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
+        sys.exit(0)
     
     # unigram_levels (list of int): the levels for the unigrams in PHOC
-    unigram_levels = [2,3,4,5]      
-    
+    unigram_levels = [2,3,4,5]
     # prepare output matrix
-    logger = logging.getLogger('PHOCGenerator')   
     phoc_size = len(phoc_unigrams) * np.sum(unigram_levels)
     phocs = np.zeros((len(words), phoc_size))
     # prepare some lambda functions
@@ -39,7 +46,9 @@ def build_phoc(words, split_character=None):
             char_occ = occupancy(index, n)
             if char not in char_indices:                                               
                 logger.fatal('The unigram \'%s\' is unknown', char)
-                sys.exit(0)                
+				 #print(' ', char, end="" )
+                sys.exit(0)
+
             char_index = char_indices[char]
             for level in unigram_levels:
                 for region in range(level):

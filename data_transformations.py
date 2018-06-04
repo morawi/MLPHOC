@@ -89,11 +89,11 @@ def process_ifnedit_data(dir_tru, phoc_word, word_id, word_str):
                         # Got an UNKNOWN UNIGRAM ERROR
                         # Compute the PHOC of the word:
                         # arabic_word = arabic_word.lower()
-                        # phoc = PHOC(words=arabic_word)
+                        phoc = PHOC(words=arabic_word)
                         # print(phoc)
                         # print('PHOCs has the size', np.shape(phoc))
 
-                        phoc = ''
+                        # phoc = ''
                         phoc_word.append(phoc)
                         word_id.append(id)
                         word_str.append(arabic_word)
