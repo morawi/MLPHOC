@@ -1,16 +1,22 @@
 from __future__ import print_function, division
-from torchvision import transforms
-from Word2PHOC import build_phoc as PHOC
-import numpy as np
-import os
+
 import glob
-import globals
+import os
+
+import numpy as np
+from torchvision import transforms
+
+from scripts.Word2PHOC import build_phoc as PHOC
+from utils import globals
+
 
 #  Method to compute the padding odf the input image to the max image size
 def get_padding(image, output_size):
     output_max_width = output_size[0]
     output_max_height = output_size[1]
-    w, h = image.size
+    h = image.shape[0]
+    w = image.shape[1]
+
     pad_width = output_max_width - w
     if pad_width < 2:
         pad_left = pad_width
@@ -52,19 +58,22 @@ class PadImage(object):
 
     def __call__(self, image):
         padding = get_padding(image, (self.output_max_width, self.output_max_height))
-        tsfm = transforms.Pad(padding)
+
+        # tsfm = transforms.Pad(padding)
+        tsfm = transforms.Compose([ transforms.ToPILImage(),
+                                    transforms.Pad(padding)])
         image = tsfm(image)
         image = np.array(image.getdata(),
                     np.uint8).reshape(image.size[1], image.size[0], 1)
         return image
 
-def process_ifnedit_data(dir_tru, phoc_word, word_id, word_str):
+def process_ifnedit_data(cf, phoc_word, word_id, word_str):
     # self.h_max = 0
     # self.w_max = 0
     # self.counter = 0
 
     # Get all the '.tru' files from the folder
-    tru_files = glob.glob(dir_tru + "*.tru")
+    tru_files = glob.glob(cf.gt_path + "*.tru")
 
     for tru_file in tru_files:
         # Save the word ID
@@ -89,7 +98,7 @@ def process_ifnedit_data(dir_tru, phoc_word, word_id, word_str):
                         # Got an UNKNOWN UNIGRAM ERROR
                         # Compute the PHOC of the word:
                         # arabic_word = arabic_word.lower()
-                        phoc = PHOC(words=arabic_word)
+                        phoc = PHOC(words=arabic_word, alphabet=cf.alphabet)
                         # print(phoc)
                         # print('PHOCs has the size', np.shape(phoc))
 
@@ -111,12 +120,11 @@ def process_ifnedit_data(dir_tru, phoc_word, word_id, word_str):
                         #     self.w_max = w
 
 
-def process_wg_data(txt_file, non_alphabet, phoc_word, word_id, word_str):
-
+def process_wg_data(cf, phoc_word, word_id, word_str):
     # self.h_max = 0
     # self.w_max = 0
 
-    word_labels_file = open(txt_file, 'r')
+    word_labels_file = open(cf.gt_path, 'r')
     text_lines = word_labels_file.readlines()
     word_labels_file.close()
 
@@ -164,7 +172,7 @@ def process_wg_data(txt_file, non_alphabet, phoc_word, word_id, word_str):
                     letter = '9'
                 else:
                     # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
-                    if non_alphabet:
+                    if cf.non_alphabet:
                         if letter == "s_cm":
                             letter = ','
                         elif letter == "s_pt":
@@ -198,7 +206,7 @@ def process_wg_data(txt_file, non_alphabet, phoc_word, word_id, word_str):
 
         if not non_alphabet_word:
             # Compute the PHOC of the word:
-            phoc = PHOC(words=word_string)
+            phoc = PHOC(words=word_string, alphabet=cf.alphabet)
             # print(phoc)
             # print('PHOCs has the size', np.shape(phoc))
             phoc_word.append(phoc)

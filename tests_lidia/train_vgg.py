@@ -1,22 +1,20 @@
 from __future__ import print_function, division
-import os
-import time
-import numpy as np
-import matplotlib.pyplot as plt
+
 import copy
-from torch.utils.data import DataLoader
-from data_transformations import PadImage
+import time
+import warnings
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
-from torchvision import datasets, models, transforms
-import globals
-from load_washington_dataset import WashingtonDataset
+from torch.utils.data import DataLoader
+from torchvision import models, transforms
 
-# Ignore warnings
-import warnings
+from datasets.load_washington_dataset import WashingtonDataset
+from scripts.data_transformations import PadImage
+from utils import globals
+
 warnings.filterwarnings("ignore")
 
 def train_model(model, dataloaders, criterion, optimizer, scheduler, num_epochs=25):

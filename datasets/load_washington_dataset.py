@@ -1,23 +1,19 @@
 from __future__ import print_function, division
+
 import os
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage import io
-from torch.utils.data import Dataset, DataLoader
-from Word2PHOC import build_phoc as PHOC
-from PIL import Image, ImageOps
-from torchvision import transforms
-from data_transformations import PadImage, process_wg_data
-
-import globals
-
-# Ignore warnings
 import warnings
+
+import numpy as np
+from PIL import Image, ImageOps
+from torch.utils.data import Dataset
+
+from scripts.data_transformations import process_wg_data
+
 warnings.filterwarnings("ignore")
 
 class WashingtonDataset(Dataset):
 
-    def __init__(self, txt_file, root_dir, train=True, transform=None, non_alphabet=False):
+    def __init__(self, cf, transform=None):
         """
         Args:
             txt_file (string): Path to the text file with the GT.
@@ -26,10 +22,10 @@ class WashingtonDataset(Dataset):
                 on a sample.
         """
 
-        self.root_dir = root_dir
-        self.train = train  # training set or test set
+        self.root_dir = cf.dataset_path
+        self.train = cf.train_split  # training set or test set
         self.transform = transform
-        self.non_alphabet = non_alphabet
+        self.non_alphabet = cf.non_alphabet
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
@@ -37,7 +33,7 @@ class WashingtonDataset(Dataset):
         aux_word_str = []
         aux_phoc_word = []
 
-        process_wg_data(txt_file, non_alphabet, aux_phoc_word, aux_word_id, aux_word_str)
+        process_wg_data(cf, aux_phoc_word, aux_word_id, aux_word_str)
 
         # Use a 80% of the dataset words for testing and the other 20% for testing
         total_data = len(aux_word_id)
@@ -77,47 +73,16 @@ class WashingtonDataset(Dataset):
         data = ImageOps.invert(data)
         data = data.convert('1')
 
+        # Convert data to numpy array
+        data = np.array(data.getdata(),
+                    np.uint8).reshape(data.size[1], data.size[0], 1)
+
         if self.transform:
             data = self.transform(data)
 
         # For testing give a random label
-        target = np.random.randint(1,10)
-        # target = self.phoc_word[idx]
+        # target = np.random.randint(1,10)
+
+        target = self.phoc_word[idx]
 
         return data, target
-
-# Test the Washington Dataset Loading
-
-pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
-
-image_transfrom = transforms.Compose([pad_image,
-                               transforms.ToPILImage(),
-                               transforms.Scale((globals.NEW_W, globals.NEW_H)),
-                               transforms.ToTensor()
-])
-
-
-washington_dataset = WashingtonDataset(txt_file='datasets/washingtondb-v1.0/ground_truth/word_labels.txt',
-                                       root_dir='datasets/washingtondb-v1.0/data/word_images_normalized',
-                                       train=True,
-                                       transform=image_transfrom,
-                                       non_alphabet=False)
-
-dataloader = DataLoader(washington_dataset, batch_size=4,
-                        shuffle=True, num_workers=4)
-
-for i in range(len(washington_dataset)):
-    plt.figure(i);
-    plt.xticks([]);
-    plt.yticks([])
-    data, target = washington_dataset[i]
-    plt.imshow(data.numpy()[0, :, :], 'gray')
-    plt.show();
-
-    if i == 2: break
-
-
-
-
-
-

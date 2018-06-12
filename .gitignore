@@ -1,9 +1,8 @@
-# ignore all bmp images
-*.bmp
-# ignore all png images
-*.png
-# ignore all tru files
-*.tru
-datasets/
 .idea
 *__
+# ignore datasets
+datasets/ifnenit_v2.0p1e/
+datasets/washingtondb-v1.0/
+# ignore folders used for testing purposes
+data/
+tests_lidia/

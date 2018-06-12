@@ -1,24 +1,19 @@
 from __future__ import print_function, division
+
 import os
-import glob
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage import io
-from torch.utils.data import Dataset, DataLoader
-from Word2PHOC import build_phoc as PHOC
-from PIL import Image, ImageOps
-from torchvision import transforms
-from data_transformations import PadImage, process_ifnedit_data
-
-import globals
-
-# Ignore warnings
 import warnings
+
+import numpy as np
+from PIL import Image
+from torch.utils.data import Dataset
+
+from scripts.data_transformations import process_ifnedit_data
+
 warnings.filterwarnings("ignore")
 
 class IfnEnitDataset(Dataset):
 
-    def __init__(self, dir_tru, dir_bmp, train=True, transform=None):
+    def __init__(self, cf, transform=None):
         """
         Args:
             dir_tru (string): Directory with all the GT files.
@@ -27,9 +22,9 @@ class IfnEnitDataset(Dataset):
                 on a sample.
         """
 
-        self.dir_bmp = dir_bmp
-        self.dir_tru = dir_tru
-        self.train = train  # training set or test set
+        self.dir_bmp = cf.dataset_path
+        self.dir_tru = cf.gt_path
+        self.train = cf.train_split  # training set or test set
         self.transform = transform
         self.word_id = []
         self.word_str = []
@@ -38,7 +33,7 @@ class IfnEnitDataset(Dataset):
         aux_word_str = []
         aux_phoc_word = []
 
-        process_ifnedit_data(dir_tru, aux_phoc_word, aux_word_id, aux_word_str)
+        process_ifnedit_data(cf, aux_phoc_word, aux_word_id, aux_word_str)
 
         # Use a 80% of the dataset words for testing and the other 20% for testing
         total_data = len(aux_word_id)
@@ -72,39 +67,15 @@ class IfnEnitDataset(Dataset):
     def __getitem__(self, idx):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         data = Image.open(img_name)
+        # Convert data to numpy array
+        data = np.array(data.getdata(),
+                    np.uint8).reshape(data.size[1], data.size[0], 1)
         if self.transform:
             data = self.transform(data)
 
         # For testing give a random label
-        target = np.random.randint(0,10)
-        # target = self.phoc_word[idx]
+        # target = np.random.randint(0,10)
+
+        target = self.phoc_word[idx]
 
         return data, target
-
-# Test the IFN/ENIT Dataset Loading
-
-pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
-
-image_transfrom = transforms.Compose([pad_image,
-                               transforms.ToPILImage(),
-                               transforms.Scale((globals.NEW_W, globals.NEW_H)),
-                               transforms.ToTensor()
-])
-
-ifnenit_dataset = IfnEnitDataset(dir_tru='datasets/ifnenit_v2.0p1e/data/set_a/tru/',
-                                dir_bmp='datasets/ifnenit_v2.0p1e/data/set_a/bmp/',
-                                 train=True,
-                                 transform=image_transfrom)
-
-dataloader = DataLoader(ifnenit_dataset, batch_size=4,
-                        shuffle=True, num_workers=4)
-
-for i in range(len(ifnenit_dataset)):
-    plt.figure(i);
-    plt.xticks([]);
-    plt.yticks([])
-    data, target = ifnenit_dataset[i]
-    plt.imshow(data.numpy()[0, :, :], 'gray')
-    plt.show();
-
-    if i == 2: break
