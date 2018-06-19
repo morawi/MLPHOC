@@ -98,7 +98,7 @@ def process_ifnedit_data(cf, phoc_word, word_id, word_str):
                         # Got an UNKNOWN UNIGRAM ERROR
                         # Compute the PHOC of the word:
                         # arabic_word = arabic_word.lower()
-                        phoc = PHOC(words=arabic_word, alphabet=cf.alphabet)
+                        phoc = PHOC(word=arabic_word, alphabet=cf.alphabet, unigram_levels=cf.unigram_levels)
                         # print(phoc)
                         # print('PHOCs has the size', np.shape(phoc))
 
@@ -206,7 +206,8 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
 
         if not non_alphabet_word:
             # Compute the PHOC of the word:
-            phoc = PHOC(words=word_string, alphabet=cf.alphabet)
+            phoc = PHOC(word=word_string, alphabet=cf.alphabet, unigram_levels=cf.unigram_levels)
+            # phoc.astype(np.float32)
             # print(phoc)
             # print('PHOCs has the size', np.shape(phoc))
             phoc_word.append(phoc)

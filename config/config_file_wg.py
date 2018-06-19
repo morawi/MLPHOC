@@ -5,27 +5,30 @@ gt_path                      = 'datasets/washingtondb-v1.0/ground_truth/word_lab
 train_split                  = True
 non_alphabet                 = False
 
-# Dataloader
-batch_size                   = 4
-shuffle                      = True
-num_workers                  = 4
-
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
 input_size                   = [256, 256]   # Input size of the dataset images
+
+# Dataloader
+batch_size_train             = 10
+batch_size_test              = 10
+shuffle                      = True
+num_workers                  = 4
 
 # PHOC
 alphabet                     = 'english'    # ['english', 'arabic', 'multiple']
 unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
-model                        = 'PHOCNet' # ['resnet', 'PHOCNet', ...]
-num_iterations               = 80000
-batch_size                   = 10
+model_name                   = 'resnet50' # ['resnet', 'PHOCNet', ...]
+epochs                       = 100 #80000
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
-learning_rate                = 10e-4
+learning_rate                = 0.01 #10e-4
+dropout_probability          = 0.2
+loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss']
+pretrained                   = False
 
 # Save results
 save_results                 = True                                   # Save Log file

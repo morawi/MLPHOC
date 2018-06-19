@@ -4,12 +4,16 @@ import logging
 
 from config.load_config_file import Configuration
 from tests.test_dataset import test_dataload
+from tests.test_cnn_finetune import test_cnn_finetune
 
 def run_mlphoc(cf):
     logger = logging.getLogger(__name__)
 
     # Test the data loading of the different dataset
-    test_dataload(cf)
+    # test_dataload(cf)
+
+    # Test CNN finetune with WG dataset
+    test_cnn_finetune(cf)
 
 
 def main():
@@ -35,7 +39,7 @@ def main():
     # test_name = arguments.test_name
 
     # Input arguments
-    config_path = 'config/config_file_ifn.py'
+    config_path = 'config/config_file_wg.py'
     test_name = '' # Optional: name of the sub folder where to store the results
 
     # Load the configuration file

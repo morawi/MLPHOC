@@ -2,12 +2,12 @@ import numpy as np
 import logging
 import sys
 
-def build_phoc(words, alphabet='multiple', split_character=None):
+def build_phoc(word, alphabet='multiple', unigram_levels = [2,3,4,5]):
     '''  Calculate Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
-        words (str): words to calculate descriptor for
+        words (str): word to calculate descriptor for
         alphabet (str): choose the alphabet to compute the PHOC
-        split_character (str): special character to split the word strings into characters
+        unigram_levels (array): [2,3,4,5]
         
     Returns:
         the PHOCs for the given words    '''
@@ -25,10 +25,11 @@ def build_phoc(words, alphabet='multiple', split_character=None):
         sys.exit(0)
     
     # unigram_levels (list of int): the levels for the unigrams in PHOC
-    unigram_levels = [2,3,4,5]
+    unigram_levels = unigram_levels
     # prepare output matrix
     phoc_size = len(phoc_unigrams) * np.sum(unigram_levels)
-    phocs = np.zeros((len(words), phoc_size))
+    phoc = np.zeros(phoc_size)
+
     # prepare some lambda functions
     occupancy = lambda k, n: [float(k) / n, float(k + 1) / n]
     overlap = lambda a, b: [max(a[0], b[0]), min(a[1], b[1])]
@@ -37,33 +38,23 @@ def build_phoc(words, alphabet='multiple', split_character=None):
     # map from character to alphabet position
     char_indices = {d: i for i, d in enumerate(phoc_unigrams)}
 
-    # iterate through all the words
-    for word_index, word in enumerate(words):
-        if split_character is not None:
-            word = word.split(split_character)
-        n = len(word)
-        for index, char in enumerate(word):
-            char_occ = occupancy(index, n)
-            if char not in char_indices:                                               
-                logger.fatal('The unigram \'%s\' is unknown', char)
-				 #print(' ', char, end="" )
-                sys.exit(0)
+    n = len(word)
+    for index, char in enumerate(word):
+        char_occ = occupancy(index, n)
+        if char not in char_indices:
+            logger.fatal('The unigram \'%s\' is unknown', char)
+             #print(' ', char, end="" )
+            sys.exit(0)
 
-            char_index = char_indices[char]
-            for level in unigram_levels:
-                for region in range(level):
-                    region_occ = occupancy(region, level)
-                    if size(overlap(char_occ, region_occ)) / size(char_occ) >= 0.5:
-                        feat_vec_index = sum([l for l in unigram_levels if l < level]) * len(
-                            phoc_unigrams) + region * len(phoc_unigrams) + char_index
-                        phocs[word_index, feat_vec_index] = 1
+        char_index = char_indices[char]
+        for level in unigram_levels:
+            for region in range(level):
+                region_occ = occupancy(region, level)
+                if size(overlap(char_occ, region_occ)) / size(char_occ) >= 0.5:
+                    feat_vec_index = sum([l for l in unigram_levels if l < level]) * len(
+                        phoc_unigrams) + region * len(phoc_unigrams) + char_index
+                    phoc[feat_vec_index] = 1
        
-    return phocs
-
-# Testing the function
-# words =['barcelona0', 'ali', 'uab', 'علي', 'اندريه']
-# qry_phocs = build_phoc(words = words)
-# print(qry_phocs)
-# print('PHOCs has the size', np.shape(qry_phocs))
+    return phoc
 
 

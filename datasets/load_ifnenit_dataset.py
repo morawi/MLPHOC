@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 
 class IfnEnitDataset(Dataset):
 
-    def __init__(self, cf, transform=None):
+    def __init__(self, cf, train=True, transform=None):
         """
         Args:
             dir_tru (string): Directory with all the GT files.
@@ -24,11 +24,12 @@ class IfnEnitDataset(Dataset):
 
         self.dir_bmp = cf.dataset_path
         self.dir_tru = cf.gt_path
-        self.train = cf.train_split  # training set or test set
+        self.train = train  # training set or test set
         self.transform = transform
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
+
         aux_word_id = []
         aux_word_str = []
         aux_phoc_word = []
@@ -60,6 +61,9 @@ class IfnEnitDataset(Dataset):
             self.phoc_word.append(aux_phoc_word[idx])
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
+
+    def phoc_size(self):
+        return len(self.phoc_word[0])
 
     def __len__(self):
         return len(self.word_id)

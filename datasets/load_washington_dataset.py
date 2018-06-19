@@ -13,22 +13,21 @@ warnings.filterwarnings("ignore")
 
 class WashingtonDataset(Dataset):
 
-    def __init__(self, cf, transform=None):
+    def __init__(self, cf, train=True, transform=None):
         """
         Args:
-            txt_file (string): Path to the text file with the GT.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
+            :param cf: configuration file variables
         """
 
         self.root_dir = cf.dataset_path
-        self.train = cf.train_split  # training set or test set
+        self.train = train  # training set or test set
         self.transform = transform
         self.non_alphabet = cf.non_alphabet
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
+        self.len_phoc = 0
+
         aux_word_id = []
         aux_word_str = []
         aux_phoc_word = []
@@ -61,6 +60,10 @@ class WashingtonDataset(Dataset):
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
 
+        self.len_phoc = len(self.phoc_word[0])
+
+    def num_classes(self):
+        return self.len_phoc
 
     def __len__(self):
         return len(self.word_id)
