@@ -32,17 +32,22 @@ def test_cnn_finetune(cf):
             image_transfrom = transforms.Compose([pad_image,
                                                   transforms.ToPILImage(),
                                                   transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                                                  transforms.ToTensor()])
+                                                  transforms.ToTensor(),
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))
+                                                  ])
         else:
             image_transfrom = transforms.Compose([transforms.ToPILImage(),
                                                   transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                                                  transforms.ToTensor()])
+                                                  transforms.ToTensor(),
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
     else:
         if cf.pad_images:
             image_transfrom = transforms.Compose([pad_image,
-                                                  transforms.ToTensor()])
+                                                  transforms.ToTensor(),
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
         else:
-            image_transfrom = transforms.ToTensor()
+            image_transfrom = transforms.Compose([transforms.ToTensor(),
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
 
     if cf.dataset_name == 'WG':
 
@@ -94,7 +99,6 @@ def test_cnn_finetune(cf):
 
     optimizer = optim.SGD(model.parameters(), lr=cf.learning_rate, momentum=cf.momentum)
 
-
     def train(epoch):
         total_loss = 0
         total_size = 0
@@ -103,7 +107,7 @@ def test_cnn_finetune(cf):
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
-            loss = criterion(output, target)
+            loss = criterion(output.float(), target.float())
             total_loss += loss.item()
             total_size += data.size(0)
             loss.backward()
