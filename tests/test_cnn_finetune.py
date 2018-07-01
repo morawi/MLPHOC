@@ -126,7 +126,7 @@ def test_cnn_finetune(cf):
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += criterion(output, target).item()
+                test_loss += criterion(output.float(), target.float()).item()
                 pred = output.data.max(1, keepdim=True)[1]
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()
 
