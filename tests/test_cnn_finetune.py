@@ -4,10 +4,7 @@ Based on:
 - https://github.com/pytorch/examples/blob/master/mnist/main.py
 """
 
-import argparse
-
 import torch
-import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.optim as optim
@@ -93,7 +90,7 @@ def test_cnn_finetune(cf):
     # )
 
     if cf.loss == 'BCEWithLogitsLoss':
-        criterion = nn.BCEWithLogitsLoss()
+        criterion = nn.BCEWithLogitsLoss(size_average=True)
     else:
         criterion = nn.CrossEntropyLoss()
 

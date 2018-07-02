@@ -11,8 +11,8 @@ resize_images                = True         # Resize the dataset images to a fix
 input_size                   = [256, 256]   # Input size of the dataset images
 
 # Dataloader
-batch_size_train             = 10
-batch_size_test              = 10
+batch_size_train             = 12
+batch_size_test              = 12
 shuffle                      = True
 num_workers                  = 4
 
@@ -22,7 +22,7 @@ unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
 model_name                   = 'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 100 #80000
+epochs                       = 1 #80000
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.01 #10e-4
