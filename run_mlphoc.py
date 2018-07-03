@@ -1,5 +1,5 @@
 from __future__ import division
-
+import time
 import logging
 
 from config.load_config_file import Configuration
@@ -39,6 +39,7 @@ def main():
     # test_name = arguments.test_name
 
     # Input arguments
+    start_timer = time.time()
     config_path = 'config/config_file_wg.py'
     test_name = '' # Optional: name of the sub folder where to store the results
 
@@ -49,6 +50,7 @@ def main():
     # Run task
     run_mlphoc(cf)
     # return cf
+    print("Execution time is: ", time.time()-start_timer ) 
 
 
 # Entry point of the script
