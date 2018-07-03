@@ -48,8 +48,10 @@ def main():
 
     # Run task
     run_mlphoc(cf)
+    # return cf
 
 
 # Entry point of the script
 if __name__ == "__main__":
+    # cf = main()
     main()

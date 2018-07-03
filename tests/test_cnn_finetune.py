@@ -8,7 +8,7 @@ import torch
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.optim as optim
-
+import torch.nn.functional as F
 from cnn_finetune import make_model
 
 from utils import globals
@@ -124,13 +124,17 @@ def test_cnn_finetune(cf):
                 data, target = data.to(device), target.to(device)
                 output = model(data)
                 test_loss += criterion(output.float(), target.float()).item()
-                pred = output.data.max(1, keepdim=True)[1]
+#                pred = output.data.max(1, keepdim=True)[1]
+                output = F.sigmoid(output)
+                pred = output.data
+                pred = pred.type(torch.cuda.DoubleTensor)
+                pred = pred.round()
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()
 
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset),
-            100. * correct / len(test_loader.dataset)))
+            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
 
 
     for epoch in range(1, cf.epochs + 1):
