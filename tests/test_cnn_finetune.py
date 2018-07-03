@@ -94,7 +94,7 @@ def test_cnn_finetune(cf):
     else:
         criterion = nn.CrossEntropyLoss()
 
-    optimizer = optim.SGD(model.parameters(), lr=cf.learning_rate, momentum=cf.momentum)
+    optimizer = optim.SGD(model.parameters(), lr=cf.learning_rate, momentum=cf.momentum)    
 
     def train(epoch):
         total_loss = 0
@@ -133,10 +133,12 @@ def test_cnn_finetune(cf):
 
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset),
+            test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
 
-
+    lr_milestones = [100, 250, 400 ] 
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .5) 
     for epoch in range(1, cf.epochs + 1):
         train(epoch)
+        scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR   
     test()
