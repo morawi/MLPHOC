@@ -22,10 +22,10 @@ unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
 model_name                   = 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 2 #300
+epochs                       = 100 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
-learning_rate                = 0.01 #10e-4
+learning_rate                = 0.005 #10e-4
 dropout_probability          = 0.2
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss']
 pretrained                   = True # False
