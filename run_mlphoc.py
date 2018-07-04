@@ -49,7 +49,7 @@ def main():
 
     # Run task
     run_mlphoc(cf)
-    # return cf
+    
     print("Execution time is: ", time.time()-start_timer ) 
 
 

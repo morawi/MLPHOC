@@ -136,9 +136,12 @@ def test_cnn_finetune(cf):
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
 
-    lr_milestones = [100, 250, 400 ] 
+    
+    lr_milestones = [100, 500, 1000 ] 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .5) 
     for epoch in range(1, cf.epochs + 1):
         train(epoch)
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR   
     test()
+    
+    

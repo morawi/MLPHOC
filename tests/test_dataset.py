@@ -49,8 +49,8 @@ def test_dataload(cf):
         logger.fatal('The dataset \'%s\' is unknown. Use: [WG, IFN]', cf.dataset_name)
         sys.exit(0)
 
-    dataloader = DataLoader(input_dataset, batch_size=cf.batch_size,
-                            shuffle=cf.shuffle, num_workers=cf.num_workers)
+#    dataloader = DataLoader(input_dataset, batch_size=cf.batch_size,
+#                            shuffle=cf.shuffle, num_workers=cf.num_workers)
 
     for i in range(len(input_dataset)):
         plt.figure(i);
@@ -60,5 +60,5 @@ def test_dataload(cf):
         plt.imshow(data.numpy()[0, :, :], 'gray')
         plt.show();
 
-        if i == 2: break
+        if i == 1002: break
 
