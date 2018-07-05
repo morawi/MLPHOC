@@ -10,15 +10,17 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from cnn_finetune import make_model
-from utils.retrieval import map_from_query_test_feature_matrices
+from utils.retrieval import map_from_query_test_feature_matrices, map_from_feature_matrix
 
 from utils import globals
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
 import numpy as np
+from utils.some_functions import word_to_label
+
 
 def test_cnn_finetune(cf):
-    global train_set, test_set, train_loader, test_loader
+    
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
 
@@ -102,7 +104,7 @@ def test_cnn_finetune(cf):
         total_loss = 0
         total_size = 0
         model.train()
-        for batch_idx, (data, target) in enumerate(train_loader):
+        for batch_idx, (data, target, word_str) in enumerate(train_loader):
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
@@ -121,9 +123,10 @@ def test_cnn_finetune(cf):
         model.eval()
         test_loss = 0
         correct = 0
-        mAP_all=0
+        mAP_QbS=0 # Query by string
+        mAP_QbE = 0 # Query by example
         with torch.no_grad():
-            for data, target in test_loader:
+            for data, target, word_str in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
                 test_loss += criterion(output.float(), target.float()).item()
@@ -131,23 +134,26 @@ def test_cnn_finetune(cf):
                 pred = output.data
                 pred = pred.type(torch.cuda.DoubleTensor)
                 # pred = pred.round()
-                correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()
+                correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
+                query_labels = word_to_label(word_str)                
                 
-                pred_query_labels = np.arange(0, pred.size()[0])
-                target_test_labels = np.arange(0, target.size()[0])
-                # Query by string
-                mAP, avg_precs = map_from_query_test_feature_matrices(target, pred, target_test_labels, pred_query_labels,  'cosine')
-                mAP_all += mAP*len(pred_query_labels)
+                mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
+                                                                      query_labels, query_labels,  'cosine')
+                mAP_QbE, avg_precs = map_from_feature_matrix(pred,query_labels,'cosine', False)
                 
-                # train_set.word_str
-                
-        mAP_all = mAP_all/len(train_loader.dataset)
+                mAP_QbS += mAP_QbS*len(query_labels)
+                mAP_QbE += mAP_QbE*len(query_labels)              
+                                
+        mAP_QbS = mAP_QbS/len(train_loader.dataset)
+        mAP_QbE = mAP_QbE/len(train_loader.dataset)
+        
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
-        print('mAP=', mAP_all)
-        return mAP_all
+        print('mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE)
+        
+        
 
     
     lr_milestones = [100, 200, 500, 1000 ] 
@@ -159,5 +165,7 @@ def test_cnn_finetune(cf):
             test()
             
     test()
+    return train_set, test_set, train_loader, test_loader
+    
     
     
