@@ -17,7 +17,7 @@ configuration = Configuration(config_path, test_name)
 cf = configuration.load()
 logger = logging.getLogger(__name__)
 # test_dataload(cf) # Test the data loading of the different dataset
-test_cnn_finetune(cf) # Test CNN finetune with WG dataset
+train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
 print("Execution time is: ", time.time()-start_timer ) 
 
 
