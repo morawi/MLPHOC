@@ -87,5 +87,7 @@ class WashingtonDataset(Dataset):
         # target = np.random.randint(1,10)
 
         target = self.phoc_word[idx]
+        word_str = self.word_str[idx]
+        
 
-        return data, target
+        return data, target, word_str
