@@ -10,13 +10,15 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from cnn_finetune import make_model
+from utils.retrieval import map_from_query_test_feature_matrices
 
 from utils import globals
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
+import numpy as np
 
 def test_cnn_finetune(cf):
-
+    global train_set, test_set, train_loader, test_loader
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
 
@@ -110,7 +112,7 @@ def test_cnn_finetune(cf):
             loss.backward()
             optimizer.step()
             if batch_idx % 100 == 0:
-                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tAverage loss: {:.6f}'.format(
+                print('Train Epoch: {} [{}/{} ({:.0f}%)]\tAverage loss: {:.7f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                     100. * batch_idx / len(train_loader), total_loss / total_size))
 
@@ -119,29 +121,43 @@ def test_cnn_finetune(cf):
         model.eval()
         test_loss = 0
         correct = 0
+        mAP_all=0
         with torch.no_grad():
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
                 test_loss += criterion(output.float(), target.float()).item()
-#                pred = output.data.max(1, keepdim=True)[1]
                 output = F.sigmoid(output)
                 pred = output.data
                 pred = pred.type(torch.cuda.DoubleTensor)
-                pred = pred.round()
+                # pred = pred.round()
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()
-
+                
+                pred_query_labels = np.arange(0, pred.size()[0])
+                target_test_labels = np.arange(0, target.size()[0])
+                # Query by string
+                mAP, avg_precs = map_from_query_test_feature_matrices(target, pred, target_test_labels, pred_query_labels,  'cosine')
+                mAP_all += mAP*len(pred_query_labels)
+                
+                # train_set.word_str
+                
+        mAP_all = mAP_all/len(train_loader.dataset)
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
+        print('mAP=', mAP_all)
+        return mAP_all
 
     
-    lr_milestones = [100, 500, 1000 ] 
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .5) 
+    lr_milestones = [100, 200, 500, 1000 ] 
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .1) 
     for epoch in range(1, cf.epochs + 1):
         train(epoch)
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR   
+        if not(epoch%11):
+            test()
+            
     test()
     
     
