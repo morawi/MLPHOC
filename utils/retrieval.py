@@ -20,6 +20,12 @@ def map_from_feature_matrix(features, labels, metric, drop_first):
         labels (1d-ndarray or list): the labels corresponding to the features (either numeric or characters)
         metric (string): the metric to be used in calculating the mAP
         drop_first (bool): whether to drop the first retrieval result or not
+        
+        metric types : str. The distance function can be ‘braycurtis’,  ‘canberra’, ‘chebyshev’, 
+         ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, 
+         ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, 
+         ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘wminkowski’, ‘yule’.
+        
     '''
     # argument error checks
     if features.shape[0] != len(labels):
@@ -60,8 +66,15 @@ def map_from_query_test_feature_matrices(query_features, test_features, query_la
         query_labels (1d-ndarray or list): the labels corresponding to the queries (either numeric or characters)
         test_features (2d-ndarray): the feature representation for the test samples
         test_labels (1d-ndarray or list): the labels corresponding to the test samples (either numeric or characters)
-        metric (string): the metric to be used in calculating the mAP
+        metric (string): the metric to be used in calculating the mAP, which is a metric used by cdist of
+        scipy.spatial.distance. See the forms below.
         drop_first (bool): whether to drop the first retrieval result or not
+        
+         metric types : str. The distance function can be ‘braycurtis’,  ‘canberra’, ‘chebyshev’, 
+         ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, 
+         ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, 
+         ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘wminkowski’, ‘yule’.
+        
     '''
     # some argument error checking
     if query_features.shape[1] != test_features.shape[1]:
