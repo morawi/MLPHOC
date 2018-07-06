@@ -125,6 +125,7 @@ def test_cnn_finetune(cf):
         correct = 0
         mAP_QbS=0 # Query by string
         mAP_QbE = 0 # Query by example
+        no_queries = 0
         with torch.no_grad():
             for data, target, word_str in test_loader:
                 data, target = data.to(device), target.to(device)
@@ -133,7 +134,7 @@ def test_cnn_finetune(cf):
                 output = F.sigmoid(output)
                 pred = output.data
                 pred = pred.type(torch.cuda.DoubleTensor)
-                # pred = pred.round()
+                pred = pred.round()
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
                 query_labels = word_to_label(word_str)                
                 
@@ -142,10 +143,11 @@ def test_cnn_finetune(cf):
                 mAP_QbE, avg_precs = map_from_feature_matrix(pred,query_labels,'cosine', False)
                 
                 mAP_QbS += mAP_QbS*len(query_labels)
-                mAP_QbE += mAP_QbE*len(query_labels)              
+                mAP_QbE += mAP_QbE*len(query_labels) 
+                no_queries += len(query_labels)
                                 
-        mAP_QbS = mAP_QbS/len(train_loader.dataset)
-        mAP_QbE = mAP_QbE/len(train_loader.dataset)
+        mAP_QbS = mAP_QbS/ no_queries
+        mAP_QbE = mAP_QbE/ no_queries
         
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
