@@ -17,6 +17,6 @@ def word_to_label(word_str):
          count += 1
     
     labels = [d[i] for i in word_str]
-    print("There are ", len(np.unique(labels)), "words" )
+    print("There are ", len(np.unique(labels)), " unique words" )
     return labels
     
