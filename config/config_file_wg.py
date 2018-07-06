@@ -12,7 +12,7 @@ input_size                   = [64, 128]   # Input size of the dataset images [H
 
 # Dataloader
 batch_size_train             = 32
-batch_size_test              = 64
+batch_size_test              = 400  # In fact, the max test size should be used
 shuffle                      = True
 num_workers                  = 4
 
@@ -21,11 +21,11 @@ alphabet                     = 'english'    # ['english', 'arabic', 'multiple']
 unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
-model_name                   = 'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 2000 #300
+model_name                   = 'vgg13_bn' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+epochs                       = 3000 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
-learning_rate                = 0.01 #10e-4
+learning_rate                = 0.1 #10e-4
 dropout_probability          = 0.1
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss']
 pretrained                   = True # False
