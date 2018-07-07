@@ -121,11 +121,12 @@ def test_cnn_finetune(cf):
 
     def test():
         model.eval()
+        
         test_loss = 0
         correct = 0
-        mAP_QbS=0 # Query by string
-        mAP_QbE = 0 # Query by example
-        no_queries = 0
+        pred_all = torch.tensor([], dtype=torch.float64, device=device)
+        target_all = torch.tensor([], dtype=torch.float64, device=device)
+        word_str_all = ()
         with torch.no_grad():
             for data, target, word_str in test_loader:
                 data, target = data.to(device), target.to(device)
@@ -136,19 +137,17 @@ def test_cnn_finetune(cf):
                 pred = pred.type(torch.cuda.DoubleTensor)
                 pred = pred.round()
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
-                query_labels = word_to_label(word_str)                
-                
-                mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
-                                                                      query_labels, query_labels,  'cosine')
-                mAP_QbE, avg_precs = map_from_feature_matrix(pred,query_labels,'cosine', False)
-                
-                mAP_QbS += mAP_QbS*len(query_labels)
-                mAP_QbE += mAP_QbE*len(query_labels) 
-                no_queries += len(query_labels)
-                                
-        mAP_QbS = mAP_QbS/ no_queries
-        mAP_QbE = mAP_QbE/ no_queries
+               
+                pred_all = torch.cat((pred_all, pred), 0)
+                target_all = torch.cat((target_all, target), 0)
+                word_str_all = word_str_all + word_str
         
+        query_labels = word_to_label(word_str_all)                 
+        mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target_all, pred_all, 
+                                                              query_labels, query_labels,  'cosine')
+        mAP_QbE, avg_precs = map_from_feature_matrix(pred_all,query_labels,'cosine', False)
+        
+                
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
@@ -161,8 +160,8 @@ def test_cnn_finetune(cf):
     lr_milestones = [100, 200, 500, 1000 ] 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .1) 
     for epoch in range(1, cf.epochs + 1):
-        train(epoch)
-        scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR   
+        scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
+        train(epoch)           
         if not(epoch%11):
             test()
             
