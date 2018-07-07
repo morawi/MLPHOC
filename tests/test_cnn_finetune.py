@@ -16,7 +16,7 @@ from utils import globals
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
 import numpy as np
-from utils.some_functions import word_to_label
+from utils.some_functions import word_to_label, remove_single_words
 
 
 def test_cnn_finetune(cf):
@@ -141,6 +141,12 @@ def test_cnn_finetune(cf):
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str
+        
+        # remove single wors from pred_all and target all
+        word_str_all, loc = remove_single_words(word_str_all)
+        loc = torch.ByteTensor(loc)
+        pred_all = pred_all[loc]  # we have to negate loc
+        target_all = target_all[loc]        
         
         query_labels = word_to_label(word_str_all)                 
         mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target_all, pred_all, 
