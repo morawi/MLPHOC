@@ -10,13 +10,12 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from cnn_finetune import make_model
-from utils.retrieval import map_from_query_test_feature_matrices, map_from_feature_matrix
 
 from utils import globals
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
 import numpy as np
-from utils.some_functions import word_to_label, remove_single_words
+from utils.some_functions import find_mAP
 
 
 def test_cnn_finetune(cf):
@@ -141,27 +140,14 @@ def test_cnn_finetune(cf):
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str
+               
+        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, 'cosine')       
         
-        # remove single wors from pred_all and target all
-        word_str_all, loc = remove_single_words(word_str_all)
-        loc = torch.ByteTensor(loc)
-        pred_all = pred_all[loc]  # we have to negate loc
-        target_all = target_all[loc]        
-        
-        query_labels = word_to_label(word_str_all)                 
-        mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target_all, pred_all, 
-                                                              query_labels, query_labels,  'cosine')
-        mAP_QbE, avg_precs = map_from_feature_matrix(pred_all,query_labels,'cosine', False)
-        
-                
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
         print('mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE)
-        
-        
-
     
     lr_milestones = [100, 200, 500, 1000 ] 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .1) 
