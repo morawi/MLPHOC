@@ -12,9 +12,10 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 from utils import globals
+from utils.some_functions import find_mAP
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
-from utils.some_functions import find_mAP
+
 
 
 def test_cnn_finetune(cf):
@@ -111,15 +112,14 @@ def test_cnn_finetune(cf):
             total_size += data.size(0)
             loss.backward()
             optimizer.step()
-            if batch_idx % 100 == 0:
+            if batch_idx % cf.batch_log == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tAverage loss: {:.7f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                     100. * batch_idx / len(train_loader), total_loss / total_size))
 
 
     def test():
-        
-        mAP_dist_metric = 'cosine'
+               
         
         model.eval()
         
@@ -138,32 +138,34 @@ def test_cnn_finetune(cf):
                 pred = pred.type(torch.cuda.DoubleTensor)
                 pred = pred.round()
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
-               
+                # Accuulate from batches to one variable (##_all)
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str
                
-        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, mAP_dist_metric)       
+        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, cf.mAP_dist_metric)       
         
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
         print('---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
+        result = {'word_str_all':word_str_all,'pred_all': pred_all,
+                  'target_all': target_all}
+        
+        return result # to be used in case we want, to try different distances later
     
-    lr_milestones = [100, 200, 500, 1000 ]  # it is better to move this in the config
-    testing_frequency = 11  # it is better to move this in the config 
-    
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .1) 
-    print('Chance level performance \n');  test() #nice to know the performance prior to training
+         
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
+    print('Chance level performance \n');  test() # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
         train(epoch)           
-        if not(epoch % testing_frequency):
+        if not(epoch % cf.testing_print_frequency):
             test()
             
-    test()
-    return train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
+    result = test()
+    return result, train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
     
     
     
