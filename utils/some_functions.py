@@ -60,3 +60,39 @@ def find_mAP(word_str, pred, target, metric):
     
     return mAP_QbE,mAP_QbS
     
+
+
+
+def test_varoius_dist(result):    
+    all_distances = [ 'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 
+    'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',  
+    'matching', 'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean', 
+    'sokalmichener', 'sokalsneath', 'sqeuclidean',  'yule']
+    
+    # 'mahalanobis' removed  due to Singular matrix
+    # 'wminkowski': requires a weighting vector
+    for my_distance in all_distances:
+         mAP_QbE,mAP_QbS = find_mAP(result['word_str_all'],
+                                    result['pred_all'],
+                                    result['target_all'],
+                                    my_distance)
+         print('using', my_distance, '---- mAP(QbS)=', mAP_QbS, "---", 
+               'mAP(QbE) = ', mAP_QbE, '----\n')
+        
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
