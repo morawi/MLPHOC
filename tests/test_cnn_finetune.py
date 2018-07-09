@@ -1,5 +1,5 @@
-"""CIFAR10 example for cnn_finetune.
-Based on:
+"""
+Structure Based on:
 - https://github.com/pytorch/tutorials/blob/master/beginner_source/blitz/cifar10_tutorial.py
 - https://github.com/pytorch/examples/blob/master/mnist/main.py
 """
@@ -14,7 +14,6 @@ from cnn_finetune import make_model
 from utils import globals
 from datasets.load_washington_dataset import WashingtonDataset
 from scripts.data_transformations import PadImage
-import numpy as np
 from utils.some_functions import find_mAP
 
 
@@ -119,6 +118,9 @@ def test_cnn_finetune(cf):
 
 
     def test():
+        
+        mAP_dist_metric = 'cosine'
+        
         model.eval()
         
         test_loss = 0
@@ -141,24 +143,27 @@ def test_cnn_finetune(cf):
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str
                
-        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, 'cosine')       
+        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, mAP_dist_metric)       
         
         test_loss /= len(test_loader.dataset)
-        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
-        print('mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE)
+        print('---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
     
-    lr_milestones = [100, 200, 500, 1000 ] 
+    lr_milestones = [100, 200, 500, 1000 ]  # it is better to move this in the config
+    testing_frequency = 11  # it is better to move this in the config 
+    
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, lr_milestones, gamma= .1) 
+    print('Chance level performance \n');  test() #nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
         train(epoch)           
-        if not(epoch%11):
+        if not(epoch % testing_frequency):
             test()
             
     test()
-    return train_set, test_set, train_loader, test_loader
+    return train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
     
     
     
