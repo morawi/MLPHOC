@@ -3,8 +3,9 @@ import time
 import logging
 
 from config.load_config_file import Configuration
-from tests.test_dataset import test_dataload
 from tests.test_cnn_finetune import test_cnn_finetune
+from utils.some_functions import test_varoius_dist
+from tests.test_dataset import test_dataload
 
 
 
@@ -17,8 +18,9 @@ configuration = Configuration(config_path, test_name)
 cf = configuration.load()
 logger = logging.getLogger(__name__)
 # test_dataload(cf) # Test the data loading of the different dataset
-train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
-print("Execution time is: ", time.time()-start_timer ) 
+result, train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
+print("Execution time is: ", time.time()-start_timer )
+test_varoius_dist(result) 
 
 
 
