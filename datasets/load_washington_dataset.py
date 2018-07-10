@@ -36,8 +36,8 @@ class WashingtonDataset(Dataset):
 
         # Use a 80% of the dataset words for testing and the other 20% for testing
         total_data = len(aux_word_id)
-        np.random.seed(0)
-        train_idx = np.random.choice(total_data, size=int(total_data*0.8),replace=False)
+        np.random.seed(cf.rnd_seed_value)
+        train_idx = np.random.choice(total_data, size=int(total_data*cf.split_percentage),replace=False)
         train_idx = np.sort(train_idx)
         test_idx = []
         prev_num = -1
