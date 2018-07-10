@@ -4,6 +4,8 @@ dataset_path                 = 'datasets/washingtondb-v1.0/data/word_images_norm
 gt_path                      = 'datasets/washingtondb-v1.0/ground_truth/word_labels.txt'   # Ground truth path
 train_split                  = True
 non_alphabet                 = False
+split_percentage             = .50
+rnd_seed_value               = 0 # time.time() should be used later
 
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
