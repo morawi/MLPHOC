@@ -38,8 +38,8 @@ class IfnEnitDataset(Dataset):
 
         # Use a 80% of the dataset words for testing and the other 20% for testing
         total_data = len(aux_word_id)
-        np.random.seed(0)
-        train_idx = np.random.choice(total_data, size=int(total_data * 0.8), replace=False)
+        np.random.seed(cf.rnd_seed_value)
+        train_idx = np.random.choice(total_data, size=int(total_data * cf.split_percentage), replace=False)
         train_idx = np.sort(train_idx)
         test_idx = []
         prev_num = -1
@@ -61,12 +61,21 @@ class IfnEnitDataset(Dataset):
             self.phoc_word.append(aux_phoc_word[idx])
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
+            
+        self.len_phoc = len(self.phoc_word[0])
 
+    def num_classes(self):
+        return len(self.phoc_word[0])
+    
+    """ probably phoc_size is not needed??? """
     def phoc_size(self):
         return len(self.phoc_word[0])
-
+    """ ------ """
+        
     def __len__(self):
         return len(self.word_id)
+    
+    
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
@@ -76,10 +85,9 @@ class IfnEnitDataset(Dataset):
                     np.uint8).reshape(data.size[1], data.size[0], 1)
         if self.transform:
             data = self.transform(data)
-
-        # For testing give a random label
-        # target = np.random.randint(0,10)
+        
 
         target = self.phoc_word[idx]
+        word_str = self.word_str[idx]
 
-        return data, target
+        return data, target, word_str
