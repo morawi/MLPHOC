@@ -3,8 +3,8 @@ dataset_name                 = 'WG' # Dataset name: ['WG', 'IFN', 'WG+IFN']
 dataset_path                 = 'datasets/washingtondb-v1.0/data/word_images_normalized'    # Dataset images path
 gt_path                      = 'datasets/washingtondb-v1.0/ground_truth/word_labels.txt'   # Ground truth path
 train_split                  = True
-non_alphabet                 = False
-split_percentage             = .50
+non_alphabet                 = False # ???
+split_percentage             = 0.80  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
 rnd_seed_value               = 0 # time.time() should be used later
 
 # Input Images
