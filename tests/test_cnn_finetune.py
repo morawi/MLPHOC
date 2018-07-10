@@ -14,6 +14,7 @@ from cnn_finetune import make_model
 from utils import globals
 from utils.some_functions import find_mAP
 from datasets.load_washington_dataset import WashingtonDataset
+from datasets.load_ifnenit_dataset import IfnEnitDataset
 from scripts.data_transformations import PadImage
 
 
@@ -50,13 +51,14 @@ def test_cnn_finetune(cf):
                                                   transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
 
     if cf.dataset_name == 'WG':
-
+        print('Loading WG dataset...')
         train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
         test_set = WashingtonDataset(cf, train=False, transform=image_transfrom)
     elif cf.dataset_name == 'IFN':
-        ##
-        print('Loading IFN dataset')
-        ## TODO
+        # TODO
+        print('Loading IFN dataset...')        
+        train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
+        test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom)
         
     elif cf.dataset_name =='WG+IFN': 
         print('Loading dual-lingual sets; IFN & WG datasets')        
@@ -69,13 +71,12 @@ def test_cnn_finetune(cf):
 
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
                                   shuffle=cf.shuffle, num_workers=cf.num_workers)
-
-    num_classes = train_set.num_classes()
+   
 
     model = make_model(
         cf.model_name,
         pretrained=cf.pretrained,
-        num_classes=num_classes,
+        num_classes= train_set.num_classes(),
         input_size=(cf.input_size[0], cf.input_size[1]),
         dropout_p=cf.dropout_probability,
     )
@@ -108,11 +109,9 @@ def test_cnn_finetune(cf):
                     100. * batch_idx / len(train_loader), total_loss / total_size))
 
 
-    def test():
-               
+    def test():               
         
-        model.eval()
-        
+        model.eval()        
         test_loss = 0
         correct = 0
         pred_all = torch.tensor([], dtype=torch.float64, device=device)
@@ -143,7 +142,7 @@ def test_cnn_finetune(cf):
         result = {'word_str_all':word_str_all,'pred_all': pred_all,
                   'target_all': target_all}
         
-        return result # to be used in case we want, to try different distances later
+        return result # to be used in case we want to try different distances later
     
          
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
