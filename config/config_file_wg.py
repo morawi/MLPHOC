@@ -1,7 +1,6 @@
 # Dataset
-dataset_name                 = 'WG' # Dataset name: ['WG', 'IFN', 'WG+IFN']
-dataset_path                 = 'datasets/washingtondb-v1.0/data/word_images_normalized'    # Dataset images path
-gt_path                      = 'datasets/washingtondb-v1.0/ground_truth/word_labels.txt'   # Ground truth path
+dataset_name                 = 'IFN' # Dataset name: ['WG', 'IFN', 'WG+IFN']
+
 train_split                  = True
 non_alphabet                 = False # ???
 split_percentage             = 0.80  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
@@ -19,7 +18,22 @@ shuffle                      = True
 num_workers                  = 4
 
 # PHOC
-alphabet                     = 'english'    # ['english', 'arabic', 'multiple'] # Eiher use alphabet or dataset_name, 
+if dataset_name=='IFN':
+    alphabet                     = 'arabic'
+    dataset_path                 = 'datasets/ifnenit_v2.0p1e/data/set_a/bmp/'
+    gt_path                      = 'datasets/ifnenit_v2.0p1e/data/set_a/tru/'
+    # there are other folers, b, c, d, e
+    
+elif dataset_name=='WG': 
+    alphabet                     = 'english'
+    dataset_path                 = 'datasets/washingtondb-v1.0/data/word_images_normalized'    # Dataset images path
+    gt_path                      = 'datasets/washingtondb-v1.0/ground_truth/word_labels.txt'   # Ground truth path
+
+else: 
+    alphabet                     = 'multiple'
+    # TODO
+    # dataset_path                 =
+    # gt_path                      =
                                             # then, using if statement to determine the other
 unigram_levels               = [2, 3, 4, 5]
 
