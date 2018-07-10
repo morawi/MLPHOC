@@ -24,7 +24,7 @@ def word_to_label(word_str):
          count += 1
     
     labels = [d[i] for i in word_str]
-    print("There are ", len(np.unique(labels)), " unique words" )
+    print("Testing has", len(np.unique(labels)), " unique words out of", len(labels) )
     return labels
  
     
@@ -46,7 +46,7 @@ def remove_single_words(word_str):
 
 
 def find_mAP(word_str, pred, target, metric):
-    # for tyeps fo metric, see retrieval.py
+    # for tyeps of metric, see retrieval.py, or test_various_dist() shown below
     # remove single wors from pred and target all
     word_str, loc = remove_single_words(word_str)
     loc = torch.ByteTensor(loc)
