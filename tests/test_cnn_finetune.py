@@ -53,6 +53,15 @@ def test_cnn_finetune(cf):
 
         train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
         test_set = WashingtonDataset(cf, train=False, transform=image_transfrom)
+    elif cf.dataset_name == 'IFN':
+        ##
+        print('Loading IFN dataset')
+        ## TODO
+        
+    elif cf.dataset_name =='WG+IFN': 
+        print('Loading dual-lingual sets; IFN & WG datasets')        
+        ## TODO
+            
 
 
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
@@ -72,26 +81,7 @@ def test_cnn_finetune(cf):
     )
     model = model.to(device)
 
-    # transform = transforms.Compose([
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(
-    #         mean=model.original_model_info.mean,
-    #         std=model.original_model_info.std),
-    # ])
-    #
-    # train_set = torchvision.datasets.CIFAR10(
-    #     root='./data', train=True, download=True, transform=transform
-    # )
-    # train_loader = torch.utils.data.DataLoader(
-    #     train_set, batch_size=args.batch_size, shuffle=True, num_workers=2
-    # )
-    # test_set = torchvision.datasets.CIFAR10(
-    #     root='./data', train=False, download=True, transform=transform
-    # )
-    # test_loader = torch.utils.data.DataLoader(
-    #     test_set, args.test_batch_size, shuffle=False, num_workers=2
-    # )
-
+   
     if cf.loss == 'BCEWithLogitsLoss':
         criterion = nn.BCEWithLogitsLoss(size_average=True)
     else:
