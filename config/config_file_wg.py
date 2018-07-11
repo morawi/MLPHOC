@@ -1,5 +1,5 @@
 # Dataset
-dataset_name                 = 'WG+IFN' # Dataset name: ['WG', 'IFN', 'WG+IFN']
+dataset_name                 = 'WG' # Dataset name: ['WG', 'IFN', 'WG+IFN']
 
 """Select the aplabet of the dataset. The value 'alphabet will be used in the PHOC function'
 to map the string to the phoc according to the chars of the language """
@@ -41,7 +41,7 @@ unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
 model_name                   = 'vgg19_bn' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 200 #300
+epochs                       = 300 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.1 #10e-4
@@ -49,12 +49,13 @@ dropout_probability          = 0.1
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # See options below
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
-
-lr_milestones                = [10, 30, 80, 200 ]  # it is better to move this in the config
+lr_milestones                = [10, 30, 50, 100, 200 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 1000  # how often to report/print the training loss
-
+binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
+                                # every val > threshold will be converted to 1
+                              # threshold 0.5 will run round() function
     
 # Save results
 save_results                 = True                                   # Save Log file

@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 from utils import globals
-from utils.some_functions import find_mAP
+from utils.some_functions import find_mAP, binarize_the_output
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
@@ -134,26 +134,27 @@ def test_cnn_finetune(cf):
                 output = F.sigmoid(output)
                 pred = output.data
                 pred = pred.type(torch.cuda.DoubleTensor)
-                pred = pred.round()
+#                pred = pred.round()
+                
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
                 # Accuulate from batches to one variable (##_all)
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
-                word_str_all = word_str_all + word_str
-               
-        mAP_QbE,mAP_QbS = find_mAP(word_str_all, pred_all, target_all, cf.mAP_dist_metric)       
+                word_str_all = word_str_all + word_str        
         
         test_loss /= len(test_loader.dataset)
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
-            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))
+            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))        
+        result = {'word_str':word_str_all,'pred': pred_all,
+                  'target': target_all}
+        mAP_QbE, mAP_QbS = find_mAP(result, cf) 
         print('---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
-        result = {'word_str_all':word_str_all,'pred_all': pred_all,
-                  'target_all': target_all}
         
         return result # to be used in case we want to try different distances later
     
-         
+    
+                
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     # print('PHOC length', train_set.)
     print('Chance level performance \n');  test() # nice to know the performance prior to training

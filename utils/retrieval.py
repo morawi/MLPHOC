@@ -4,6 +4,7 @@
 '''
 Created on Jul 10, 2016
 @author: ssudholt
+https://github.com/ssudholt/phocnet
 '''
 import numpy as np
 from scipy.spatial.distance import pdist, squareform, cdist

@@ -2,6 +2,12 @@ import numpy as np
 import logging
 import sys
 
+""" adapted from @author: ssudholt, 
+ https://github.com/ssudholt/phocnet/blob/master/src/phocnet/attributes/phoc.py
+ 
+ - Mohammed Al-Rawi
+ """
+
 def build_phoc(word, alphabet='multiple', unigram_levels = [2,3,4,5]):
     '''  Calculate Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
