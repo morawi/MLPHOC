@@ -15,6 +15,7 @@ from utils import globals
 from utils.some_functions import find_mAP
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
+from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from scripts.data_transformations import PadImage
 
 
@@ -53,16 +54,24 @@ def test_cnn_finetune(cf):
     if cf.dataset_name == 'WG':
         print('Loading WG dataset...')
         train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
-        test_set = WashingtonDataset(cf, train=False, transform=image_transfrom)
+        test_set = WashingtonDataset(cf, train=False, transform=image_transfrom, 
+                            data_idx =train_set.data_idx, complement_idx = True)
+    
     elif cf.dataset_name == 'IFN':
         # TODO
         print('Loading IFN dataset...')        
         train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
-        test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom)
+        test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
+                            data_idx =train_set.data_idx, complement_idx = True)
         
     elif cf.dataset_name =='WG+IFN': 
         print('Loading dual-lingual sets; IFN & WG datasets')        
         ## TODO
+        train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
+        test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
+                                  data_idx_WG = train_set.data_idx_WG, 
+                                  data_idx_IFN = train_set.data_idx_IFN, 
+                                        complement_idx = True)
             
 
 
@@ -146,6 +155,7 @@ def test_cnn_finetune(cf):
     
          
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
+    # print('PHOC length', train_set.)
     print('Chance level performance \n');  test() # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
