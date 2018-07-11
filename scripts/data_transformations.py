@@ -73,7 +73,7 @@ def process_ifnedit_data(cf, phoc_word, word_id, word_str):
     # self.counter = 0
 
     # Get all the '.tru' files from the folder
-    tru_files = glob.glob(cf.gt_path + "*.tru")
+    tru_files = glob.glob(cf.gt_path_IFN + "*.tru")
 
     for tru_file in tru_files:
         # Save the word ID
@@ -124,7 +124,7 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
     # self.h_max = 0
     # self.w_max = 0
 
-    word_labels_file = open(cf.gt_path, 'r')
+    word_labels_file = open(cf.gt_path_WG, 'r')
     text_lines = word_labels_file.readlines()
     word_labels_file.close()
 
