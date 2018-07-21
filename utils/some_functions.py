@@ -27,7 +27,7 @@ def word_to_label(word_str):
          count += 1
     
     labels = [d[i] for i in word_str]
-    print("Testing has", len(np.unique(labels)), " unique words out of", len(labels) )
+    print("There're", len(np.unique(labels)), " unique words out of", len(labels), " ", end="" )
     return labels
  
     
@@ -49,8 +49,7 @@ def remove_single_words(word_str):
 
 
 
-def find_mAP(result, cf):
-    
+def find_mAP(result, cf):   
     
     pred = result['pred']       # test_phocs       
     pred = binarize_the_output(pred, cf.binarizing_thresh)
@@ -68,28 +67,54 @@ def find_mAP(result, cf):
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
                                                           query_labels, query_labels, cf.mAP_dist_metric)
     
-    '''   
-    # For QbS, we have to remove the repeated word-embbedings in the target (i.e., query features)
-    # we also have to remove the same items from the word string, so that we generate the target_labels (query_labels)
-    word_str = result['word_str'] #  use the original one    
-    target = result['target']  # query_phocs, unique for Qbs    
-    # idx_unique = sorted(word_str.index(elem) for elem in set(word_str))
-    idx_unique = [word_str.index(elem) for elem in set(word_str)]
-    word_str = pd.Series(word_str)
-    word_str = word_str.get(idx_unique)
-    target_labels = word_to_label(word_str) 
-    target = target[idx_unique]
+        
+    return mAP_QbE, mAP_QbS
     
+
+def find_mAP_QbE(result, cf):       
+    # For QbE, we have to remove each single occurence words, 
+    # and the corresponding items in pred    
+    pred = result['pred']       # test_phocs       
+    pred = binarize_the_output(pred, cf.binarizing_thresh)  
+    
+    word_str = result['word_str']
+    # remove from 
+    
+    word_str, loc = remove_single_words(word_str)  
+    pred = pred[loc]   
+    query_labels = word_to_label(word_str)                 
+    mAP_QbE, avg_precs = map_from_feature_matrix(pred, query_labels, cf.mAP_dist_metric, False)    
+    return mAP_QbE
+   
+    
+'''
+ get unique words are not correct,
+we should extract unique phocs from pred
+'''    
+def find_mAP_QbS(result, cf):
+    # Now, QbS    
+    target = result['target']
+    pred = result['pred']       # test_phocs       
+    word_str = result['word_str']    
+    target_labels = word_to_label(word_str) 
+    pred = binarize_the_output(pred, cf.binarizing_thresh) 
+    # For QbS, we have to use single (transcriptions) pred phoc     
+    # get unique phoc from pred
+    query_labels = word_to_label(word_str) # target is the query_features        
+        
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
                                                           target_labels, query_labels, cf.mAP_dist_metric)
-    '''
-    
-    
-    return mAP_QbE,mAP_QbS
-    
+                
+    return mAP_QbS
 
 
+def get_unique_words(word_str):
+    loc = [word_str.index(elem) for elem in set(word_str)]
+    word_str = pd.Series(word_str)
+    word_str = word_str.get(loc)   
+    
+    return word_str, loc
 
 def test_varoius_dist(result, cf):    
     all_distances = [ 'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation', 'cosine', 
@@ -103,7 +128,7 @@ def test_varoius_dist(result, cf):
         cf.mAP_dist_metric = my_distance
         mAP_QbE,mAP_QbS = find_mAP(result, cf)
         print('using', my_distance, '---- mAP(QbS)=', mAP_QbS, "---", 
-               'mAP(QbE) = ', mAP_QbE, '----\n')
+               'mAP(QbE) = ', mAP_QbE, ' \n')
 
     
     
@@ -127,18 +152,18 @@ def test_varoius_thresholds(result, cf):
 
 
 def word_str_moment(word_str):
-    word_str, loc = remove_single_words(word_str)
+    # word_str, loc = remove_single_words(word_str)
     vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
     vv= Counter(idx)
     ss0 = sum(vv.values())
     ss = 0    
     for i in range(0,  len(vv) ):
-        ss += vv[i]**2
+        ss += vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4
     
-    ss= ss/( len(vv) * ss0)
+    ss= ss/ ss0
     return ss
         
- 
+# http://www.nltk.org/howto/wordnet.html
 def word_similarity_metric(list_of_words):
     ''' Example:   list_of_wrods  = ['hi', 'xerox', 'hi', 'xerox', 'dunk', 'hi']    
     print( word_similarity_metric(list_of_wrods) )
@@ -146,7 +171,20 @@ def word_similarity_metric(list_of_words):
     '''
     
     list_of_words = list(list_of_words)
+    
+    ''''
+    Test
+    TEST
+    
+    
     list_of_words, loc = remove_single_words(list_of_words)  
+    
+    
+    may be we should comment remove-single-words
+    
+    TODO
+    '''
+    
     ss=0
     list_len =  len(list_of_words)
     for word in list_of_words:
