@@ -8,15 +8,17 @@ import torch
 import torchvision.transforms as transforms
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 import torch.nn.functional as F
 from cnn_finetune import make_model
 
 from utils import globals
-from utils.some_functions import find_mAP, binarize_the_output
+from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from scripts.data_transformations import PadImage
+from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 
 
 
@@ -79,7 +81,7 @@ def test_cnn_finetune(cf):
                                   shuffle=cf.shuffle, num_workers=cf.num_workers)
 
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
-                                  shuffle=cf.shuffle, num_workers=cf.num_workers)
+                                  shuffle= False, num_workers=cf.num_workers)
    
 
     model = make_model(
@@ -118,7 +120,7 @@ def test_cnn_finetune(cf):
                     100. * batch_idx / len(train_loader), total_loss / total_size))
 
 
-    def test():               
+    def test(test_loader):               
         
         model.eval()        
         test_loss = 0
@@ -142,29 +144,65 @@ def test_cnn_finetune(cf):
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str        
         
-        test_loss /= len(test_loader.dataset)
-        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
-            test_loss, correct, len(test_loader.dataset)*pred.size()[1],
-            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))        
+        test_loss /= len(test_loader.dataset)             
         result = {'word_str':word_str_all,'pred': pred_all,
                   'target': target_all}
-        mAP_QbE, mAP_QbS = find_mAP(result, cf) 
-        print('---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
+        
+        '''
+        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+            test_loss, correct, len(test_loader.dataset)*pred.size()[1],
+            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))   
+        '''
+   
+        mAP_QbE, mAP_QbS = find_mAP(result, cf)               
+       
+        # mAP_QbS = find_mAP_QbS(result, cf)
+        # mAP_QbE = find_mAP_QbE(result, cf)
+        print(  mAP_QbS, "  ",  mAP_QbE, " ", end="")        
+        result['mAP_QbE'] = mAP_QbE
+        result['mAP_QbS'] = mAP_QbS
+        
         
         return result # to be used in case we want to try different distances later
     
-    
+    def test_moment_and_word_sim(result):
+        print('--------------Moment and similarity statistics ----------------- ')
+        no_of_samples  = len(result['word_str'])
+        step = 200
+        # sampler_selector_sizes = [i for i in range(no_of_samples-100, 200, -step )]            
+        sampler_selector_sizes = [no_of_samples - 400]
+        no_iterations = 100
+        for sample_size in sampler_selector_sizes:
+            word_str_mom = []; word_similarity=[]
+            for  xxnn in range(0, no_iterations):            
+                sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:sample_size]                     
+                if len(sample_idx) ==0:  
+                    exit('exiting function get_the_sampler(), sample_idx size is 0')    
+                my_sampler = torch.utils.data.sampler.SubsetRandomSampler(sample_idx)  
+                test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
+                                  shuffle= False, num_workers=cf.num_workers, sampler=my_sampler)
+                res = test(test_loader)
+                word_str_mom = word_str_moment(res['word_str'])
+                word_similarity = word_similarity_metric(res['word_str'])
+                # print('word Moment =--: ', word_str_mom, end="")
+                # print('word Similarity =--: ', word_similarity, '\n')
+                print(  word_str_mom, " ", end="")
+                print( word_similarity)
+
+
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     # print('PHOC length', train_set.)
-    print('Chance level performance \n');  test() # nice to know the performance prior to training
+    print('Chance level performance \n');  test(test_loader) # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
         train(epoch)           
         if not(epoch % cf.testing_print_frequency):
-            test()
+            test(test_loader)
             
-    result = test()
+    result = test(test_loader)
+    test_moment_and_word_sim(result)
+    
     return result, train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
     
     
