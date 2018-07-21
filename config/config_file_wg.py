@@ -1,3 +1,6 @@
+import time
+
+
 # Dataset
 dataset_name                 = 'WG' # Dataset name: ['WG', 'IFN', 'WG+IFN']
 
@@ -13,8 +16,8 @@ elif dataset_name== 'WG+IFN':
 
 train_split                  = True # When True, this is the training set 
 non_alphabet                 = False  # This option can be used to include non_alphabet (if true)
-split_percentage             = 0.80  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-rnd_seed_value               = 0 # time.time() should be used later
+split_percentage             = 0.65  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+rnd_seed_value               = 0 #  int(time.time())  #  0 # time.time() should be used later
 
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
@@ -45,7 +48,10 @@ epochs                       = 300 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.1 #10e-4
-dropout_probability          = 0.1
+
+
+dropout_probability          = 0.25
+
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # See options below
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
@@ -61,6 +67,8 @@ binarizing_thresh            = 0.5 # threshold to be used to binarize the net si
 save_results                 = True                                   # Save Log file
 results_path                 = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
 save_plots = True                                                     # Save the plots to disk
+
+
 
 '''
 list of model_name : 
