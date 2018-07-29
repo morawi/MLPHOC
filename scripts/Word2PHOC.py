@@ -8,7 +8,7 @@ import sys
  - Mohammed Al-Rawi
  """
 
-def build_phoc(word, alphabet='multiple', unigram_levels = [2,3,4,5]):
+def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     '''  Calculate Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
         words (str): word to calculate descriptor for
@@ -20,20 +20,40 @@ def build_phoc(word, alphabet='multiple', unigram_levels = [2,3,4,5]):
 
     logger = logging.getLogger('PHOCGenerator')
     # phoc_unigrams (str): string of all unigrams to use in the PHOC
-    if alphabet == 'english':
-        phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
-    elif alphabet == 'arabic':
-        phoc_unigrams ='0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ'''
-    elif alphabet == 'multiple':
-        phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ'''
-    else:
+    
+    if cf.dataset_name == 'WG':
+        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz.,-;':()£|"
+        # phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
+    elif cf.dataset_name =='IFN':
+        phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+    elif cf.dataset_name == 'WG+IFN':
+        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+    elif cf.dataset_name == 'IAM':
+        x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+        phoc_unigrams = ''.join(map(str, x))
+    else: 
         logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
         sys.exit(0)
+        
     
+#    if alphabet == 'english':
+#        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz.,-;':()£|"
+#        # phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
+#    elif alphabet == 'arabic':
+#        phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+#    elif alphabet == 'multiple':
+#        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+#    elif alphabet == 'just_iam':
+#        x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+#        phoc_unigrams = ''.join(map(str, x))
+#    else: 
+#        logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
+#        sys.exit(0)
+#    
     # unigram_levels (list of int): the levels for the unigrams in PHOC
-    unigram_levels = unigram_levels
+    # unigram_levels = unigram_levels
     # prepare output matrix
-    phoc_size = len(phoc_unigrams) * np.sum(unigram_levels)
+    phoc_size = len(phoc_unigrams) * np.sum(cf.unigram_levels)
     phoc = np.zeros(phoc_size)
 
     # prepare some lambda functions
@@ -53,11 +73,11 @@ def build_phoc(word, alphabet='multiple', unigram_levels = [2,3,4,5]):
             sys.exit(0)
 
         char_index = char_indices[char]
-        for level in unigram_levels:
+        for level in cf.unigram_levels:
             for region in range(level):
                 region_occ = occupancy(region, level)
                 if size(overlap(char_occ, region_occ)) / size(char_occ) >= 0.5:
-                    feat_vec_index = sum([l for l in unigram_levels if l < level]) * len(
+                    feat_vec_index = sum([l for l in cf.unigram_levels if l < level]) * len(
                         phoc_unigrams) + region * len(phoc_unigrams) + char_index
                     phoc[feat_vec_index] = 1
        

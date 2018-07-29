@@ -12,11 +12,12 @@ import numpy as np
 import torch.nn.functional as F
 from cnn_finetune import make_model
 
-from utils import globals
+# from utils import globals
 from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
+from datasets.load_iam_dataset import IAM_words
 from scripts.data_transformations import PadImage
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 
@@ -26,10 +27,12 @@ def test_cnn_finetune(cf):
     
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
+#    mean = (0.5, 0.5, 0.5) 
+#    std = (0.25, 0.25 , 0.25)     
 
     # Image transformations
     if cf.pad_images:
-        pad_image = PadImage((globals.MAX_IMAGE_WIDTH, globals.MAX_IMAGE_HEIGHT))
+        pad_image = PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT))
 
     if cf.resize_images:
         if cf.pad_images:
@@ -37,46 +40,59 @@ def test_cnn_finetune(cf):
                                                   transforms.ToPILImage(),
                                                   transforms.Scale((cf.input_size[0], cf.input_size[1])),
                                                   transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                                  #transforms.Normalize(mean, std),
                                                   ])
         else:
             image_transfrom = transforms.Compose([transforms.ToPILImage(),
                                                   transforms.Scale((cf.input_size[0], cf.input_size[1])),
                                                   transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                                  # transforms.Normalize(mean, std),
+                                                  ])
     else:
         if cf.pad_images:
             image_transfrom = transforms.Compose([pad_image,
                                                   transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
+                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                                  # transforms.Normalize(mean, std),
+                                                  ])
         else:
             image_transfrom = transforms.Compose([transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1))])
+                                                  # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                                  # transforms.Normalize(mean, std),
+                                                  ])
 
     if cf.dataset_name == 'WG':
-        print('Loading WG dataset...')
+        print('...................Loading WG dataset...................')
         train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
         test_set = WashingtonDataset(cf, train=False, transform=image_transfrom, 
                             data_idx =train_set.data_idx, complement_idx = True)
     
     elif cf.dataset_name == 'IFN':
         # TODO
-        print('Loading IFN dataset...')        
+        print('...................Loading IFN dataset...................')        
         train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
         test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
                             data_idx =train_set.data_idx, complement_idx = True)
         
     elif cf.dataset_name =='WG+IFN': 
-        print('Loading dual-lingual sets; IFN & WG datasets')        
+        print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
         ## TODO
         train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
         test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
-            
-
-
+    elif cf.dataset_name =='IAM':
+        print('...................Loading IAM dataset...................') 
+        train_set = IAM_words(cf, mode='train', transform = image_transfrom, augmentation=True )
+        test_set = IAM_words(cf, mode='test', transform = image_transfrom, augmentation=True )
+        
+        print('IAM IAM')
+        # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
+               
+     
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
                                   shuffle=cf.shuffle, num_workers=cf.num_workers)
 
@@ -170,7 +186,7 @@ def test_cnn_finetune(cf):
         no_of_samples  = len(result['word_str'])
         step = 200
         # sampler_selector_sizes = [i for i in range(no_of_samples-100, 200, -step )]            
-        sampler_selector_sizes = [no_of_samples - 400]
+        sampler_selector_sizes = [no_of_samples - 100]
         no_iterations = 100
         for sample_size in sampler_selector_sizes:
             word_str_mom = []; word_similarity=[]
@@ -193,7 +209,8 @@ def test_cnn_finetune(cf):
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     # print('PHOC length', train_set.)
-    print('Chance level performance \n');  test(test_loader) # nice to know the performance prior to training
+    print('Chance level performance \n');  
+    test(test_loader) # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
         train(epoch)           

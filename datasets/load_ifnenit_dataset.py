@@ -27,7 +27,7 @@ class IfnEnitDataset(Dataset):
             constructor of the test_set. 
             complement_idx: generate the set from the complement of data_idx
         """
-
+        self.cf = cf
         self.dir_bmp = cf.dataset_path_IFN
         self.dir_tru = cf.gt_path_IFN
         self.train = train  # training set or test set
@@ -67,10 +67,14 @@ class IfnEnitDataset(Dataset):
     def __len__(self):
         return len(self.word_id)
        
-
+        
     def __getitem__(self, idx):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         data = Image.open(img_name)
+        if not(self.cf.H_ifn_scale ==0): # resizing just the height            
+            data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS)
+            #    data.show()
+            
         # Convert data to numpy array
         data = np.array(data.getdata(),
                     np.uint8).reshape(data.size[1], data.size[0], 1)

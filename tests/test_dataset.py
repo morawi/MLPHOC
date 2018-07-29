@@ -60,5 +60,5 @@ def test_dataload(cf):
         plt.imshow(data.numpy()[0, :, :], 'gray')
         plt.show();
 
-        if i == 1002: break
+        if i == 102: break
 

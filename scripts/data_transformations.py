@@ -93,33 +93,13 @@ def process_ifnedit_data(cf, phoc_word, word_id, word_str):
                 tokens = line[1].split(";")
                 for token in tokens:
                     if "AW1" in str(token):
-                        arabic_word = token.split(":")[1]
-
-                        # Got an UNKNOWN UNIGRAM ERROR
-                        # Compute the PHOC of the word:
-                        # arabic_word = arabic_word.lower()
-                        phoc = PHOC(word=arabic_word, alphabet=cf.alphabet, unigram_levels=cf.unigram_levels)
-                        # print(phoc)
-                        # print('PHOCs has the size', np.shape(phoc))
-
-                        # phoc = ''
+                        arabic_word = token.split(":")[1]                        
+                        phoc = PHOC(arabic_word, cf)
                         phoc_word.append(phoc)
                         word_id.append(id)
                         word_str.append(arabic_word)
 
-                        # Check images max size = [1035, 226]
-                        # img_name = os.path.join(self.dir_bmp, id + '.bmp')
-                        # image = io.imread(img_name)
-                        # h, w = image.shape[:2]
-                        # if w == globals.MAX_IMAGE_WIDTH:
-                        #     print("Image with max size: " + id)
-                        #     self.counter = self.counter + 1
-                        # if h > self.h_max:
-                        #     self.h_max = h
-                        # if w > self.w_max:
-                        #     self.w_max = w
-
-
+                        
 def process_wg_data(cf, phoc_word, word_id, word_str):
     # self.h_max = 0
     # self.w_max = 0
@@ -133,7 +113,6 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
         line = line[:-1].split(" ")
         id = line[0]
         letters = line[1].split("-")
-
         non_alphabet_word = False
         word_string = ''
         for letter in letters:
@@ -206,19 +185,15 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
 
         if not non_alphabet_word:
             # Compute the PHOC of the word:
-            phoc = PHOC(word=word_string, alphabet=cf.alphabet, unigram_levels=cf.unigram_levels)
-            # phoc.astype(np.float32)
-            # print(phoc)
-            # print('PHOCs has the size', np.shape(phoc))
+            phoc = PHOC(word_string, cf)            
             phoc_word.append(phoc)
             word_id.append(id)
             word_str.append(word_string)
 
-            # Check images max size = [551, 120]
-            # img_name = os.path.join(self.root_dir, id + '.png')
-            # image = io.imread(img_name)
-            # h, w = image.shape[:2]
-            # if h > self.h_max:
-            #     self.h_max = h
-            # if w > self.w_max:
-            #     self.w_max = w
+             
+            
+            
+            
+            
+            
+            

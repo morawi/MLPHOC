@@ -12,6 +12,7 @@ import torch
 from collections import Counter
 from nltk.corpus import wordnet
 
+# https://www.wordfrequency.info/comparison.asp
 
 """Example:
     x= ['hello', 'John', 'hi', 'John', 'hello', 'pumpum']
@@ -151,18 +152,30 @@ def test_varoius_thresholds(result, cf):
         print('Thresh val', my_thresh, '---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
 
 
+#def word_str_moment(word_str):
+#    # word_str, loc = remove_single_words(word_str)
+#    vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
+#    vv = Counter(idx)
+#    ss0 = sum(vv.values())
+#    ss = 0    
+#    for i in range(0,  len(vv) ):
+#        ss += vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4
+#    
+#    ss= ss/ ss0
+#    return ss
+        
+
 def word_str_moment(word_str):
     # word_str, loc = remove_single_words(word_str)
     vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
-    vv= Counter(idx)
-    ss0 = sum(vv.values())
-    ss = 0    
+    vv = Counter(idx)    
+    ss = np.zeros(None, dtype=float)   
     for i in range(0,  len(vv) ):
-        ss += vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4
+        ss = np.append(ss, vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4 )
     
-    ss= ss/ ss0
-    return ss
-        
+    return np.std(ss)/np.mean(ss)
+
+
 # http://www.nltk.org/howto/wordnet.html
 def word_similarity_metric(list_of_words):
     ''' Example:   list_of_wrods  = ['hi', 'xerox', 'hi', 'xerox', 'dunk', 'hi']    
@@ -185,12 +198,18 @@ def word_similarity_metric(list_of_words):
     TODO
     '''
     
-    ss=0
-    list_len =  len(list_of_words)
+#    ss=0
+#    list_len =  len(list_of_words)
+#    for word in list_of_words:
+#        list_of_words.pop(0)
+#        ss += ListOfWords_to_ListOfWords_statistic(list([word]), list_of_words )
+#    return 2*(ss/list_len)
+
+    ss = np.zeros(None, dtype= float)    
     for word in list_of_words:
         list_of_words.pop(0)
-        ss += ListOfWords_to_ListOfWords_statistic(list([word]), list_of_words )
-    return 2*(ss/list_len)
+        ss = np.append(ss, ListOfWords_to_ListOfWords_statistic(list([word]), list_of_words ) )
+    return 2*np.std(ss)/np.mean(ss)
 
 
 def ListOfWords_to_ListOfWords_statistic(list1, list2):
@@ -199,21 +218,24 @@ def ListOfWords_to_ListOfWords_statistic(list1, list2):
 # list1  ['choose', 'copy', 'define', 'copy', 'choose', 'choose']
 # list2 has several words to be compared with the ones in lis1
     
-    xx = []; i=0    
+    xx = np.zeros(len(list1) * len(list2), dtype=float)
+       
     for word1 in list1:
         for word2 in list2:
             wordFromList1 = wordnet.synsets(word1)
             wordFromList2 = wordnet.synsets(word2)
             if wordFromList1 and wordFromList2: 
                 s = wordFromList1[0].wup_similarity(wordFromList2[0])
-                xx.append(s)        
-    for zz in xx:
-         xx[i] = int(0 if zz is None else zz)
-         i += 1
-        
-    return sum(xx)/( len(list1) * len(list2) )
-
-
+                if s==None: s=0
+                xx = np.append(xx, s)        
+#     i=0 
+#    for zz in xx:
+#         xx[i] = int(0 if zz is None else zz)
+#         i += 1
+#        
+#    return sum(xx)/( len(list1) * len(list2) )
+#
+    return xx
 
 
 
