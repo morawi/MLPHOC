@@ -1,4 +1,4 @@
-import time
+import time   # used to create a seed for the randomizers
 
 '''
 1- We need to find the max size of IFN,
@@ -12,38 +12,56 @@ and remove the excludes from globals.py
 
 
 # Dataset
-dataset_name                 = 'WG' # Dataset name: ['WG', 'IFN', 'WG+IFN']
+dataset_name                 = 'WG+IFN'       # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
-"""Select the aplabet of the dataset. The value 'alphabet will be used in the PHOC function'
-to map the string to the phoc according to the chars of the language """
-if dataset_name == 'IFN':
-    alphabet                     = 'arabic'    
-elif dataset_name =='WG': 
-    alphabet                     = 'english'    
-elif dataset_name == 'WG+IFN': 
-    alphabet                     = 'multiple'
-elif  dataset_name == 'IAM': 
-    alphabet =                  'just_iam'
-if dataset_name == 'IFN' or dataset_name == 'WG':
-    MAX_IMAGE_WIDTH = 576
-    MAX_IMAGE_HEIGHT = 226
-elif dataset_name == 'IAM':
+# """Select the aplabet of the dataset. The value 'alphabet will be used in the PHOC function'
+# to map the string to the phoc according to the chars of the language """
+#if dataset_name == 'IFN':
+#    alphabet                     = 'arabic'    
+#elif dataset_name =='WG': 
+#    alphabet                     = 'english'    
+#elif dataset_name == 'WG+IFN': 
+#    alphabet                     = 'multiple'
+#elif  dataset_name == 'IAM': 
+#    alphabet                     = 'just_iam'
+
+if dataset_name ==  'WG': # 645 x 120
+    MAX_IMAGE_WIDTH = 645
+    MAX_IMAGE_HEIGHT = 120
+
+elif dataset_name == 'IFN': # 1069 x 226
+    MAX_IMAGE_WIDTH = 1069
+    MAX_IMAGE_HEIGHT = 226  
+    H_ifn_scale = 120  # to skip scaling the height, use 0
+    
+elif dataset_name == 'IAM': # 1087 x 241
     MAX_IMAGE_WIDTH = 1087
     MAX_IMAGE_HEIGHT = 241
+    
+    ''' for mix language, we have to scale IFN to WG size'''
+elif dataset_name == 'WG+IFN':   
+    MAX_IMAGE_WIDTH = 1069
+    MAX_IMAGE_HEIGHT = 226     
+    H_ifn_scale = 0 # to skip scaling the height, use 0,  WG_IMAGE_HEIGHT = 120
+
+
 
 # IFN max size 1035, 226
     
     
 
 train_split                  = True # When True, this is the training set 
-non_alphabet                 = False  # This option can be used to include non_alphabet (if true)
-split_percentage             = 0.80  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+
+non_alphabet                 = True  # This option can be used to include non_alphabet (if true), only for GW dataset
+
+split_percentage             = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+
 rnd_seed_value               = 0 #  int(time.time())  #  0 # time.time() should be used later
 
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
-input_size                   =[120, 300] # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+input_size                   = [120, 300] # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
                                             # H= 40, then, W = (576/226)*40 ~= 100
 # Dataloader
 batch_size_train             = 16  # Prev works say the less the better, 10 is best?!
@@ -53,9 +71,18 @@ num_workers                  = 4
 
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 
+
+
+
 dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/bmp/' # path to IFN images
 gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/tru/' # path to IFN ground_truth
 # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
+'''
+# all the dataa in one folder
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+'''
+
 
 dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
 gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
@@ -89,7 +116,7 @@ binarizing_thresh            = 0.5 # threshold to be used to binarize the net si
                               # threshold 0.5 will run round() function
     
 # Save results
-save_results                 = True                                   # Save Log file
+save_results                 = False                            # Save Log file
 results_path                 = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
 save_plots                   = True                                                     # Save the plots to disk
 
