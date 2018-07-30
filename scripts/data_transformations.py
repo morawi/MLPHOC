@@ -9,6 +9,8 @@ from torchvision import transforms
 from scripts.Word2PHOC import build_phoc as PHOC
 from utils import globals
 
+from skimage.morphology import thin as skimage_thinner
+
 
 #  Method to compute the padding odf the input image to the max image size
 def get_padding(image, output_size):
@@ -18,6 +20,8 @@ def get_padding(image, output_size):
     w = image.shape[1]
 
     pad_width = output_max_width - w
+    if pad_width<0 : print('MAX_IMAGE_WIDTH is smaller than expected, config_file'); exit(0)
+    
     if pad_width < 2:
         pad_left = pad_width
         pad_right = 0
@@ -28,8 +32,9 @@ def get_padding(image, output_size):
         else:
             pad_left = int(pad_width / 2) + 1
             pad_right = pad_left - 1
-
-    pad_height = output_max_height - h
+    
+    pad_height = output_max_height - h    
+    if pad_height<0 : print('MAX_IMAGE_WIDTH is smaller than expected, see config_file'); exit(0)
     if pad_height < 2:
         pad_top = pad_height
         pad_bottom = 0
@@ -43,6 +48,8 @@ def get_padding(image, output_size):
 
     padding = (pad_left, pad_top, pad_right, pad_bottom)
     return padding
+
+
 
 # Class to perform the padding
 class PadImage(object):
@@ -65,6 +72,32 @@ class PadImage(object):
         image = tsfm(image)
         image = np.array(image.getdata(),
                     np.uint8).reshape(image.size[1], image.size[0], 1)
+        return image
+
+
+class ImageThinning(object):
+    """ Thin the image 
+        To be used as part of  torchvision.transforms
+    Args: p, a threshold value to determine the thinning
+        
+    """
+    def __init__(self, p = 0.5):
+       #  assert isinstance(output_size, (int, tuple))
+        self.p = p        
+        
+    def image_thinning(image, p):
+        # thinned = skimage_thinner(image)
+        ss = image.shpae()
+        ss = ss[0]*ss[1]
+        for i in range(25): 
+            sum_img = sum(image)/ss
+            if sum_img<p:
+                image = skimage_thinner(image, max_iter= 1)
+            else: 
+                break
+        
+    def __call__(self, image):
+        image = self.image_thinning(image, self.p)                      
         return image
 
 def process_ifnedit_data(cf, phoc_word, word_id, word_str):
@@ -151,7 +184,7 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
                     letter = '9'
                 else:
                     # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
-                    if cf.non_alphabet:
+                    if cf.keep_non_alphabet_in_GW:
                         if letter == "s_cm":
                             letter = ','
                         elif letter == "s_pt":

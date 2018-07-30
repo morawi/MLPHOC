@@ -81,7 +81,6 @@ class IfnEnitDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         
-
         target = self.phoc_word[idx]
         word_str = self.word_str[idx]
 

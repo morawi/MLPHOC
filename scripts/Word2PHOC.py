@@ -9,11 +9,11 @@ import sys
  """
 
 def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
-    '''  Calculate Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
+    '''  Calculates Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
         words (str): word to calculate descriptor for
-        alphabet (str): choose the alphabet to compute the PHOC
-        unigram_levels (array): [2,3,4,5]
+        cf.alphabet (str): choose the alphabet to compute the PHOC
+        cf.unigram_levels (array): [2,3,4,5]
         
     Returns:
         the PHOCs for the given words    '''
@@ -27,31 +27,19 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     elif cf.dataset_name =='IFN':
         phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
     elif cf.dataset_name == 'WG+IFN':
-        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+        if cf.keep_non_alphabet_in_GW==True:
+            phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+        else:
+            phoc_unigrams ="abcdefghijklmnopqrstuvwxyz0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+            
     elif cf.dataset_name == 'IAM':
         x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
         phoc_unigrams = ''.join(map(str, x))
     else: 
         logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
         sys.exit(0)
-        
-    
-#    if alphabet == 'english':
-#        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz.,-;':()£|"
-#        # phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
-#    elif alphabet == 'arabic':
-#        phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-#    elif alphabet == 'multiple':
-#        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-#    elif alphabet == 'just_iam':
-#        x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-#        phoc_unigrams = ''.join(map(str, x))
-#    else: 
-#        logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
-#        sys.exit(0)
-#    
-    # unigram_levels (list of int): the levels for the unigrams in PHOC
-    # unigram_levels = unigram_levels
+         
+
     # prepare output matrix
     phoc_size = len(phoc_unigrams) * np.sum(cf.unigram_levels)
     phoc = np.zeros(phoc_size)

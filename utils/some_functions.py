@@ -14,6 +14,17 @@ from nltk.corpus import wordnet
 
 # https://www.wordfrequency.info/comparison.asp
 
+def random_seeding(seed_value, use_cuda):
+    ''' a function to randomly seed torch and np
+        Args in: seed_value: (int)
+                 use_cuda: bool, True for using cuda or False otherwise
+    '''
+
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)    
+    if use_cuda: torch.cuda.manual_seed_all(seed_value)
+    
+
 """Example:
     x= ['hello', 'John', 'hi', 'John', 'hello', 'pumpum']
     output should be something like this:

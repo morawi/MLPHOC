@@ -31,7 +31,7 @@ class WashingtonDataset(Dataset):
         self.root_dir = cf.dataset_path_WG
         self.train = train  # training set or test set
         self.transform = transform
-        self.non_alphabet = cf.non_alphabet
+        self.keep_non_alphabet_in_GW = cf.keep_non_alphabet_in_GW
         self.word_id = []
         self.word_str = []
         self.phoc_word = []
