@@ -74,7 +74,7 @@ gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # p
 unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
-model_name                   = 'resnet50' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+model_name                   = 'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 epochs                       = 300 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5

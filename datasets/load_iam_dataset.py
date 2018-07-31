@@ -90,24 +90,20 @@ def get_the_image(file_name, transform, cf):
 
 
 class IAM_words(Dataset):
-    def __init__(self, cf, mode='train', transform = None, augmentation=True ):
+    def __init__(self, cf, mode='train', transform = None):
         # mode: 'train', 'validate', or 'test'
         #def __init__(self, cf, train=True, transform=None, data_idx = np.arange(1), complement_idx=False):
         self.cf = cf
         self.mode = mode
         self.file_label = get_iam_file_label(self.cf, self.mode)
-        self.output_max_len = OUTPUT_MAX_LEN
-        self.augmentation = augmentation        
+        self.output_max_len = OUTPUT_MAX_LEN            
         self.transform = transform
         self.len_phoc = len( PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
 
     def __getitem__(self, index):
         word = self.file_label[index]                
         label, label_mask = label_padding(' '.join(word[1:]), self.output_max_len)
-        word_str = word[1] # word_str = word[1].lower(); # to only keep lower-case
-        # img, img_width = readImage_keepRatio(word[0], FLIP, self.augmentation, self.transformer, self.cf)
-        # in the origianl implementation (img[0]) has the word img[1]) has the image        
-        # return img[1], target, word_str
+        word_str = word[1] # word_str = word[1].lower(); # to only keep lower-case       
 
         img = get_the_image(word[0], self.transform, self.cf) 
         target = PHOC(word_str, self.cf)        
