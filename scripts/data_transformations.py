@@ -81,18 +81,20 @@ class ImageThinning(object):
     Args: p, a threshold value to determine the thinning
         
     """
-    def __init__(self, p = 0.5):
+    def __init__(self, p = 0.2):
        #  assert isinstance(output_size, (int, tuple))
         self.p = p        
         
     def image_thinning(image, p):
-        # thinned = skimage_thinner(image)
+        # thinned = skimage_thinner(image) 
+        thin_iter_step  = 1
         ss = image.shpae()
         ss = ss[0]*ss[1]
+        
         for i in range(25): 
             sum_img = sum(image)/ss
             if sum_img<p:
-                image = skimage_thinner(image, max_iter= 1)
+                image = skimage_thinner(image, max_iter= thin_iter_step)
             else: 
                 break
         
