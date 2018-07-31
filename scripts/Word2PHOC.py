@@ -36,7 +36,7 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
         x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
         phoc_unigrams = ''.join(map(str, x))
     else: 
-        logger.fatal('The alphabet flag (str) should be: english, arabic or multiple')
+        logger.fatal("Datasets to use: 'WG', 'IFN', 'IAM', or 'WG+IAM' ")
         sys.exit(0)
          
 

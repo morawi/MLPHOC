@@ -77,7 +77,7 @@ def get_the_image(file_name, transform, cf):
     data = data.point(lambda p: p > thresh and 255) # threshold the image
     data = ImageOps.invert(data)    # Invert the input image 
     # data.show()
-    # data = data.convert('L') 
+    # data = data.convert('L')  # this convers an image to grayscale
     # Convert data to numpy array, so that we use it as input to transform    
     data = np.array(data.getdata(),
                 np.uint8).reshape(data.size[1], data.size[0], 1)

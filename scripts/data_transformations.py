@@ -66,7 +66,8 @@ class PadImage(object):
     def __call__(self, image):
         padding = get_padding(image, (self.output_max_width, self.output_max_height))
 
-        # tsfm = transforms.Pad(padding)
+        # tsfm = transforms.Pad(padding)        
+        
         tsfm = transforms.Compose([ transforms.ToPILImage(),
                                     transforms.Pad(padding)])
         image = tsfm(image)
@@ -74,6 +75,24 @@ class PadImage(object):
                     np.uint8).reshape(image.size[1], image.size[0], 1)
         return image
 
+def image_thinning(img, p):
+    # thinned = skimage_thinner(image) 
+    thin_iter_step  = 1   
+    img=img.squeeze()
+    ss = img.shape
+    ss = ss[0]*ss[1]
+    img_max_orig = img.max()
+    for i in range(25): 
+        img_max = img.max()
+        sum_img = img.sum()/(img.size* img_max)
+        if sum_img>p:
+            img = skimage_thinner(img, max_iter= thin_iter_step)
+            img = img.astype('uint8')
+        else: 
+            break
+    
+    img = img.reshape(img.shape[0], img.shape[1], 1)
+    return img*img_max_orig
 
 class ImageThinning(object):
     """ Thin the image 
@@ -83,23 +102,11 @@ class ImageThinning(object):
     """
     def __init__(self, p = 0.2):
        #  assert isinstance(output_size, (int, tuple))
-        self.p = p        
-        
-    def image_thinning(image, p):
-        # thinned = skimage_thinner(image) 
-        thin_iter_step  = 1
-        ss = image.shpae()
-        ss = ss[0]*ss[1]
-        
-        for i in range(25): 
-            sum_img = sum(image)/ss
-            if sum_img<p:
-                image = skimage_thinner(image, max_iter= thin_iter_step)
-            else: 
-                break
+        self.p = p                  
         
     def __call__(self, image):
-        image = self.image_thinning(image, self.p)                      
+        # image =self.image_thinning(image, self.p)                      
+        image = image_thinning(image, self.p)                      
         return image
 
 def process_ifnedit_data(cf, phoc_word, word_id, word_str):

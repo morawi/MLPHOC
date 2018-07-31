@@ -80,7 +80,7 @@ class IfnEnitDataset(Dataset):
                     np.uint8).reshape(data.size[1], data.size[0], 1)        
         maxG = data.max(); 
         if maxG>200:  
-            data = (maxG - data)/maxG
+            data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
         
         if self.transform:
             data = self.transform(data)
@@ -92,20 +92,3 @@ class IfnEnitDataset(Dataset):
     
     
     
-# temp_idx = np.sort(temp_idx)
-#            test_idx = []
-#            prev_num = -1
-#            for idx in range(train_idx.shape[0]):
-#                if idx != 0:
-#                    prev_num = train_idx[idx - 1]
-#                while train_idx[idx] != prev_num + 1:
-#                    prev_num = prev_num + 1
-#                    test_idx.append(prev_num)
-#            test_idx = np.sort(test_idx)
-        
-#
-#        Choose the training or the testing indexes
-#        if self.train:
-#            data_idx = train_idx
-#        else:
-#            data_idx = test_idx
