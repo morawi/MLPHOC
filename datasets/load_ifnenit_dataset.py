@@ -73,11 +73,15 @@ class IfnEnitDataset(Dataset):
         data = Image.open(img_name)
         if not(self.cf.H_ifn_scale ==0): # resizing just the height            
             data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS)
-            #    data.show()
-            
+        #  data.show()
+        
         # Convert data to numpy array
         data = np.array(data.getdata(),
-                    np.uint8).reshape(data.size[1], data.size[0], 1)
+                    np.uint8).reshape(data.size[1], data.size[0], 1)        
+        maxG = data.max(); 
+        if maxG>200:  
+            data = (maxG - data)/maxG
+        
         if self.transform:
             data = self.transform(data)
         
