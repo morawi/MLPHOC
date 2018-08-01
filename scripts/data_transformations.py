@@ -89,10 +89,11 @@ def image_thinning(img, p):
             img = skimage_thinner(img, max_iter= thin_iter_step)
             img = img.astype('uint8')
         else: 
+            img= (img/img.max()).astype('uint8') # the thinning will result in a binary [0,1] 2dArray, hence we need to normalized the non thinned ones
             break
     
     img = img.reshape(img.shape[0], img.shape[1], 1)
-    return img*img_max_orig
+    return img*img_max_orig # Now, bringing the normalization back to all images
 
 class ImageThinning(object):
     """ Thin the image 
