@@ -48,7 +48,10 @@ def hist_of_text_to_background_ratio(data_set):
         # img = img_max  - img 
         hh.append(img.sum()/(img.size* img_max))
     # plt.hist(img.squeeze()) # to plot the hist of an image, rough one
+    plt.figure(" ")
     plt.hist(hh)
+    plt.xticks(np.arange(0, 1.1, 0.2))
+    plt.show()
 
 def test_thinning(data_set):
     img, _, _ = data_set[45]; img.sum()/(img.size*255)
@@ -63,14 +66,14 @@ cf = configuration.load()
 cf.split_percentage = 1
 
 
-folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/tru/' # path to IFN ground_truth 
+folder_of_data                = '/home/malrawi/Desktop/My Programs/all_data/'
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_e/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_e/tru/' # path to IFN ground_truth 
 cf.dataset_path_IFN = dataset_path_IFN
 cf.gt_path_IFN = gt_path_IFN
 
 
-thin_image = ImageThinning()
+thin_image = ImageThinning(p = cf.thinning_threshold)
 image_transfrom = transforms.Compose([thin_image,
                          # transforms.ToPILImage(),
                          # transforms.ToTensor(),
@@ -78,19 +81,19 @@ image_transfrom = transforms.Compose([thin_image,
                           # transforms.Normalize(mean, std),
                           ])
 
-
-
-cf.dataset_name = 'IAM'; 
-data_set1  = IAM_words(cf, mode='validate', transform = image_transfrom)
-x1, _,_ = data_set1[1]
-data_set2  = IAM_words(cf, mode='validate', transform = None)
-x2, _,_ = data_set2[1]
+# cf.dataset_name = 'IAM'; 
+# data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
+#x1, _,_ = data_set1[1]
+# data_set  = IAM_words(cf, mode='test', transform = None)
+#x2, _,_ = data_set2[1]
 
 # data_set = WashingtonDataset(cf, train=True, transform=None)
+# cf.dataset_name                 = 'IFN'   ; cf.H_ifn_scale = 0
 # data_set = IfnEnitDataset(cf, train=True, transform=None)
 
 # find_max_HW_in_data(data_set)
 # hist_of_text_to_background_ratio(data_set)
+
 # test_thinning(data_set)
 
 
