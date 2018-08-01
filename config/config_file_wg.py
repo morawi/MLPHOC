@@ -11,7 +11,6 @@ import time   # used to create a seed for the randomizers
 # Dataset
 dataset_name                 = 'WG+IFN'       # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
-
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH = 645
     MAX_IMAGE_HEIGHT = 120
@@ -29,7 +28,7 @@ elif dataset_name == 'IAM': # 1087 x 241
 elif dataset_name == 'WG+IFN':   
     MAX_IMAGE_WIDTH = 1069 # 
     MAX_IMAGE_HEIGHT = 226     
-    H_ifn_scale = 0 # to skip scaling the height, use 0,  WG_IMAGE_HEIGHT = 120
+    H_ifn_scale = 0 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
 
    
 
@@ -49,13 +48,15 @@ batch_size_train             = 16  # Prev works say the less the better, 10 is b
 batch_size_test              = 300  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-
-
+thinning_threshold           = 0.2 # This value should be decided upon investigating 
+                                    # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
+                                    # use 0 ti indicate no thinning
 ''' Path to  Data '''
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/tru/' # path to IFN ground_truth
+
+dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/bmp/' # path to IFN images
+gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/set_a/tru/' # path to IFN ground_truth
 # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
 '''
 # all the dataa in one folder
@@ -75,7 +76,7 @@ unigram_levels               = [2, 3, 4, 5]
 
 # Model parameters
 model_name                   = 'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 300 #300
+epochs                       = 60 # 300 #300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.1 #10e-4
@@ -87,7 +88,7 @@ lr_milestones                = [10, 30, 50, 100, 200 ]  # it is better to move t
 lr_gamma                     = 0.1 # learning rate decay calue
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 1000  # how often to report/print the training loss
-binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
+binarizing_thresh            = 0.3 # threshold to be used to binarize the net sigmoid output, 
                                 # every val > threshold will be converted to 1
                               # threshold 0.5 will run round() function
     
