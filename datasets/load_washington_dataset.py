@@ -78,7 +78,8 @@ class WashingtonDataset(Dataset):
         # Convert data to numpy array
         data = np.array(data.getdata(),
                     np.uint8).reshape(data.size[1], data.size[0], 1)
-
+        data = (data/data.max()).astype('uint8') # normalized to [0,1] 
+        
         if self.transform:
             data = self.transform(data)
         target = self.phoc_word[idx]

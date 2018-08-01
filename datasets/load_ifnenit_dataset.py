@@ -78,7 +78,7 @@ class IfnEnitDataset(Dataset):
         # Convert data to numpy array
         data = np.array(data.getdata(),
                     np.uint8).reshape(data.size[1], data.size[0], 1)        
-        maxG = data.max(); 
+        maxG = data.max() # correcting the values of folder e, they do not match the other folders
         if maxG>200:  
             data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
         

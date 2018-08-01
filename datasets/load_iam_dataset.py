@@ -81,7 +81,7 @@ def get_the_image(file_name, transform, cf):
     # Convert data to numpy array, so that we use it as input to transform    
     data = np.array(data.getdata(),
                 np.uint8).reshape(data.size[1], data.size[0], 1)
-    
+    data = (data/data.max()).astype('uint8') # normalized to [0,1] 
     if transform:
         data = transform(data)
            
