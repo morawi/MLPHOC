@@ -5,6 +5,7 @@ import logging
 from config.load_config_file import Configuration
 from tests.test_cnn_finetune import test_cnn_finetune
 from utils.some_functions import random_seeding, test_varoius_thresholds, word_str_moment, word_similarity_metric #test_varoius_dist, 
+from inspect import getmembers
 # from tests.test_dataset import test_dataload
 
 
@@ -17,6 +18,9 @@ test_name = '' # Optional: name of the sub folder where to store the results
 configuration = Configuration(config_path, test_name)
 cf = configuration.load()
 logger = logging.getLogger(__name__)
+xx = getmembers(cf)
+for i in range(len(xx)): 
+    print (xx[i])
 # test_dataload(cf) # Test the data loading of the different dataset
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 result, train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
