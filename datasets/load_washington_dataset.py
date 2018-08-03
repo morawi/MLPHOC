@@ -69,11 +69,13 @@ class WashingtonDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        data = Image.open(img_name)
+        data = Image.open(img_name)  
+     
         # Invert the input image 
         data = data.convert('L')
         data = ImageOps.invert(data)
-        data = data.convert('1')
+#        data = data.convert('1')
+        # data.show()
 
         # Convert data to numpy array
         data = np.array(data.getdata(),

@@ -39,7 +39,7 @@ def word_to_label(word_str):
          count += 1
     
     labels = [d[i] for i in word_str]
-    print("There're", len(np.unique(labels)), " unique words out of", len(labels), " ", end="" )
+    print("There're", len(np.unique(labels)), " unique words out of", len(labels), "  ", end="" )
     return labels
  
     
@@ -87,14 +87,10 @@ def find_mAP_QbE(result, cf):
     # For QbE, we have to remove each single occurence words, 
     # and the corresponding items in pred    
     pred = result['pred']       # test_phocs       
-    pred = binarize_the_output(pred, cf.binarizing_thresh)  
-    
+    pred = binarize_the_output(pred, cf.binarizing_thresh)      
     word_str = result['word_str']
-    # remove from 
-    
-    word_str, loc = remove_single_words(word_str)  
+    query_labels, loc = remove_single_words(word_str)  
     pred = pred[loc]   
-    query_labels = word_to_label(word_str)                 
     mAP_QbE, avg_precs = map_from_feature_matrix(pred, query_labels, cf.mAP_dist_metric, False)    
     return mAP_QbE
    
@@ -104,28 +100,29 @@ def find_mAP_QbE(result, cf):
 we should extract unique phocs from pred
 '''    
 def find_mAP_QbS(result, cf):
-    # Now, QbS    
-    target = result['target']
-    pred = result['pred']       # test_phocs       
-    word_str = result['word_str']    
-    target_labels = word_to_label(word_str) 
+    # For QbS, we have to use single (transcriptions) target phoc     
+    # get unique phoc from target, target is the query 
+    word_str = result['word_str']   
+    pred_labels = word_str # word_to_label(word_str) 
+    pred = result['pred']       # test_phocs         
     pred = binarize_the_output(pred, cf.binarizing_thresh) 
-    # For QbS, we have to use single (transcriptions) pred phoc     
-    # get unique phoc from pred
-    query_labels = word_to_label(word_str) # target is the query_features        
-        
+    target = result['target']
+    target_labels, loc = get_unique_words(word_str)
+    target = target[loc]
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
-                                                          target_labels, query_labels, cf.mAP_dist_metric)
-                
+                         target_labels, pred_labels, cf.mAP_dist_metric)
+   
     return mAP_QbS
 
-
+'''  Args in- list of words/strings 
+ouptus: unique words and thier locations/positions'''
 def get_unique_words(word_str):
+    len_orig = len(word_str)
     loc = [word_str.index(elem) for elem in set(word_str)]
     word_str = pd.Series(word_str)
     word_str = word_str.get(loc)   
-    
+    print("There're", len(word_str), " unique words out of", len_orig, "  ", end="" )
     return word_str, loc
 
 def test_varoius_dist(result, cf):    
@@ -145,7 +142,7 @@ def test_varoius_dist(result, cf):
     
     
 def binarize_the_output(pred, binarizing_thresh):        
-    if (binarizing_thresh ==0.5):
+    if (binarizing_thresh == 0.5):
         pred = pred.round()
     else:        
         pred = ( pred > binarizing_thresh)
@@ -158,9 +155,10 @@ def test_varoius_thresholds(result, cf):
     # 'mahalanobis' removed  due to Singular matrix
     # 'wminkowski': requires a weighting vector
     for my_thresh in thresholds:
-        cf.binarizing_thresh = my_thresh
-        mAP_QbE,mAP_QbS = find_mAP(result, cf)
-        print('Thresh val', my_thresh, '---- mAP(QbS)=', mAP_QbS, "---", 'mAP(QbE) = ', mAP_QbE, '----\n')
+        cf.binarizing_thresh = my_thresh        
+        mAP_QbS = find_mAP_QbS(result, cf)
+        mAP_QbE = find_mAP_QbE(result, cf)        
+        print('Thresh val', my_thresh, '  mAP(QbS)=', mAP_QbS, '  ', 'mAP(QbE) = ', mAP_QbE, '----\n')
 
 
 #def word_str_moment(word_str):
@@ -175,7 +173,7 @@ def test_varoius_thresholds(result, cf):
 #    ss= ss/ ss0
 #    return ss
         
-
+''' moment as a coeficent of variation'''
 def word_str_moment(word_str):
     # word_str, loc = remove_single_words(word_str)
     vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
@@ -220,7 +218,7 @@ def word_similarity_metric(list_of_words):
     for word in list_of_words:
         list_of_words.pop(0)
         ss = np.append(ss, ListOfWords_to_ListOfWords_statistic(list([word]), list_of_words ) )
-    return 2*np.std(ss)/np.mean(ss)
+    return 2*np.std(ss)/np.mean(ss) # as a coeficent of variatio
 
 
 def ListOfWords_to_ListOfWords_statistic(list1, list2):

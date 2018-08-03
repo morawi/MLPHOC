@@ -194,7 +194,7 @@ def process_wg_data(cf, phoc_word, word_id, word_str):
                     letter = '9'
                 else:
                     # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
-                    if cf.keep_non_alphabet_in_GW:
+                    if cf.keep_non_alphabet_of_GW_in_loaded_data:
                         if letter == "s_cm":
                             letter = ','
                         elif letter == "s_pt":

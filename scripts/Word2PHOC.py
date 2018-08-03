@@ -22,7 +22,7 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     # phoc_unigrams (str): string of all unigrams to use in the PHOC
     
     if cf.dataset_name == 'WG':
-        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz.,-;':()£|"
+        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
         # phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
     elif cf.dataset_name =='IFN':
         phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
@@ -56,9 +56,11 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     for index, char in enumerate(word):
         char_occ = occupancy(index, n)
         if char not in char_indices:
-            logger.fatal('The unigram \'%s\' is unknown', char)
-             #print(' ', char, end="" )
-            sys.exit(0)
+            if  cf.keep_non_alphabet_in_GW==False and cf.dataset_name=='WG':
+                continue
+            else:    
+                logger.fatal('The unigram \'%s\' is unknown', char)
+                sys.exit(0)
 
         char_index = char_indices[char]
         for level in cf.unigram_levels:

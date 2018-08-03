@@ -15,7 +15,24 @@ from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 import numpy as np
 
+'''
+- Args
+First, load the train set by the default values, except (train and transform), 
+this wil result in train_set, where the idx's are stored for each IFN and WG, 
+then, to load the test set, these idx's are estimated randomly according to 
+cf.split_percentage in config_file_wg.py. 
+ We then can use these idx's (train_set.data_idx_WG,) to load the complement data and get 
+the test set for each of IFN and WG.
 
+Example:
+train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
+test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
+                      data_idx_WG = train_set.data_idx_WG, 
+                      data_idx_IFN = train_set.data_idx_IFN, 
+                            complement_idx = True)
+ 
+==
+'''
 class WG_IFN_Dataset(data.Dataset):
   def __init__(self, cf, train=True, transform=None, data_idx_WG = np.arange(1), 
                data_idx_IFN = np.arange(1), complement_idx=False):

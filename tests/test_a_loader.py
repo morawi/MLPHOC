@@ -86,13 +86,13 @@ image_transfrom = transforms.Compose([thin_image,
 #x1, _,_ = data_set1[1]
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
-
-# data_set = WashingtonDataset(cf, train=True, transform=None)
+cf.dataset_name = 'WG'
+data_set = WashingtonDataset(cf, train=True, transform=None)
 # cf.dataset_name                 = 'IFN'   ; cf.H_ifn_scale = 0
 # data_set = IfnEnitDataset(cf, train=True, transform=None)
 
 # find_max_HW_in_data(data_set)
-# hist_of_text_to_background_ratio(data_set)
+hist_of_text_to_background_ratio(data_set)
 
 # test_thinning(data_set)
 

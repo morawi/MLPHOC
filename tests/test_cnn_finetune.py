@@ -33,6 +33,12 @@ def test_cnn_finetune(cf):
     # Image transformations
     if cf.pad_images:
         pad_image = PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT))
+    
+    '''  I am not sure if these transforms.ToPILImage() are needed?
+        we need to inspect everyting, and I would really like to 
+        re-wriet these if-stmnt in a btter, and clearer form
+     '''
+
 
     if cf.resize_images:
         if cf.pad_images:
@@ -152,10 +158,8 @@ def test_cnn_finetune(cf):
                 output = F.sigmoid(output)
                 pred = output.data
                 pred = pred.type(torch.cuda.DoubleTensor)
-#                pred = pred.round()
-                
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
-                # Accuulate from batches to one variable (##_all)
+                # Accumulate from batches to one variable (##_all)
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
                 word_str_all = word_str_all + word_str        
@@ -170,10 +174,10 @@ def test_cnn_finetune(cf):
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))   
         '''
    
-        mAP_QbE, mAP_QbS = find_mAP(result, cf)               
+        # mAP_QbE, mAP_QbS = find_mAP(result, cf)               
        
-        # mAP_QbS = find_mAP_QbS(result, cf)
-        # mAP_QbE = find_mAP_QbE(result, cf)
+        mAP_QbS = find_mAP_QbS(result, cf)
+        mAP_QbE = find_mAP_QbE(result, cf)
         print(  mAP_QbS, "  ",  mAP_QbE, " ", end="")        
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
@@ -187,10 +191,10 @@ def test_cnn_finetune(cf):
         step = 200
         # sampler_selector_sizes = [i for i in range(no_of_samples-100, 200, -step )]            
         sampler_selector_sizes = [no_of_samples - 100]
-        no_iterations = 100
+        no_moment_iterations = 10
         for sample_size in sampler_selector_sizes:
             word_str_mom = []; word_similarity=[]
-            for  xxnn in range(0, no_iterations):            
+            for  xxnn in range(0, no_moment_iterations):            
                 sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:sample_size]                     
                 if len(sample_idx) ==0:  
                     exit('exiting function get_the_sampler(), sample_idx size is 0')    
