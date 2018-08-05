@@ -2,14 +2,45 @@ from __future__ import print_function, division
 
 import os
 import warnings
-
+import glob
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
+from utils import globals
 
-from scripts.data_transformations import process_ifnedit_data
+# from scripts.data_transformations import process_ifnedit_data
 
 warnings.filterwarnings("ignore")
+
+def load_ifnedit_data(cf, phoc_word, word_id, word_str):
+   
+    # Get all the '.tru' files from the folder
+    tru_files = glob.glob(cf.gt_path_IFN + "*.tru")
+
+    for tru_file in tru_files:
+        # Save the word ID
+        id = os.path.splitext(os.path.basename(tru_file))[0]
+
+        # Check if we exclude this words because is too long
+        if id in globals.excluded_words_IFN_ENIT:
+            continue
+        # Open the tru file
+        tru = open(tru_file, 'r', encoding='cp1256')
+        text_lines = tru.readlines()
+        tru.close()
+        for line in text_lines:
+            # split using space to separate the ID from the letters and delete the \n
+            line = line[:-1].split(": ")
+            if line[0] == "LBL":
+                tokens = line[1].split(";")
+                for token in tokens:
+                    if "AW1" in str(token):
+                        arabic_word = token.split(":")[1]                        
+                        phoc = cf.PHOC(arabic_word, cf)
+                        phoc_word.append(phoc)
+                        word_id.append(id)
+                        word_str.append(arabic_word)
+
 
 class IfnEnitDataset(Dataset):
 
@@ -40,7 +71,7 @@ class IfnEnitDataset(Dataset):
         aux_word_str = []
         aux_phoc_word = []
 
-        process_ifnedit_data(cf, aux_phoc_word, aux_word_id, aux_word_str)
+        load_ifnedit_data(cf, aux_phoc_word, aux_word_id, aux_word_str)
         
         len_data = len(aux_word_id)
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
@@ -50,7 +81,6 @@ class IfnEnitDataset(Dataset):
         if complement_idx:
             all_idx = np.arange(0, len_data)
             data_idx = np.sort( np.setdiff1d(all_idx, data_idx, assume_unique=False) )
-
 
         for idx in data_idx:
             self.phoc_word.append(aux_phoc_word[idx])
@@ -73,7 +103,6 @@ class IfnEnitDataset(Dataset):
         data = Image.open(img_name)
         if not(self.cf.H_ifn_scale ==0): # resizing just the height            
             data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS)
-        #  data.show()
         
         # Convert data to numpy array
         data = np.array(data.getdata(),
