@@ -60,7 +60,7 @@ def remove_single_words(word_str):
     return word_str, loc
 
 
-
+# depriciated and incorrect
 def find_mAP(result, cf):   
     
     pred = result['pred']       # test_phocs       

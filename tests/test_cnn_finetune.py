@@ -117,9 +117,12 @@ def test_cnn_finetune(cf):
 
    
     if cf.loss == 'BCEWithLogitsLoss':
-        criterion = nn.BCEWithLogitsLoss(size_average=True)
-    else:
+        criterion = nn.BCEWithLogitsLoss() # size_average=True, reduction='sum')
+    elif cf.loss == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
+    else: 
+        criterion = nn.MSELoss()
+        
 
     optimizer = optim.SGD(model.parameters(), lr=cf.learning_rate, momentum=cf.momentum)    
 
@@ -131,7 +134,11 @@ def test_cnn_finetune(cf):
             data, target = data.to(device), target.to(device)
             optimizer.zero_grad()
             output = model(data)
-            loss = criterion(output.float(), target.float())
+            if cf.loss=='MSELoss': 
+                output= F.sigmoid(output)
+                loss = criterion(output.float(), target.float())
+            else: 
+                loss = criterion(output.float(), target.float())
             total_loss += loss.item()
             total_size += data.size(0)
             loss.backward()

@@ -17,10 +17,12 @@ test_name = '' # Optional: name of the sub folder where to store the results
 # Load the configuration file
 configuration = Configuration(config_path, test_name)
 cf = configuration.load()
+
 logger = logging.getLogger(__name__)
 xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
+print('------- p_raw_hoc length is: ', len(cf.PHOC('', cf)) )
 # test_dataload(cf) # Test the data loading of the different dataset
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 result, train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset

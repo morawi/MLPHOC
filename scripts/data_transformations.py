@@ -1,13 +1,14 @@
 from __future__ import print_function, division
 
-import glob
-import os
+#import glob
+#import os
+## from scripts.Word2PHOC import build_phoc as PHOC
+#from utils import globals
+
 
 import numpy as np
 from torchvision import transforms
 
-from scripts.Word2PHOC import build_phoc as PHOC
-from utils import globals
 
 from skimage.morphology import thin as skimage_thinner
 
@@ -110,133 +111,133 @@ class ImageThinning(object):
         image = image_thinning(image, self.p)                      
         return image
 
-def process_ifnedit_data(cf, phoc_word, word_id, word_str):
-    # self.h_max = 0
-    # self.w_max = 0
-    # self.counter = 0
-
-    # Get all the '.tru' files from the folder
-    tru_files = glob.glob(cf.gt_path_IFN + "*.tru")
-
-    for tru_file in tru_files:
-        # Save the word ID
-        id = os.path.splitext(os.path.basename(tru_file))[0]
-
-        # Check if we exclude this words because is too long
-        if id in globals.excluded_words_IFN_ENIT:
-            continue
-        # Open the tru file
-        tru = open(tru_file, 'r', encoding='cp1256')
-        text_lines = tru.readlines()
-        tru.close()
-        for line in text_lines:
-            # split using space to separate the ID from the letters and delete the \n
-            line = line[:-1].split(": ")
-            if line[0] == "LBL":
-                tokens = line[1].split(";")
-                for token in tokens:
-                    if "AW1" in str(token):
-                        arabic_word = token.split(":")[1]                        
-                        phoc = PHOC(arabic_word, cf)
-                        phoc_word.append(phoc)
-                        word_id.append(id)
-                        word_str.append(arabic_word)
+#def process_ifnedit_data(cf, phoc_word, word_id, word_str):
+#    # self.h_max = 0
+#    # self.w_max = 0
+#    # self.counter = 0
+#
+#    # Get all the '.tru' files from the folder
+#    tru_files = glob.glob(cf.gt_path_IFN + "*.tru")
+#
+#    for tru_file in tru_files:
+#        # Save the word ID
+#        id = os.path.splitext(os.path.basename(tru_file))[0]
+#
+#        # Check if we exclude this words because is too long
+#        if id in globals.excluded_words_IFN_ENIT:
+#            continue
+#        # Open the tru file
+#        tru = open(tru_file, 'r', encoding='cp1256')
+#        text_lines = tru.readlines()
+#        tru.close()
+#        for line in text_lines:
+#            # split using space to separate the ID from the letters and delete the \n
+#            line = line[:-1].split(": ")
+#            if line[0] == "LBL":
+#                tokens = line[1].split(";")
+#                for token in tokens:
+#                    if "AW1" in str(token):
+#                        arabic_word = token.split(":")[1]                        
+#                        phoc = PHOC(arabic_word, cf)
+#                        phoc_word.append(phoc)
+#                        word_id.append(id)
+#                        word_str.append(arabic_word)
 
                         
-def process_wg_data(cf, phoc_word, word_id, word_str):
-    # self.h_max = 0
-    # self.w_max = 0
-
-    word_labels_file = open(cf.gt_path_WG, 'r')
-    text_lines = word_labels_file.readlines()
-    word_labels_file.close()
-
-    for line in text_lines:
-        # split using space to separate the ID from the letters and delete the \n
-        line = line[:-1].split(" ")
-        id = line[0]
-        letters = line[1].split("-")
-        non_alphabet_word = False
-        word_string = ''
-        for letter in letters:
-            if "s_" in letter:
-                if "st" in letter:
-                    letter = letter[2] + "st"
-                elif "nd" in letter:
-                    letter = letter[2] + "nd"
-                elif "rd" in letter:
-                    letter = letter[2] + "rd"
-                elif "th" in letter:
-                    letter = letter[2] + "th"
-                elif letter == "s_et":
-                    letter = "et"
-                elif letter == "s_s":
-                    letter = 's'
-                elif letter == "s_0":
-                    letter = '0'
-                elif letter == "s_1":
-                    letter = '1'
-                elif letter == "s_2":
-                    letter = '2'
-                elif letter == "s_3":
-                    letter = '3'
-                elif letter == "s_4":
-                    letter = '4'
-                elif letter == "s_5":
-                    letter = '5'
-                elif letter == "s_6":
-                    letter = '6'
-                elif letter == "s_7":
-                    letter = '7'
-                elif letter == "s_8":
-                    letter = '8'
-                elif letter == "s_9":
-                    letter = '9'
-                else:
-                    # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
-                    if cf.keep_non_alphabet_of_GW_in_loaded_data:
-                        if letter == "s_cm":
-                            letter = ','
-                        elif letter == "s_pt":
-                            letter = '.'
-                        elif letter == "s_sq":
-                            letter = ';'
-                        elif letter == "s_qo":
-                            letter = ':'
-                        elif letter == "s_mi":
-                            letter = '-'
-                        elif letter == "s_GW":
-                            letter = "GW"
-                        elif letter == "s_lb":
-                            letter = '£'
-                        elif letter == "s_bl":
-                            letter = '('
-                        elif letter == "s_br":
-                            letter = ')'
-                        elif letter == "s_qt":
-                            letter = "'"
-                        elif letter == "s_sl":
-                            letter = "|"  # 306-03-04
-                        else:
-                            print(letter + "  in   " + id)
-                    else:
-                        non_alphabet_word = True
-                        continue
-
-            # Make sure to insert the letter in lower case
-            word_string += letter.lower()
-
-        if not non_alphabet_word:
-            # Compute the PHOC of the word:
-            phoc = PHOC(word_string, cf)            
-            phoc_word.append(phoc)
-            word_id.append(id)
-            word_str.append(word_string)
-
-             
-            
-            
-            
-            
+#def process_wg_data(cf, phoc_word, word_id, word_str):
+#    # self.h_max = 0
+#    # self.w_max = 0
+#
+#    word_labels_file = open(cf.gt_path_WG, 'r')
+#    text_lines = word_labels_file.readlines()
+#    word_labels_file.close()
+#
+#    for line in text_lines:
+#        # split using space to separate the ID from the letters and delete the \n
+#        line = line[:-1].split(" ")
+#        id = line[0]
+#        letters = line[1].split("-")
+#        non_alphabet_word = False
+#        word_string = ''
+#        for letter in letters:
+#            if "s_" in letter:
+#                if "st" in letter:
+#                    letter = letter[2] + "st"
+#                elif "nd" in letter:
+#                    letter = letter[2] + "nd"
+#                elif "rd" in letter:
+#                    letter = letter[2] + "rd"
+#                elif "th" in letter:
+#                    letter = letter[2] + "th"
+#                elif letter == "s_et":
+#                    letter = "et"
+#                elif letter == "s_s":
+#                    letter = 's'
+#                elif letter == "s_0":
+#                    letter = '0'
+#                elif letter == "s_1":
+#                    letter = '1'
+#                elif letter == "s_2":
+#                    letter = '2'
+#                elif letter == "s_3":
+#                    letter = '3'
+#                elif letter == "s_4":
+#                    letter = '4'
+#                elif letter == "s_5":
+#                    letter = '5'
+#                elif letter == "s_6":
+#                    letter = '6'
+#                elif letter == "s_7":
+#                    letter = '7'
+#                elif letter == "s_8":
+#                    letter = '8'
+#                elif letter == "s_9":
+#                    letter = '9'
+#                else:
+#                    # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
+#                    if cf.keep_non_alphabet_of_GW_in_loaded_data:
+#                        if letter == "s_cm":
+#                            letter = ','
+#                        elif letter == "s_pt":
+#                            letter = '.'
+#                        elif letter == "s_sq":
+#                            letter = ';'
+#                        elif letter == "s_qo":
+#                            letter = ':'
+#                        elif letter == "s_mi":
+#                            letter = '-'
+#                        elif letter == "s_GW":
+#                            letter = "GW"
+#                        elif letter == "s_lb":
+#                            letter = '£'
+#                        elif letter == "s_bl":
+#                            letter = '('
+#                        elif letter == "s_br":
+#                            letter = ')'
+#                        elif letter == "s_qt":
+#                            letter = "'"
+#                        elif letter == "s_sl":
+#                            letter = "|"  # 306-03-04
+#                        else:
+#                            print(letter + "  in   " + id)
+#                    else:
+#                        non_alphabet_word = True
+#                        continue
+#
+#            # Make sure to insert the letter in lower case
+#            word_string += letter.lower()
+#
+#        if not non_alphabet_word:
+#            # Compute the PHOC of the word:
+#            phoc = PHOC(word_string, cf)            
+#            phoc_word.append(phoc)
+#            word_id.append(id)
+#            word_str.append(word_string)
+#
+#             
+#            
+#            
+#            
+#            
             
             
