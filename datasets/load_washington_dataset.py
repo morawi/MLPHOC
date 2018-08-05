@@ -6,17 +6,100 @@ import warnings
 import numpy as np
 from PIL import Image, ImageOps
 from torch.utils.data import Dataset
+#  from scripts.Word2PHOC import build_phoc as PHOC
 
-from scripts.data_transformations import process_wg_data
+# from scripts.data_transformations import process_wg_data
 
 warnings.filterwarnings("ignore")
+
+
+def load_wg_data(cf):
+    word_labels_file = open(cf.gt_path_WG, 'r')
+    text_lines = word_labels_file.readlines()
+    word_labels_file.close()
+    word_id=[]; word_str=[]
+    for line in text_lines:
+        # split using space to separate the ID from the letters and delete the \n
+        line = line[:-1].split(" ")
+        id = line[0]
+        letters = line[1].split("-")
+        word_string = ''
+        for letter in letters:
+            if "s_" in letter:
+                if "st" in letter:
+                    letter = letter[2] + "st"
+                elif "nd" in letter:
+                    letter = letter[2] + "nd"
+                elif "rd" in letter:
+                    letter = letter[2] + "rd"
+                elif "th" in letter:
+                    letter = letter[2] + "th"
+                elif letter == "s_et":
+                    letter = "et"
+                elif letter == "s_s":
+                    letter = 's'
+                elif letter == "s_0":
+                    letter = '0'
+                elif letter == "s_1":
+                    letter = '1'
+                elif letter == "s_2":
+                    letter = '2'
+                elif letter == "s_3":
+                    letter = '3'
+                elif letter == "s_4":
+                    letter = '4'
+                elif letter == "s_5":
+                    letter = '5'
+                elif letter == "s_6":
+                    letter = '6'
+                elif letter == "s_7":
+                    letter = '7'
+                elif letter == "s_8":
+                    letter = '8'
+                elif letter == "s_9":
+                    letter = '9'
+                else:
+                    # If the non-alphabet flag is false I skip this image and I do not included in the dataset.
+                    if cf.keep_non_alphabet_of_GW_in_loaded_data:
+                        if letter == "s_cm":
+                            letter = ','
+                        elif letter == "s_pt":
+                            letter = '.'
+                        elif letter == "s_sq":
+                            letter = ';'
+                        elif letter == "s_qo":
+                            letter = ':'
+                        elif letter == "s_mi":
+                            letter = '-'
+                        elif letter == "s_GW":
+                            letter = "GW"
+                        elif letter == "s_lb":
+                            letter = '£'
+                        elif letter == "s_bl":
+                            letter = '('
+                        elif letter == "s_br":
+                            letter = ')'
+                        elif letter == "s_qt":
+                            letter = "'"
+                        elif letter == "s_sl":
+                            letter = "|"  # 306-03-04
+                        else:
+                            print(letter + "  in   " + id)
+            # Make sure to insert the letter in lower case
+            word_string += letter.lower()
+
+        word_id.append(id)
+        word_str.append(word_string)
+        
+    return word_str, word_id
+
 
 class WashingtonDataset(Dataset):
 
     def __init__(self, cf, train=True, transform=None, data_idx = np.arange(1), complement_idx=False):
         """
         Args:
-            :param cf: configuration file variables
+            param cf: configuration file variables
             transform (callable, optional): Optional transform to be applied
             on a sample.
             Train(flag): generate the training set!
@@ -31,81 +114,51 @@ class WashingtonDataset(Dataset):
         self.root_dir = cf.dataset_path_WG
         self.train = train  # training set or test set
         self.transform = transform
-        self.keep_non_alphabet_in_GW = cf.keep_non_alphabet_in_GW
+        self.keep_non_alphabet_in_GW = cf.keep_non_alphabet_of_GW_in_analysis
         self.word_id = []
         self.word_str = []
-        self.phoc_word = []
-        self.len_phoc = 0
+        self.cf = cf
 
-        aux_word_id = []
-        aux_word_str = []
-        aux_phoc_word = []
-
-        process_wg_data(cf, aux_phoc_word, aux_word_id, aux_word_str)               
+        aux_word_str, aux_word_id = load_wg_data(cf)               
         
         len_data = len(aux_word_id)
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
             np.random.seed(cf.rnd_seed_value)
-            data_idx = np.sort(np.random.choice(len_data, size=int(len_data * cf.split_percentage), replace=False) )
+            data_idx = np.sort(np.random.choice(len_data, size=int(len_data * cf.split_percentage), 
+                                                replace=False) )
             
         if complement_idx:
             all_idx = np.arange(0, len_data)
             data_idx = np.sort( np.setdiff1d(all_idx, data_idx, assume_unique=False) )
-       
 
         for idx in data_idx:
-            self.phoc_word.append(aux_phoc_word[idx])
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
-
-        self.len_phoc = len(self.phoc_word[0])
+        
         self.data_idx = data_idx
-
+        
     def num_classes(self):
-        return self.len_phoc
-
+        return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+    
     def __len__(self):
         return len(self.word_id)
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        data = Image.open(img_name)  
-     
-        # Invert the input image 
-        data = data.convert('L')
-        data = ImageOps.invert(data)
-#        data = data.convert('1')
-        # data.show()
-
-        # Convert data to numpy array
+        data = Image.open(img_name)       
+        data = data.convert('L') # to grayscale
+        data = ImageOps.invert(data) # invert        
         data = np.array(data.getdata(),
                     np.uint8).reshape(data.size[1], data.size[0], 1)
-        data = (data/data.max()).astype('uint8') # normalized to [0,1] 
+        data = (data/data.max()).astype('uint8') # normalize to [0,1] 
         
         if self.transform:
             data = self.transform(data)
-        target = self.phoc_word[idx]
+               
         word_str = self.word_str[idx]        
-
+        target = self.cf.PHOC(word_str, self.cf)
+        
         return data, target, word_str
     
     
-# total_data = len(aux_word_id)
-#        np.random.seed(cf.rnd_seed_value)
-#        train_idx = np.random.choice(total_data, size=int(total_data*cf.split_percentage),replace=False)
-#        train_idx = np.sort(train_idx)
-#        test_idx = []
-#        prev_num = -1
-#        for idx in range(train_idx.shape[0]):
-#            if idx != 0:
-#                prev_num = train_idx[idx-1]
-#            while train_idx[idx] != prev_num + 1:
-#                prev_num = prev_num + 1
-#                test_idx.append(prev_num)
-#        test_idx = np.sort(test_idx)
-#
-#        # Choose the training or the testing indexes
-#        if self.train:
-#            data_idx = train_idx
-#        else:
-#            data_idx = test_idx
+ 
