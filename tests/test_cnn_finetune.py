@@ -18,7 +18,7 @@ from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
-from scripts.data_transformations import PadImage
+from scripts.data_transformations import PadImage, ImageThinning
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 
 
@@ -39,30 +39,36 @@ def test_cnn_finetune(cf):
         re-wriet these if-stmnt in a btter, and clearer form
      '''
 
+    thin_image = ImageThinning(p = cf.thinning_threshold)
+
 
     if cf.resize_images:
         if cf.pad_images:
-            image_transfrom = transforms.Compose([pad_image,
-                                                  transforms.ToPILImage(),
-                                                  transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                                                  transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                  #transforms.Normalize(mean, std),
-                                                  ])
+            image_transfrom = transforms.Compose([
+                  #  thin_image,
+                    pad_image,
+                    transforms.ToPILImage(),
+                    transforms.Scale((cf.input_size[0], cf.input_size[1])),
+                    transforms.ToTensor(),
+                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+  #transforms.Normalize(mean, std),
+                      ])
         else:
-            image_transfrom = transforms.Compose([transforms.ToPILImage(),
-                                                  transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                                                  transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                  # transforms.Normalize(mean, std),
-                                                  ])
+            image_transfrom = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Scale((cf.input_size[0], cf.input_size[1])),
+                    transforms.ToTensor(),
+                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                    # transforms.Normalize(mean, std),
+                    ])
     else:
         if cf.pad_images:
-            image_transfrom = transforms.Compose([pad_image,
-                                                  transforms.ToTensor(),
-                                                  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                  # transforms.Normalize(mean, std),
-                                                  ])
+            image_transfrom = transforms.Compose([
+                    pad_image,
+                    transforms.ToTensor(),
+                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                    # transforms.Normalize(mean, std),
+                    ])
         else:
             image_transfrom = transforms.Compose([transforms.ToTensor(),
                                                   # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),

@@ -18,13 +18,14 @@ elif encoder == 'rawhoc' :
 elif encoder == 'pro_hoc': 
     from scripts.Word2RAWHOC import build_pro_hoc as PHOC
     unigram_levels               = [2, 3, 4, 5 ]  # # PHOC levels   
-    rawhoc_repeates = 2
+    rawhoc_repeates = 1
     max_word_len = 24   
     
 else: 
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')                                      
 
-    
+tolerance = 0.01
+ 
 
  
 
@@ -38,7 +39,7 @@ if dataset_name ==  'WG': # 645 x 120
 elif dataset_name == 'IFN': # 1069 x 226
     MAX_IMAGE_WIDTH  = 1069
     MAX_IMAGE_HEIGHT = 226  
-    H_ifn_scale      = 120  # to skip scaling the height, use 0
+    H_ifn_scale      = 0  # to skip scaling the height, use 0
     
 elif dataset_name == 'IAM': # 1087 x 241
     MAX_IMAGE_WIDTH  = 1087
@@ -48,15 +49,14 @@ elif dataset_name == 'IAM': # 1087 x 241
 elif dataset_name == 'WG+IFN':   
     MAX_IMAGE_WIDTH  = 1069 # 
     MAX_IMAGE_HEIGHT = 226     
-    H_ifn_scale      = 0 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
-
+    H_ifn_scale      = 120 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
 
 
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 
 split_percentage             = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-rnd_seed_value               =  0 # int(time.time())  #  0 # time.time() should be used later
+rnd_seed_value               =  1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
 train_split                  = True # When True, this is the training set 
 
 # Input Images
@@ -79,20 +79,20 @@ epochs                       = 300
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.1 #10e-4
+lr_milestones                = [50, 100, 200 ]  # it is better to move this in the config
+lr_gamma                     = 0.1 # learning rate decay calue
 
 dropout_probability          = 0.5
 
 
-loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
-mAP_dist_metric              = 'cosine' # See options below
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
-lr_milestones                = [10, 30, 50, 100, 200 ]  # it is better to move this in the config
-lr_gamma                     = 0.1 # learning rate decay calue
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 1000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
                                 # every val > threshold will be converted to 1
                               # threshold 0.5 will run round() function
+loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
+mAP_dist_metric              = 'cosine' # See options below
 
 ''' Path to  Data '''
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'

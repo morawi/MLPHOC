@@ -10,7 +10,6 @@ from scripts.Word2PHOC import build_phoc as build_phoc
 import sys
 
 def build_rawhoc(word, cf):
-    # phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
     no_symbols = len(cf.phoc_unigrams)
     bitword_width = np.ceil(np.log2(no_symbols)).astype('uint8')
     rawhoc = np.zeros(cf.rawhoc_repeates*bitword_width*cf.max_word_len)
@@ -25,7 +24,8 @@ def build_rawhoc(word, cf):
         offset = index*cf.rawhoc_repeates*bitword_width
         rawhoc[offset: offset + cf.rawhoc_repeates*bitword_width] = bb
     
-    return rawhoc
+    # rawhoc = [1-cf.tolerance if x>0.5 else cf.tolerance for x in rawhoc]
+    return rawhoc 
 
 
 def build_pro_hoc(word, cf):

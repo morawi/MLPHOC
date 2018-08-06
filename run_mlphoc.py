@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
-print('------- p_raw_hoc length is: ', len(cf.PHOC('', cf)) )
+print('------- the_hoc length is: ', len(cf.PHOC('', cf)) )
 # test_dataload(cf) # Test the data loading of the different dataset
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 result, train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
