@@ -102,7 +102,9 @@ class IfnEnitDataset(Dataset):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         data = Image.open(img_name)
         if not(self.cf.H_ifn_scale ==0): # resizing just the height            
-            data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS)
+#           data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS) 
+            data = data.resize( ( int(data.size[0]*self.cf.H_ifn_scale/data.size[1]),
+                                self.cf.H_ifn_scale), Image.ANTIALIAS)
         
         # Convert data to numpy array
         data = np.array(data.getdata(),
