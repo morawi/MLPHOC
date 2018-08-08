@@ -117,11 +117,14 @@ class WashingtonDataset(Dataset):
         self.keep_non_alphabet_in_GW = cf.keep_non_alphabet_of_GW_in_analysis
         self.word_id = []
         self.word_str = []
+        self.weights = 1
         self.cf = cf
-
+        
         aux_word_str, aux_word_id = load_wg_data(cf)               
         
         len_data = len(aux_word_id)
+        
+        
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
             np.random.seed(cf.rnd_seed_value)
             data_idx = np.sort(np.random.choice(len_data, size=int(len_data * cf.split_percentage), 
@@ -136,6 +139,10 @@ class WashingtonDataset(Dataset):
             self.word_str.append(aux_word_str[idx])
         
         self.data_idx = data_idx
+        self.weights = np.ones( len(data_idx) )
+    
+    def add_weights(self, weights):
+        self.weights = weights
         
     def num_classes(self):
         return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
@@ -158,7 +165,7 @@ class WashingtonDataset(Dataset):
         word_str = self.word_str[idx]        
         target = self.cf.PHOC(word_str, self.cf)
         
-        return data, target, word_str
+        return data, target, word_str, self.weights[idx]
     
     
  
