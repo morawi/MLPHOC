@@ -52,6 +52,7 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
                         cf.phoc_unigrams) + region * len(cf.phoc_unigrams) + char_index
                     phoc[feat_vec_index] = 1
        
-    # phoc = [1-cf.tolerance if x>0.5 else cf.tolerance for x in phoc]
+    if cf.phoc_tolerance>0:
+        phoc = np.array([1-cf.tolerance if x>0.5 else cf.tolerance for x in phoc])
     return phoc 
 
