@@ -14,11 +14,10 @@ start_timer = time.time()
 config_path = 'config/config_file_wg.py'
 test_name = '' # Optional: name of the sub folder where to store the results
 
+logger = logging.getLogger(__name__)
 # Load the configuration file
 configuration = Configuration(config_path, test_name)
 cf = configuration.load()
-
-logger = logging.getLogger(__name__)
 xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
