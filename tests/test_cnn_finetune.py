@@ -13,12 +13,12 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 # from utils import globals
-from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE
+from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE, add_weights_of_words
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
-from scripts.data_transformations import PadImage, ImageThinning
+from scripts.data_transformations import PadImage, ImageThinning, NoneTransform
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 
 
@@ -27,54 +27,17 @@ def test_cnn_finetune(cf):
     
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
-#    mean = (0.5, 0.5, 0.5) 
-#    std = (0.25, 0.25 , 0.25)     
-
-    # Image transformations
-    if cf.pad_images:
-        pad_image = PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT))
     
-    '''  I am not sure if these transforms.ToPILImage() are needed?
-        we need to inspect everyting, and I would really like to 
-        re-wriet these if-stmnt in a btter, and clearer form
-     '''
-
-    thin_image = ImageThinning(p = cf.thinning_threshold)
-
-
-    if cf.resize_images:
-        if cf.pad_images:
-            image_transfrom = transforms.Compose([
-                  #  thin_image,
-                    pad_image,
-                    transforms.ToPILImage(),
-                    transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                    transforms.ToTensor(),
-                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-  #transforms.Normalize(mean, std),
-                      ])
-        else:
-            image_transfrom = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.Scale((cf.input_size[0], cf.input_size[1])),
-                    transforms.ToTensor(),
-                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                    # transforms.Normalize(mean, std),
-                    ])
-    else:
-        if cf.pad_images:
-            image_transfrom = transforms.Compose([
-                    pad_image,
-                    transforms.ToTensor(),
-                    transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                    # transforms.Normalize(mean, std),
-                    ])
-        else:
-            image_transfrom = transforms.Compose([transforms.ToTensor(),
-                                                  # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                                  # transforms.Normalize(mean, std),
-                                                  ])
-
+    image_transfrom = transforms.Compose([
+            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold> 0 else NoneTransform(),
+            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
+            transforms.ToPILImage(),
+            transforms.Scale((cf.input_size[0], cf.input_size[1])) if cf.resize_images else NoneTransform(),
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),
+            ])
+#        
     if cf.dataset_name == 'WG':
         print('...................Loading WG dataset...................')
         train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
@@ -82,7 +45,6 @@ def test_cnn_finetune(cf):
                             data_idx =train_set.data_idx, complement_idx = True)
     
     elif cf.dataset_name == 'IFN':
-        # TODO
         print('...................Loading IFN dataset...................')        
         train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
         test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
@@ -90,7 +52,6 @@ def test_cnn_finetune(cf):
         
     elif cf.dataset_name =='WG+IFN': 
         print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
-        ## TODO
         train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
         test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
                                   data_idx_WG = train_set.data_idx_WG, 
@@ -104,7 +65,9 @@ def test_cnn_finetune(cf):
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
                
-     
+    if cf.use_weight_to_balance_data: 
+        print('Adding weights to balance the data')
+        train_set = add_weights_of_words(train_set)
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
                                   shuffle=cf.shuffle, num_workers=cf.num_workers)
 
@@ -122,8 +85,10 @@ def test_cnn_finetune(cf):
     model = model.to(device)
 
    
-    if cf.loss == 'BCEWithLogitsLoss':
+    if cf.loss == 'BCEWithLogitsLoss': 
+        
         criterion = nn.BCEWithLogitsLoss() # size_average=True, reduction='sum')
+        
     elif cf.loss == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
     else: 
@@ -136,10 +101,17 @@ def test_cnn_finetune(cf):
         total_loss = 0
         total_size = 0
         model.train()
-        for batch_idx, (data, target, word_str) in enumerate(train_loader):
-            data, target = data.to(device), target.to(device)
+        for batch_idx, (data, target, word_str, weight) in enumerate(train_loader):
+            data, target = data.to(device), target.to(device) 
             optimizer.zero_grad()
             output = model(data)
+            if cf.use_weight_to_balance_data:
+                weight = weight.to(device)
+                output = torch.mul(weight, torch.transpose(output.double(), 0, 1) )
+                output = torch.transpose(output, 0, 1)
+                target = torch.mul(weight, torch.transpose(target.double(), 0, 1) )
+                target = torch.transpose(target, 0, 1)
+                
             if cf.loss=='MSELoss': 
                 output= F.sigmoid(output)
                 loss = criterion(output.float(), target.float())
@@ -164,7 +136,7 @@ def test_cnn_finetune(cf):
         target_all = torch.tensor([], dtype=torch.float64, device=device)
         word_str_all = ()
         with torch.no_grad():
-            for data, target, word_str in test_loader:
+            for data, target, word_str, weight in test_loader: # weight is trivial here
                 data, target = data.to(device), target.to(device)
                 output = model(data)
                 test_loss += criterion(output.float(), target.float()).item()

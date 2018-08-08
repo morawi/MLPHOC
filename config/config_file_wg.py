@@ -6,31 +6,28 @@ import time   # used to create a seed for the randomizers
 4- add scaling preprocessing, for IAM only, to scale if the image has top and down char parts 
 
 '''
-encoder = 'pro_hoc' # ['rawhoc', 'phoc', 'p_raw_hoc']
+encoder = 'phoc' # ['rawhoc', 'phoc', 'p_raw_hoc']
 if encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
     unigram_levels               = [2, 3, 4, 5 ]  # # PHOC levels                                            
 
 elif encoder == 'rawhoc' :
     from scripts.Word2RAWHOC import build_rawhoc as PHOC
-    rawhoc_repeates = 3
+    rawhoc_repeates = 2
     max_word_len = 24
 elif encoder == 'pro_hoc': 
     from scripts.Word2RAWHOC import build_pro_hoc as PHOC
     unigram_levels               = [2, 3, 4, 5 ]  # # PHOC levels   
-    rawhoc_repeates = 1
+    rawhoc_repeates = 2
     max_word_len = 24   
     
 else: 
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')                                      
 
-tolerance = 0.01
- 
-
- 
+phoc_tolerance = 0 # if above 0, it will perturbate the phoc/rawhoc by tolerance
 
 # Dataset
-dataset_name            = 'IFN'#+IFN'       # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name            = 'WG'#+IFN'       # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
@@ -56,34 +53,36 @@ keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in 
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 
 split_percentage             = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-rnd_seed_value               =  1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
+rnd_seed_value               = 1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
 train_split                  = True # When True, this is the training set 
 
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
 input_size                   = [60, 300] # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
-                                            # H= 40, then, W = (576/226)*40 ~= 100
+normalize_images             = False
+   
+                                         # H= 40, then, W = (576/226)*40 ~= 100
 # Dataloader
 batch_size_train             = 10  # Prev works say the less the better, 10 is best?!
 batch_size_test              = 300  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-thinning_threshold           = 0.2 # This value should be decided upon investigating 
+thinning_threshold           = 0 # This value should be decided upon investigating 
                                     # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
-                                    # use 0 ti indicate no thinning, only used with IAM, as part of the transform
+                                    # use 0 ti indicate no thinning, could only be used with IAM, as part of the transform
 
 # Model parameters
 model_name                   = 'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-epochs                       = 300 
+epochs                       = 100 
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
 learning_rate                = 0.1 #10e-4
-lr_milestones                = [50, 100, 200 ]  # it is better to move this in the config
+lr_milestones                = [ 40, 80 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 
 dropout_probability          = 0.5
-
+use_weight_to_balance_data   = True
 
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training

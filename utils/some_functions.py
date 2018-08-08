@@ -25,13 +25,13 @@ def random_seeding(seed_value, use_cuda):
     if use_cuda: torch.cuda.manual_seed_all(seed_value)
     
 
-"""Example:
+def word_to_label(word_str):
+    """Example:
     x= ['hello', 'John', 'hi', 'John', 'hello', 'pumpum']
     output should be something like this:
     y=[0, 1, 2, 1, 0, 3] """
-def word_to_label(word_str):
-    d = {}
-    
+
+    d = {}    
     count = 0
     for i in word_str:
       if i not in d:
@@ -172,6 +172,21 @@ def test_varoius_thresholds(result, cf):
 #    
 #    ss= ss/ ss0
 #    return ss
+       
+        
+def add_weights_of_words(data_set):
+    
+    word_str = []
+    for data, target, one_word_str, weights in data_set:
+        word_str.append(one_word_str)        
+    
+    # word_str=['apple','egg','apple','banana','egg','apple']
+    N = len(word_str)
+    wordfreq = [word_str.count(w) for w in word_str]
+    weights = 1 - np.array(wordfreq)/N
+    data_set.add_weights(weights)
+    return data_set
+    
         
 ''' moment as a coeficent of variation'''
 def word_str_moment(word_str):

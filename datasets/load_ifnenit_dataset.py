@@ -76,7 +76,8 @@ class IfnEnitDataset(Dataset):
         len_data = len(aux_word_id)
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
             np.random.seed(cf.rnd_seed_value)
-            data_idx = np.sort(np.random.choice(len_data, size=int(len_data * cf.split_percentage), replace=False) )
+            data_idx = np.sort(np.random.choice(len_data, 
+                                                size=int(len_data * cf.split_percentage), replace=False) )
             
         if complement_idx:
             all_idx = np.arange(0, len_data)
