@@ -24,7 +24,8 @@ def build_rawhoc(word, cf):
         offset = index*cf.rawhoc_repeates*bitword_width
         rawhoc[offset: offset + cf.rawhoc_repeates*bitword_width] = bb
     
-    # rawhoc = [1-cf.tolerance if x>0.5 else cf.tolerance for x in rawhoc]
+    if cf.phoc_tolerance>0:
+        rawhoc = np.array([1-cf.tolerance if x>0.5 else cf.tolerance for x in rawhoc])
     return rawhoc 
 
 
