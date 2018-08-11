@@ -28,7 +28,7 @@ def find_max_HW_in_data(data_set):
         max_w = max(max_w, w)
         max_h = max(max_h, h)
         
-    print('max_h', max_h)
+    print('\n max_h', max_h)
     print('max_w',max_w) 
     
     
@@ -67,18 +67,18 @@ cf.split_percentage = 1
 
 
 folder_of_data                = '/home/malrawi/Desktop/My Programs/all_data/'
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_e/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_e/tru/' # path to IFN ground_truth 
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_d/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_d/tru/' # path to IFN ground_truth 
 cf.dataset_path_IFN = dataset_path_IFN
 cf.gt_path_IFN = gt_path_IFN
 
 
 thin_image = ImageThinning(p = cf.thinning_threshold)
-image_transfrom = transforms.Compose([thin_image,
-                         # transforms.ToPILImage(),
-                         # transforms.ToTensor(),
-                         # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                          # transforms.Normalize(mean, std),
+image_transfrom = transforms.Compose([ thin_image,
+                         transforms.ToPILImage(),
+                         transforms.ToTensor(),
+                         transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                         # transforms.Normalize(mean, std),
                           ])
 
 # cf.dataset_name = 'IAM'; 
@@ -87,12 +87,12 @@ image_transfrom = transforms.Compose([thin_image,
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
 cf.dataset_name = 'WG'
-data_set = WashingtonDataset(cf, train=True, transform=None)
-# cf.dataset_name                 = 'IFN'   ; cf.H_ifn_scale = 0
-# data_set = IfnEnitDataset(cf, train=True, transform=None)
+data_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
+#cf.dataset_name                 = 'IFN'   ; cf.H_ifn_scale = 0
+#data_set = IfnEnitDataset(cf, train=True, transform=None)
 
 # find_max_HW_in_data(data_set)
-hist_of_text_to_background_ratio(data_set)
+# hist_of_text_to_background_ratio(data_set)
 
 # test_thinning(data_set)
 

@@ -9,6 +9,7 @@ from __future__ import print_function, division
 import numpy as np
 from torchvision import transforms
 from skimage.morphology import thin as skimage_thinner
+from PIL import Image
 
 
 #  Method to compute the padding odf the input image to the max image size
@@ -19,7 +20,9 @@ def get_padding(image, output_size):
     w = image.shape[1]
 
     pad_width = output_max_width - w
-    if pad_width<0 : print('MAX_IMAGE_WIDTH is smaller than expected, config_file'); exit(0)
+    if pad_width<0 : 
+        print('MAX_IMAGE_WIDTH is smaller than expected, config_file'); 
+        exit(0)
     
     if pad_width < 2:
         pad_left = pad_width
@@ -88,7 +91,6 @@ class NoneTransform(object):
 
 
 def image_thinning(img, p):
-    # thinned = skimage_thinner(image) 
     thin_iter_step  = 1   
     img=img.squeeze()
     ss = img.shape
@@ -105,11 +107,12 @@ def image_thinning(img, p):
             break
     
     img = img.reshape(img.shape[0], img.shape[1], 1)
-    return img*img_max_orig # Now, bringing the normalization back to all images
-
+    img=  img*img_max_orig # Now, bringing the normalization back to all images
+    
+    return img
 
 class ImageThinning(object):
-    """ Thin the image 
+    """ Thin the image input as numpy array and output as numpy array 
         To be used as part of  torchvision.transforms
     Args: p, a threshold value to determine the thinning
         

@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 # from utils import globals
-from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE, add_weights_of_words
+from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
@@ -48,7 +48,7 @@ def test_cnn_finetune(cf):
         print('...................Loading IFN dataset...................')        
         train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
         test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
-                            data_idx =train_set.data_idx, complement_idx = True)
+                            data_idx = train_set.data_idx, complement_idx = True)
         
     elif cf.dataset_name =='WG+IFN': 
         print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
@@ -59,15 +59,17 @@ def test_cnn_finetune(cf):
                                         complement_idx = True)
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................') 
-        train_set = IAM_words(cf, mode='train', transform = image_transfrom, augmentation=True )
-        test_set = IAM_words(cf, mode='test', transform = image_transfrom, augmentation=True )
+        train_set = IAM_words(cf, mode='test', transform = image_transfrom)
+        test_set = IAM_words(cf, mode='validate', transform = image_transfrom)
         
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
                
     if cf.use_weight_to_balance_data: 
         print('Adding weights to balance the data')
-        train_set = add_weights_of_words(train_set)
+        # train_set = add_weights_of_words(train_set)
+        train_set.add_weights_of_words()
+        
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
                                   shuffle=cf.shuffle, num_workers=cf.num_workers)
 
@@ -85,10 +87,11 @@ def test_cnn_finetune(cf):
     model = model.to(device)
 
    
-    if cf.loss == 'BCEWithLogitsLoss': 
-        
-        criterion = nn.BCEWithLogitsLoss() # size_average=True, reduction='sum')
-        
+    if cf.loss == 'BCEWithLogitsLoss':
+        if cf.use_weight_to_balance_data:         
+            criterion = nn.BCEWithLogitsLoss(reduce = None) # size_average=True, reduction='sum')
+        else: 
+            criterion = nn.BCEWithLogitsLoss()          
     elif cf.loss == 'CrossEntropyLoss':
         criterion = nn.CrossEntropyLoss()
     else: 
@@ -106,13 +109,12 @@ def test_cnn_finetune(cf):
             optimizer.zero_grad()
             output = model(data)
             if cf.use_weight_to_balance_data:
-                weight = weight.to(device)
-                output = torch.mul(weight, torch.transpose(output.double(), 0, 1) )
-                output = torch.transpose(output, 0, 1)
-                target = torch.mul(weight, torch.transpose(target.double(), 0, 1) )
-                target = torch.transpose(target, 0, 1)
-                
-            if cf.loss=='MSELoss': 
+                weight = weight.to(device)                
+                loss = criterion( output, target )
+                loss = torch.mul(weight, torch.transpose(loss, 0, 1) )
+                loss= torch.mean(loss)
+                 
+            elif cf.loss=='MSELoss': 
                 output= F.sigmoid(output)
                 loss = criterion(output.float(), target.float())
             else: 
@@ -132,17 +134,20 @@ def test_cnn_finetune(cf):
         model.eval()        
         test_loss = 0
         correct = 0
-        pred_all = torch.tensor([], dtype=torch.float64, device=device)
-        target_all = torch.tensor([], dtype=torch.float64, device=device)
+        pred_all = torch.tensor([], dtype=torch.float32, device=device)
+        target_all = torch.tensor([], dtype=torch.float32, device=device)
         word_str_all = ()
         with torch.no_grad():
             for data, target, word_str, weight in test_loader: # weight is trivial here
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                test_loss += criterion(output.float(), target.float()).item()
+                loss = criterion(output.float(), target.float())
+                if cf.use_weight_to_balance_data:
+                    test_loss += torch.mean(loss).item()
+                else: test_loss += loss.item()
                 output = F.sigmoid(output)
                 pred = output.data
-                pred = pred.type(torch.cuda.DoubleTensor)
+                # pred = pred.type(torch.cuda.DoubleTensor)
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
                 # Accumulate from batches to one variable (##_all)
                 pred_all = torch.cat((pred_all, pred), 0)
@@ -212,4 +217,11 @@ def test_cnn_finetune(cf):
     return result, train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
     
     
-    
+# '''   
+# if cf.use_weight_to_balance_data:
+#                weight = weight.to(device)
+#                output = torch.mul(weight, torch.transpose(output.double(), 0, 1) )
+#                output = torch.transpose(output, 0, 1)
+#                target = torch.mul(weight, torch.transpose(target.double(), 0, 1) )
+#                target = torch.transpose(target, 0, 1)
+#'''            

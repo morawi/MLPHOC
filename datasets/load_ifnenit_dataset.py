@@ -12,7 +12,10 @@ from utils import globals
 
 warnings.filterwarnings("ignore")
 
-def load_ifnedit_data(cf, phoc_word, word_id, word_str):
+def load_ifnedit_data(cf):
+    word_id = []
+    word_str = []
+    phoc_word = []
    
     # Get all the '.tru' files from the folder
     tru_files = glob.glob(cf.gt_path_IFN + "*.tru")
@@ -40,7 +43,7 @@ def load_ifnedit_data(cf, phoc_word, word_id, word_str):
                         phoc_word.append(phoc)
                         word_id.append(id)
                         word_str.append(arabic_word)
-
+    return phoc_word, word_id, word_str
 
 class IfnEnitDataset(Dataset):
 
@@ -67,13 +70,10 @@ class IfnEnitDataset(Dataset):
         self.word_str = []
         self.phoc_word = []
 
-        aux_word_id = []
-        aux_word_str = []
-        aux_phoc_word = []
-
-        load_ifnedit_data(cf, aux_phoc_word, aux_word_id, aux_word_str)
         
+        aux_phoc_word, aux_word_id, aux_word_str = load_ifnedit_data(cf)        
         len_data = len(aux_word_id)
+        
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
             np.random.seed(cf.rnd_seed_value)
             data_idx = np.sort(np.random.choice(len_data, 
@@ -87,10 +87,19 @@ class IfnEnitDataset(Dataset):
             self.phoc_word.append(aux_phoc_word[idx])
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
-            
-        self.len_phoc = len(self.phoc_word[0])
-        self.data_idx = data_idx
         
+        self.data_idx = data_idx
+        self.weights = np.ones( len(data_idx), dtype = 'uint8' )
+    
+    def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
+        N = len(self.word_str)
+        wordfreq = [self.word_str.count(w) for w in self.word_str]
+        weights = 1 - np.array(wordfreq, dtype = 'float32')/N        
+        self.weights = weights
+    
+#    def add_weights(self, weights):
+#        self.weights = weights # weights to be used to balance the data, as input to the loss
+
     def num_classes(self):
         return len(self.phoc_word[0])
         
@@ -103,9 +112,9 @@ class IfnEnitDataset(Dataset):
         img_name = os.path.join(self.dir_bmp, self.word_id[idx] + '.bmp')
         data = Image.open(img_name)
         if not(self.cf.H_ifn_scale ==0): # resizing just the height            
-#           data = data.resize((data.size[0], self.cf.H_ifn_scale), Image.ANTIALIAS) 
-            data = data.resize( ( int(data.size[0]*self.cf.H_ifn_scale/data.size[1]),
-                                self.cf.H_ifn_scale), Image.ANTIALIAS)
+            new_w = int(data.size[0]*self.cf.H_ifn_scale/data.size[1])
+            if new_w>self.cf.MAX_IMAGE_WIDTH: new_w = self.cf.MAX_IMAGE_WIDTH
+            data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
         
         # Convert data to numpy array
         data = np.array(data.getdata(),
@@ -120,7 +129,7 @@ class IfnEnitDataset(Dataset):
         target = self.phoc_word[idx]
         word_str = self.word_str[idx]
 
-        return data, target, word_str
+        return data, target, word_str, self.weights[idx]
     
     
     

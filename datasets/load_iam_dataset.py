@@ -99,15 +99,16 @@ class IAM_words(Dataset):
         self.output_max_len = OUTPUT_MAX_LEN            
         self.transform = transform
         self.len_phoc = len( PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
-
+        self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
+        
+        # label, label_mask = label_padding(' '.join(word[1:]), self.output_max_len)
+        
     def __getitem__(self, index):
-        word = self.file_label[index]                
-        label, label_mask = label_padding(' '.join(word[1:]), self.output_max_len)
+        word = self.file_label[index]  
         word_str = word[1] # word_str = word[1].lower(); # to only keep lower-case       
-
         img = get_the_image(word[0], self.transform, self.cf) 
         target = PHOC(word_str, self.cf)        
-        return img, target, word_str
+        return img, target, word_str, self.weights[index]
 
     def __len__(self):
         return len(self.file_label)

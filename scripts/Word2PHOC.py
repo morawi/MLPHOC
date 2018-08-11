@@ -23,7 +23,7 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
 
     # prepare output matrix
     phoc_size = len(cf.phoc_unigrams) * np.sum(cf.unigram_levels)
-    phoc = np.zeros(phoc_size)
+    phoc = np.zeros(phoc_size,  dtype='float32')
 
     # prepare some lambda functions
     occupancy = lambda k, n: [float(k) / n, float(k + 1) / n]
@@ -53,6 +53,6 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
                     phoc[feat_vec_index] = 1
        
     if cf.phoc_tolerance>0:
-        phoc = np.array([1-cf.tolerance if x>0.5 else cf.tolerance for x in phoc])
+        phoc = np.array([1-cf.tolerance if x>0.5 else cf.tolerance for x in phoc]) #, dtype = 'float32')
     return phoc 
 

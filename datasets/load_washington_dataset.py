@@ -4,7 +4,7 @@ import os
 import warnings
 
 import numpy as np
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageChops
 from torch.utils.data import Dataset
 #  from scripts.Word2PHOC import build_phoc as PHOC
 
@@ -139,10 +139,16 @@ class WashingtonDataset(Dataset):
             self.word_str.append(aux_word_str[idx])
         
         self.data_idx = data_idx
-        self.weights = np.ones( len(data_idx) )
+        self.weights = np.ones( len(data_idx), dtype = 'uint8' )
     
-    def add_weights(self, weights):
+    def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
+        N = len(self.word_str)
+        wordfreq = [self.word_str.count(w) for w in self.word_str]
+        weights = 1 - np.array(wordfreq, dtype = 'float32')/N        
         self.weights = weights
+
+#    def add_weights(self, weights):
+#        self.weights = weights # weights to be used to balance the data, as input to the loss
         
     def num_classes(self):
         return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
@@ -152,7 +158,8 @@ class WashingtonDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        data = Image.open(img_name)       
+        data = Image.open(img_name)   
+        # data = data.ImageChops.invert()
         data = data.convert('L') # to grayscale
         data = ImageOps.invert(data) # invert        
         data = np.array(data.getdata(),

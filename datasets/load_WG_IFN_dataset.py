@@ -50,10 +50,13 @@ class WG_IFN_Dataset(data.Dataset):
 
     self.data_idx_WG = self.datasetWG.data_idx # this is needed, to be passed from one set to another
     self.data_idx_IFN = self.datasetIFN.data_idx # this is needed, to be passed from one set to another
-        
+          
+  def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
+      self.datasetWG.add_weights_of_words()
+      self.datasetIFN.add_weights_of_words()
 
   def num_classes(self):
-    return self.datasetIFN.len_phoc
+    return self.datasetIFN.num_classes() #IFN and WG have the same phoc size
 
   def __getitem__(self, index):
     if index < len(self.datasetWG):

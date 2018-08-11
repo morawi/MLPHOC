@@ -174,18 +174,18 @@ def test_varoius_thresholds(result, cf):
 #    return ss
        
         
-def add_weights_of_words(data_set):
-    
-    word_str = []
-    for data, target, one_word_str, weights in data_set:
-        word_str.append(one_word_str)        
-    
-    # word_str=['apple','egg','apple','banana','egg','apple']
-    N = len(word_str)
-    wordfreq = [word_str.count(w) for w in word_str]
-    weights = 1 - np.array(wordfreq)/N
-    data_set.add_weights(weights)
-    return data_set
+#def add_weights_of_words(data_set):
+#    
+#    word_str = []
+#    for data, target, one_word_str, weights in data_set:
+#        word_str.append(one_word_str)        
+#    
+#    # word_str=['apple','egg','apple','banana','egg','apple']
+#    N = len(word_str)
+#    wordfreq = [word_str.count(w) for w in word_str]
+#    weights = 1 - np.array(wordfreq)/N
+#    data_set.add_weights(weights)
+#    return data_set
     
         
 ''' moment as a coeficent of variation'''

@@ -27,14 +27,14 @@ else:
 phoc_tolerance = 0 # if above 0, it will perturbate the phoc/rawhoc by tolerance
 
 # Dataset
-dataset_name            = 'WG'#+IFN'       # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name            = 'IAM'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
     MAX_IMAGE_HEIGHT = 120
 
 elif dataset_name == 'IFN': # 1069 x 226
-    MAX_IMAGE_WIDTH  = 1069
+    MAX_IMAGE_WIDTH  = 1069 # (set_a: h226, w1035); (set_b: h214, w1069); (set_c: w211, h1028); (set_d: h195, w1041);  (set_e: h-197, w-977)
     MAX_IMAGE_HEIGHT = 226  
     H_ifn_scale      = 0  # to skip scaling the height, use 0
     
@@ -48,6 +48,8 @@ elif dataset_name == 'WG+IFN':
     MAX_IMAGE_HEIGHT = 226     
     H_ifn_scale      = 120 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
 
+
+use_weight_to_balance_data   = False
 
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
@@ -65,7 +67,7 @@ normalize_images             = False
                                          # H= 40, then, W = (576/226)*40 ~= 100
 # Dataloader
 batch_size_train             = 10  # Prev works say the less the better, 10 is best?!
-batch_size_test              = 300  # Higher values may trigger memory problems
+batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
 thinning_threshold           = 0 # This value should be decided upon investigating 
@@ -73,7 +75,7 @@ thinning_threshold           = 0 # This value should be decided upon investigati
                                     # use 0 ti indicate no thinning, could only be used with IAM, as part of the transform
 
 # Model parameters
-model_name                   = 'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 epochs                       = 100 
 momentum                     = 0.9
 weight_decay                 = 5*10e-5
@@ -82,7 +84,7 @@ lr_milestones                = [ 40, 80 ]  # it is better to move this in the co
 lr_gamma                     = 0.1 # learning rate decay calue
 
 dropout_probability          = 0.5
-use_weight_to_balance_data   = True
+
 
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training

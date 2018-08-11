@@ -12,7 +12,7 @@ import sys
 def build_rawhoc(word, cf):
     no_symbols = len(cf.phoc_unigrams)
     bitword_width = np.ceil(np.log2(no_symbols)).astype('uint8')
-    rawhoc = np.zeros(cf.rawhoc_repeates*bitword_width*cf.max_word_len)
+    rawhoc = np.zeros(cf.rawhoc_repeates*bitword_width*cf.max_word_len, dtype='float32')
 
     for index, char in enumerate(word):
         i = cf.phoc_unigrams.find(char)  # the one added to get rid of zero binary
