@@ -1,11 +1,5 @@
 import time   # used to create a seed for the randomizers
 
-'''
-
-3- add thininig preprocessing
-4- add scaling preprocessing, for IAM only, to scale if the image has top and down char parts 
-
-'''
 encoder = 'phoc' # ['rawhoc', 'phoc', 'p_raw_hoc']
 if encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
@@ -70,9 +64,9 @@ batch_size_train             = 10  # Prev works say the less the better, 10 is b
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-thinning_threshold           = 0 # This value should be decided upon investigating 
+thinning_threshold           = 0.4 # This value should be decided upon investigating 
                                     # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
-                                    # use 0 ti indicate no thinning, could only be used with IAM, as part of the transform
+                                    # use 0 to indicate no thinning, could only be used with IAM, as part of the transform
 
 # Model parameters
 model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
@@ -83,7 +77,7 @@ learning_rate                = 0.1 #10e-4
 lr_milestones                = [ 40, 80 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 
-dropout_probability          = 0.5
+dropout_probability          = 0.2
 
 
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
@@ -132,7 +126,10 @@ elif dataset_name == 'WG+IFN':
         phoc_unigrams ="abcdefghijklmnopqrstuvwxyz0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
         
 elif dataset_name == 'IAM':
+    # all symbols
     x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    # juse just lower case
+    x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     phoc_unigrams = ''.join(map(str, x))
 else: 
     exit("Datasets to use: 'WG', 'IFN', 'IAM', or 'WG+IAM' ")
