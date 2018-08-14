@@ -91,10 +91,10 @@ class NoneTransform(object):
 
 
 def image_thinning(img, p):
+    # input image as PIL
+    # output image as numpy
+    img= np.array(img).squeeze()
     thin_iter_step  = 1   
-    img=img.squeeze()
-    ss = img.shape
-    ss = ss[0]*ss[1]
     img_max_orig = img.max()
     for i in range(25): 
         img_max = img.max()
