@@ -73,20 +73,24 @@ def get_the_image(file_name, transform, cf):
     file_name, thresh = file_name.split(',')        
     thresh = int(thresh)    
     img_name = cf.dataset_path_IAM + file_name + '.png'        
-    data = Image.open(img_name)    
-    data = data.point(lambda p: p > thresh and 255) # threshold the image
-    data = ImageOps.invert(data)    # Invert the input image 
-    # data.show()
-    # data = data.convert('L')  # this convers an image to grayscale
-    # Convert data to numpy array, so that we use it as input to transform    
-    data = np.array(data.getdata(),
-                np.uint8).reshape(data.size[1], data.size[0], 1)
-    data = (data/data.max()).astype('uint8') # normalized to [0,1] 
+    data = Image.open(img_name)     # data.show()
+    data = data.point(lambda p: p > thresh and 255) # threshold the image [0,255]
+    data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
+    
     if transform:
         data = transform(data)
-           
+
     return data
-    
+#   print(data.getextrema())
+#  data.show()
+# data = ImageOps.invert(data)    # Invert the input image  
+# data = data.convert('L')  # this convers an image to grayscale
+# Convert data to numpy array, so that we use it as input to transform    
+#    data = np.array(data.getdata(),
+#                np.uint8).reshape(data.size[1], data.size[0], 1)
+#    data = (data/data.max()).astype('uint8') # normalized to [0,1] 
+# data = data/data.max()
+
 
 
 class IAM_words(Dataset):
@@ -105,7 +109,7 @@ class IAM_words(Dataset):
         
     def __getitem__(self, index):
         word = self.file_label[index]  
-        word_str = word[1] # word_str = word[1].lower(); # to only keep lower-case       
+        word_str = word[1].lower() # word_str = word[1].lower(); # to only keep lower-case       
         img = get_the_image(word[0], self.transform, self.cf) 
         target = PHOC(word_str, self.cf)        
         return img, target, word_str, self.weights[index]
