@@ -79,10 +79,10 @@ def test_cnn_finetune(cf):
 
     model = make_model(
         cf.model_name,
-        pretrained=cf.pretrained,
-        num_classes= train_set.num_classes(),
-        input_size=(cf.input_size[0], cf.input_size[1]),
-        dropout_p=cf.dropout_probability,
+        pretrained = cf.pretrained,
+        num_classes = train_set.num_classes(),
+        input_size = cf.input_size, # [0], cf.input_size[1]),
+        dropout_p = cf.dropout_probability,
     )
     model = model.to(device)
 
@@ -98,7 +98,14 @@ def test_cnn_finetune(cf):
         criterion = nn.MSELoss()
         
 
-    optimizer = optim.SGD(model.parameters(), lr=cf.learning_rate, momentum=cf.momentum)    
+    optimizer = optim.SGD(model.parameters(), 
+                          lr = cf.learning_rate, 
+                          momentum = cf.momentum,
+                          nesterov = cf.use_nestrov_moment,
+                          weight_decay = cf.weight_decay,
+                          dampening = cf.damp_moment # if cf.damp_moment>0 else None,
+ 
+                          )    
 
     def train(epoch):
         total_loss = 0

@@ -21,7 +21,7 @@ else:
 phoc_tolerance = 0 # if above 0, it will perturbate the phoc/rawhoc by tolerance
 
 # Dataset
-dataset_name            = 'IAM'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name            = 'WG'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
@@ -55,7 +55,7 @@ train_split                  = True # When True, this is the training set
 # Input Images
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
-input_size                   = [60, 300] # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+input_size                   = (60, 300) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
 normalize_images             = False
    
                                          # H= 40, then, W = (576/226)*40 ~= 100
@@ -64,7 +64,7 @@ batch_size_train             = 10  # Prev works say the less the better, 10 is b
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-thinning_threshold           = 0.4 # This value should be decided upon investigating 
+thinning_threshold           = 0# 0.4 # This value should be decided upon investigating 
                                     # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
                                     # use 0 to indicate no thinning, could only be used with IAM, as part of the transform
 
@@ -72,18 +72,19 @@ thinning_threshold           = 0.4 # This value should be decided upon investiga
 model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 epochs                       = 100 
 momentum                     = 0.9
-weight_decay                 = 5*10e-5
+weight_decay                 = 5*10e-14
 learning_rate                = 0.1 #10e-4
 lr_milestones                = [ 40, 80 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
-
-dropout_probability          = 0.2
+use_nestrov_moment           = True 
+damp_moment                  = 0# 0.005 # 0 value will disable dampening moment
+dropout_probability          = 0.5
 
 
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 1000  # how often to report/print the training loss
-binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
+binarizing_thresh            = 0.2 # threshold to be used to binarize the net sigmoid output, 
                                 # every val > threshold will be converted to 1
                               # threshold 0.5 will run round() function
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
