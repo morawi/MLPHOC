@@ -11,6 +11,7 @@ from utils.retrieval import map_from_query_test_feature_matrices, map_from_featu
 import torch
 from collections import Counter
 from nltk.corpus import wordnet
+import random
 
 # https://www.wordfrequency.info/comparison.asp
 
@@ -21,7 +22,9 @@ def random_seeding(seed_value, use_cuda):
     '''
 
     np.random.seed(seed_value)
-    torch.manual_seed(seed_value)    
+    torch.manual_seed(seed_value)   
+    random.seed(seed_value)
+
     if use_cuda: torch.cuda.manual_seed_all(seed_value)
     
 
