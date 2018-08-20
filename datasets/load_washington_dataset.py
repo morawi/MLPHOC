@@ -160,12 +160,15 @@ class WashingtonDataset(Dataset):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
         data = Image.open(img_name)   
         # data = data.ImageChops.invert()
-        data = data.convert('L') # to grayscale
-        data = ImageOps.invert(data) # invert        
-        data = np.array(data.getdata(),
-                    np.uint8).reshape(data.size[1], data.size[0], 1)
-        data = (data/data.max()).astype('uint8') # normalize to [0,1] 
-        
+#        data = data.convert('L') # to grayscale
+#        data = ImageOps.invert(data) # invert        
+#        data = np.array(data.getdata(),
+#                    np.uint8).reshape(data.size[1], data.size[0], 1)
+#        data = (data/data.max()).astype('uint8') # normalize to [0,1] 
+#       
+        data = data.point(lambda p: p > 100 and 255) # threshold the image [0,255]
+        data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
+
         if self.transform:
             data = self.transform(data)
                

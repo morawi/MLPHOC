@@ -61,30 +61,7 @@ def remove_single_words(word_str):
     s = pd.Series(word_str)
     word_str =  s[s.duplicated(keep=False)].tolist()    
     return word_str, loc
-
-
-# depriciated and incorrect
-def find_mAP(result, cf):   
-    
-    pred = result['pred']       # test_phocs       
-    pred = binarize_the_output(pred, cf.binarizing_thresh)
-    # For QbE, we have to remove each single occurence words, 
-    # and the corresponding items in pred
-    word_str = result['word_str']
-    target = result['target'] 
-    word_str, loc = remove_single_words(word_str)    
-    pred = pred[loc]   
-    target = target[loc]
-    query_labels = word_to_label(word_str)                 
-    mAP_QbE, avg_precs = map_from_feature_matrix(pred, query_labels, cf.mAP_dist_metric, False)
-    
-    # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
-    mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
-                                                          query_labels, query_labels, cf.mAP_dist_metric)
-    
-        
-    return mAP_QbE, mAP_QbS
-    
+   
 
 def find_mAP_QbE(result, cf):       
     # For QbE, we have to remove each single occurence words, 
@@ -164,32 +141,6 @@ def test_varoius_thresholds(result, cf):
         print('Thresh val', my_thresh, '  mAP(QbS)=', mAP_QbS, '  ', 'mAP(QbE) = ', mAP_QbE, '----\n')
 
 
-#def word_str_moment(word_str):
-#    # word_str, loc = remove_single_words(word_str)
-#    vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
-#    vv = Counter(idx)
-#    ss0 = sum(vv.values())
-#    ss = 0    
-#    for i in range(0,  len(vv) ):
-#        ss += vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4
-#    
-#    ss= ss/ ss0
-#    return ss
-       
-        
-#def add_weights_of_words(data_set):
-#    
-#    word_str = []
-#    for data, target, one_word_str, weights in data_set:
-#        word_str.append(one_word_str)        
-#    
-#    # word_str=['apple','egg','apple','banana','egg','apple']
-#    N = len(word_str)
-#    wordfreq = [word_str.count(w) for w in word_str]
-#    weights = 1 - np.array(wordfreq)/N
-#    data_set.add_weights(weights)
-#    return data_set
-    
         
 ''' moment as a coeficent of variation'''
 def word_str_moment(word_str):
@@ -266,6 +217,31 @@ def ListOfWords_to_ListOfWords_statistic(list1, list2):
 
 
 
+#def word_str_moment(word_str):
+#    # word_str, loc = remove_single_words(word_str)
+#    vals, ids, idx = np.unique(word_str, return_index=True, return_inverse=True)
+#    vv = Counter(idx)
+#    ss0 = sum(vv.values())
+#    ss = 0    
+#    for i in range(0,  len(vv) ):
+#        ss += vv[i]/len(vv) + (vv[i]/len(vv) )**2 + (vv[i]/len(vv) )**3 + (vv[i]/len(vv) )**4
+#    
+#    ss= ss/ ss0
+#    return ss
+       
+        
+#def add_weights_of_words(data_set):
+#    
+#    word_str = []
+#    for data, target, one_word_str, weights in data_set:
+#        word_str.append(one_word_str)        
+#    
+#    # word_str=['apple','egg','apple','banana','egg','apple']
+#    N = len(word_str)
+#    wordfreq = [word_str.count(w) for w in word_str]
+#    weights = 1 - np.array(wordfreq)/N
+#    data_set.add_weights(weights)
+#    return data_set
 
 
 

@@ -9,15 +9,13 @@ from __future__ import print_function, division
 import numpy as np
 from torchvision import transforms
 from skimage.morphology import thin as skimage_thinner
-from PIL import Image
 
 
 #  Method to compute the padding odf the input image to the max image size
 def get_padding(image, output_size):
     output_max_width = output_size[0]
     output_max_height = output_size[1]
-    h = image.shape[0]
-    w = image.shape[1]
+    w, h = image.size
 
     pad_width = output_max_width - w
     if pad_width<0 : 
@@ -67,14 +65,8 @@ class PadImage(object):
 
     def __call__(self, image):
         padding = get_padding(image, (self.output_max_width, self.output_max_height))
-
-        # tsfm = transforms.Pad(padding)        
-        
-        tsfm = transforms.Compose([ transforms.ToPILImage(),
-                                    transforms.Pad(padding)])
+        tsfm = transforms.Pad(padding)        
         image = tsfm(image)
-        image = np.array(image.getdata(),
-                    np.uint8).reshape(image.size[1], image.size[0], 1)
         return image
 
 # Class to perform the padding
@@ -107,8 +99,9 @@ def image_thinning(img, p):
             break
     
     img = img.reshape(img.shape[0], img.shape[1], 1)
-    img=  img*img_max_orig # Now, bringing the normalization back to all images
+    img =  img*img_max_orig # Now, bringing the normalization back to all images
     
+    # print(img.shape)
     return img
 
 class ImageThinning(object):
@@ -123,6 +116,8 @@ class ImageThinning(object):
         
     def __call__(self, image):
         # image =self.image_thinning(image, self.p)                      
-        image = image_thinning(image, self.p)                      
+        image = image_thinning(image, self.p) 
+        tsfm = transforms.ToPILImage()
+        image = tsfm(image)                     
         return image
 

@@ -116,12 +116,11 @@ class IfnEnitDataset(Dataset):
             if new_w>self.cf.MAX_IMAGE_WIDTH: new_w = self.cf.MAX_IMAGE_WIDTH
             data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
         
-        # Convert data to numpy array
-        data = np.array(data.getdata(),
-                    np.uint8).reshape(data.size[1], data.size[0], 1)        
-        maxG = data.max() # correcting the values of folder e, they do not match the other folders
-        if maxG>200:  
-            data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
+
+        ''' using pil img '''
+        maxG = data.getextrema()
+        if maxG[1]>200: # correcting the values of folder e, they do not match the other folders
+            data = data.point(lambda p: int(p < 127) ) # threshold and invert
         
         if self.transform:
             data = self.transform(data)
@@ -132,4 +131,10 @@ class IfnEnitDataset(Dataset):
         return data, target, word_str, self.weights[idx]
     
     
-    
+# Convert data to numpy array
+#        data = np.array(data.getdata(),
+#                    np.uint8).reshape(data.size[1], data.size[0], 1)        
+#        maxG = data.max() # correcting the values of folder e, they do not match the other folders
+#        if maxG>200:  
+#            data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
+#      

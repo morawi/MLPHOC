@@ -74,13 +74,16 @@ def get_the_image(file_name, transform, cf):
     thresh = int(thresh)    
     img_name = cf.dataset_path_IAM + file_name + '.png'        
     data = Image.open(img_name)     # data.show()
-    data = data.point(lambda p: p > thresh and 255) # threshold the image [0,255]
-    data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
-    
+    data = data.point(lambda p: int(p < thresh) )
     if transform:
         data = transform(data)
 
     return data
+
+#    data = data.point(lambda p: p > thresh and 255) # threshold the image [0,255]
+#    data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
+
+
 #   print(data.getextrema())
 #  data.show()
 # data = ImageOps.invert(data)    # Invert the input image  

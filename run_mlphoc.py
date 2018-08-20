@@ -27,6 +27,7 @@ random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 result, train_set, test_set, train_loader, test_loader = test_cnn_finetune(cf) # Test CNN finetune with WG dataset
 print("Execution time is: ", time.time()-start_timer )
 # test_varoius_dist(result, cf) 
+
 test_varoius_thresholds(result, cf)
 # word_str_mom = word_str_moment(result['word_str'])
 # word_similarity = word_similarity_metric(result['word_str'])

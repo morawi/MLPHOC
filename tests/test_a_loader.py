@@ -83,9 +83,10 @@ image_transfrom = transforms.Compose([ thin_image,
                           ])
 
 cf.dataset_name = 'IAM'; 
-# data_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
-data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
-x1 = data_set[9][0]
+data_set  = IAM_words(cf, mode='train', transform = None) #image_transfrom)
+# data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
+x1 = data_set[921][0]
+plt.imshow(np.array(x1).squeeze(), 'gray')
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
 #cf.dataset_name = 'WG'

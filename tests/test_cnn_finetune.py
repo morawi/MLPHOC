@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 # from utils import globals
-from utils.some_functions import find_mAP, binarize_the_output, find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
+from utils.some_functions import binarize_the_output, find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
@@ -29,10 +29,10 @@ def test_cnn_finetune(cf):
     device = torch.device('cuda' if use_cuda else 'cpu')
     
     image_transfrom = transforms.Compose([
-            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold> 0 else NoneTransform(),
+            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold> 0 else NoneTransform(),            
+           # transforms.ToPILImage(), 
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
-            transforms.ToPILImage(),
-            transforms.Scale((cf.input_size[0], cf.input_size[1])) if cf.resize_images else NoneTransform(),
+            transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
             transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),
@@ -103,7 +103,8 @@ def test_cnn_finetune(cf):
                           momentum = cf.momentum,
                           nesterov = cf.use_nestrov_moment,
                           weight_decay = cf.weight_decay,
-                          dampening = cf.damp_moment # if cf.damp_moment>0 else None,
+                          dampening = cf.damp_moment 
+                              if not(cf.use_nestrov_moment) else 0
  
                           )    
 
