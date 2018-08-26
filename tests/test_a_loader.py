@@ -74,17 +74,17 @@ cf.dataset_path_IFN = dataset_path_IFN
 cf.gt_path_IFN = gt_path_IFN
 
 
-thin_image = ImageThinning(p = cf.thinning_threshold)
+thin_image = ImageThinning(p = 0.25)
 image_transfrom = transforms.Compose([ thin_image,
-                         transforms.ToPILImage(),
-                         transforms.ToTensor(),
-                         transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+#                         transforms.ToPILImage(),
+                         # transforms.ToTensor(),
+                         # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                          # transforms.Normalize(mean, std),
                           ])
 
 cf.dataset_name = 'IAM'; 
-data_set  = IAM_words(cf, mode='train', transform = None) #image_transfrom)
-# data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
+# data_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
+data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
 x1 = data_set[921][0]
 plt.imshow(np.array(x1).squeeze(), 'gray')
 # data_set  = IAM_words(cf, mode='test', transform = None)

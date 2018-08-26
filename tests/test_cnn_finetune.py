@@ -29,8 +29,7 @@ def test_cnn_finetune(cf):
     device = torch.device('cuda' if use_cuda else 'cpu')
     
     image_transfrom = transforms.Compose([
-            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold> 0 else NoneTransform(),            
-           # transforms.ToPILImage(), 
+            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
             transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
             transforms.ToTensor(),
@@ -71,17 +70,17 @@ def test_cnn_finetune(cf):
         train_set.add_weights_of_words()
         
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
-                                  shuffle=cf.shuffle, num_workers=cf.num_workers)
+                                  shuffle = cf.shuffle, num_workers=cf.num_workers)
 
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
-                                  shuffle= False, num_workers=cf.num_workers)
+                                  shuffle = False, num_workers=cf.num_workers)
    
 
     model = make_model(
         cf.model_name,
         pretrained = cf.pretrained,
         num_classes = train_set.num_classes(),
-        input_size = cf.input_size, # [0], cf.input_size[1]),
+        input_size = cf.input_size, 
         dropout_p = cf.dropout_probability,
     )
     model = model.to(device)
@@ -176,7 +175,7 @@ def test_cnn_finetune(cf):
        
         mAP_QbS = find_mAP_QbS(result, cf)
         mAP_QbE = find_mAP_QbE(result, cf)
-        print(  mAP_QbS, "  ",  mAP_QbE, " ", end="")        
+        print( 'QbS ',  mAP_QbS, " QbE ",  mAP_QbE, " ")        
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
         

@@ -42,7 +42,7 @@ def word_to_label(word_str):
          count += 1
     
     labels = [d[i] for i in word_str]
-    print("There're", len(np.unique(labels)), " unique words out of", len(labels), "  ", end="" )
+   # print("There're", len(np.unique(labels)), " unique words out of", len(labels), "  ", end="" )
     return labels
  
     
@@ -71,6 +71,7 @@ def find_mAP_QbE(result, cf):
     word_str = result['word_str']
     query_labels, loc = remove_single_words(word_str)  
     pred = pred[loc]   
+    query_labels = word_to_label(query_labels)
     mAP_QbE, avg_precs = map_from_feature_matrix(pred, query_labels, cf.mAP_dist_metric, False)    
     return mAP_QbE
    
@@ -90,6 +91,8 @@ def find_mAP_QbS(result, cf):
     target_labels, loc = get_unique_words(word_str)
     target = target[loc]
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
+    # target_labels = word_to_label(target_labels)
+    # pred_labels = word_to_label(pred_labels)
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
                          target_labels, pred_labels, cf.mAP_dist_metric)
    

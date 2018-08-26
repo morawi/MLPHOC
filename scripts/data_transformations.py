@@ -83,29 +83,29 @@ class NoneTransform(object):
 
 
 def image_thinning(img, p):
-    # input image as PIL
-    # output image as numpy
+    # input image as PIL, output image as PIL
     img= np.array(img).squeeze()
     thin_iter_step  = 1   
     img_max_orig = img.max()
     for i in range(25): 
-        img_max = img.max()
-        sum_img = img.sum()/(img.size* img_max)
+        sum_img = img.sum()/(img.size* img.max())
         if sum_img>p:
             img = skimage_thinner(img, max_iter= thin_iter_step)
-            img = img.astype('uint8')
+            ''' remove below maybe '''
         else: 
-            img= (img/img.max()).astype('uint8') # the thinning will result in a binary [0,1] 2dArray, hence we need to normalized the non thinned ones
+            # img = (img/img.max())
             break
     
     img = img.reshape(img.shape[0], img.shape[1], 1)
-    img =  img*img_max_orig # Now, bringing the normalization back to all images
+    img = img*img_max_orig   # Now, bringing the normalization back to all images
+    img = img.astype('float32')
+    tsfm = transforms.ToPILImage()
+    img = tsfm(img)   
     
-    # print(img.shape)
-    return img
+    return img 
 
 class ImageThinning(object):
-    """ Thin the image input as numpy array and output as numpy array 
+    """ Thin the image input as PIL and output a PIL
         To be used as part of  torchvision.transforms
     Args: p, a threshold value to determine the thinning
         
@@ -117,7 +117,6 @@ class ImageThinning(object):
     def __call__(self, image):
         # image =self.image_thinning(image, self.p)                      
         image = image_thinning(image, self.p) 
-        tsfm = transforms.ToPILImage()
-        image = tsfm(image)                     
+        
         return image
 

@@ -15,7 +15,7 @@ IMG_WIDTH = 1011 # m01-084-07-00 max_length
 IMG_HEIGHT = 64
 
 #IMG_WIDTH = 256 # img_width < 256: padding   img_width > 256: resize to 256
-''' IAM has 46945 train data; 6445 valid data; and 13752 test data '''
+''' IAM has 46945 train data; 7554 alid data; and 20304 test data '''
     
 def get_iam_file_label(cf, mode):         
         subname = 'word' 

@@ -115,7 +115,6 @@ class IfnEnitDataset(Dataset):
             new_w = int(data.size[0]*self.cf.H_ifn_scale/data.size[1])
             if new_w>self.cf.MAX_IMAGE_WIDTH: new_w = self.cf.MAX_IMAGE_WIDTH
             data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
-        
 
         ''' using pil img '''
         maxG = data.getextrema()
