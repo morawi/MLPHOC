@@ -18,7 +18,7 @@ from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
-from scripts.data_transformations import PadImage, ImageThinning, NoneTransform
+from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 
 
@@ -28,8 +28,16 @@ def test_cnn_finetune(cf):
     use_cuda = torch.cuda.is_available()
     device = torch.device('cuda' if use_cuda else 'cpu')
     
+#    the_augmentor = TheAugmentor(probability=.5, grid_width=3, 
+#                                 grid_height=3, magnitude=8)
+
+    sheer_tsfm = transforms.RandomAffine(0, shear=(-30, 10) )
+    random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
+
+    
     image_transfrom = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
+            random_sheer if cf.use_distortion_augmentor else NoneTransform(),            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
             transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
             transforms.ToTensor(),
@@ -58,8 +66,8 @@ def test_cnn_finetune(cf):
                                         complement_idx = True)
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................') 
-        train_set = IAM_words(cf, mode='test', transform = image_transfrom)
-        test_set = IAM_words(cf, mode='validate', transform = image_transfrom)
+        train_set = IAM_words(cf, mode='train', transform = image_transfrom)
+        test_set = IAM_words(cf, mode='test', transform = image_transfrom)
         
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
@@ -97,14 +105,12 @@ def test_cnn_finetune(cf):
         criterion = nn.MSELoss()
         
 
-    optimizer = optim.SGD(model.parameters(), 
+    optimizer = optim.SGD( model.parameters(), 
                           lr = cf.learning_rate, 
                           momentum = cf.momentum,
                           nesterov = cf.use_nestrov_moment,
                           weight_decay = cf.weight_decay,
-                          dampening = cf.damp_moment 
-                              if not(cf.use_nestrov_moment) else 0
- 
+                          dampening = cf.damp_moment if not(cf.use_nestrov_moment) else 0
                           )    
 
     def train(epoch):
@@ -170,15 +176,12 @@ def test_cnn_finetune(cf):
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))   
         '''
-   
-        # mAP_QbE, mAP_QbS = find_mAP(result, cf)               
        
         mAP_QbS = find_mAP_QbS(result, cf)
         mAP_QbE = find_mAP_QbE(result, cf)
         print( 'QbS ',  mAP_QbS, " QbE ",  mAP_QbE, " ")        
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
-        
         
         return result # to be used in case we want to try different distances later
     
@@ -219,7 +222,7 @@ def test_cnn_finetune(cf):
             test(test_loader)
             
     result = test(test_loader)
-    test_moment_and_word_sim(result)
+    # test_moment_and_word_sim(result)
     
     return result, train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
     

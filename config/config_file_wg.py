@@ -2,10 +2,10 @@ import time   # used to create a seed for the randomizers
 
 encoder = 'phoc' # ['rawhoc', 'phoc', 'pro_hoc']
 
-unigram_L = [2 ,3, 4, 5 ]
-if encoder =='phoc':
+phoc_levels = [2 ,3, 4, 5 ]
+if encoder =='pro_hoc':
     from scripts.Word2PHOC import build_phoc as PHOC
-    unigram_levels               = unigram_L  # # PHOC levels                                            
+    unigram_levels               = phoc_levels  # # PHOC levels                                            
 
 elif encoder == 'rawhoc' :
     from scripts.Word2RAWHOC import build_rawhoc as PHOC
@@ -14,12 +14,12 @@ elif encoder == 'rawhoc' :
     
 elif encoder == 'pro_hoc': 
     from scripts.Word2RAWHOC import build_pro_hoc as PHOC
-    unigram_levels               = unigram_L  # # PHOC levels   
+    unigram_levels               = phoc_levels  # # PHOC levels   
     rawhoc_repeates = 2
     max_word_len = 24   
 else: 
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')      
-del unigram_L                                
+del phoc_levels                                
 
 phoc_tolerance = 0 # if above 0, it will perturbate the phoc/rawhoc by tolerance
 
@@ -76,15 +76,14 @@ gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # p
 del folder_of_data # not needed anymore
 
 
-use_weight_to_balance_data          = False
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 
 train_split                  = True # When True, this is the training set 
 if train_split: 
     split_percentage         = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-
 rnd_seed_value               =  1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
+
 
 # Input Images
 normalize_images             = False
@@ -95,17 +94,15 @@ if resize_images:
 else: 
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
    
-                                         # H= 40, then, W = (576/226)*40 ~= 100
-# Dataloader
-batch_size_train             = 4  # Prev works say the less the better, 10 is best?!
-batch_size_test              = 100  # Higher values may trigger memory problems
-shuffle                      = True # shuffle the training set
-num_workers                  = 4
-thinning_threshold           = .5 # 0.4 # This value should be decided upon investigating 
+
+use_weight_to_balance_data      = False
+use_distortion_augmentor        = True
+thinning_threshold              = .3 #  1   no thinning  # This value should be decided upon investigating 
                                     # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
                                     # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 
 # Model parameters
+pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 epochs                       = 60 
 momentum                     = 0.9
@@ -117,15 +114,20 @@ use_nestrov_moment           = True
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 dropout_probability          = 0
 
-pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 
-binarizing_thresh            = 0.2 # threshold to be used to binarize the net sigmoid output, 
+binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
                                 # every val > threshold will be converted to 1
                               # threshold 0.5 will run round() function
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # See options below
+
+# Dataloader
+batch_size_train             = 4  # Prev works say the less the better, 10 is best?!
+batch_size_test              = 100  # Higher values may trigger memory problems
+shuffle                      = True # shuffle the training set
+num_workers                  = 4
 
     
 

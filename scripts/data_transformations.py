@@ -9,6 +9,7 @@ from __future__ import print_function, division
 import numpy as np
 from torchvision import transforms
 from skimage.morphology import thin as skimage_thinner
+import Augmentor
 
 
 #  Method to compute the padding odf the input image to the max image size
@@ -120,3 +121,27 @@ class ImageThinning(object):
         
         return image
 
+class TheAugmentor(object):
+    """ 
+        Using the Augmentor module to distorte the text, see https://github.com/mdbloice/Augmentor
+        
+    """
+    def __init__(self, probability=.5, grid_width=4, grid_height=4, magnitude=8):
+       self.p = Augmentor.Pipeline()
+       # self.p.random_distortion(probability, grid_width, grid_height, magnitude)
+       self.p.shear(probability=.7, max_shear_left=5, max_shear_right=5)
+       self.transform = transforms.Compose([self.p.torch_transform()])
+        
+    def __call__(self, image):        
+        
+        image = self.transform(image)
+        if type(image)==list:
+            image = image[0]
+            image = np.array(image) #, dtype='float32') #for some reason augmentor returns a list  
+            image = image > image.mean()
+            image = image.astype('float32')
+            image = image.reshape(image.shape[0], image.shape[1], 1)
+            tsfm = transforms.ToPILImage()
+            image = tsfm(image)   
+           
+        return image

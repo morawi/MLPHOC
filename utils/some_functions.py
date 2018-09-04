@@ -12,6 +12,7 @@ import torch
 from collections import Counter
 from nltk.corpus import wordnet
 import random
+from sklearn import preprocessing
 
 # https://www.wordfrequency.info/comparison.asp
 
@@ -34,15 +35,15 @@ def word_to_label(word_str):
     output should be something like this:
     y=[0, 1, 2, 1, 0, 3] """
 
-    d = {}    
-    count = 0
+    d = {};  count = 0
+   
     for i in word_str:
       if i not in d:
          d[i] = count
          count += 1
     
     labels = [d[i] for i in word_str]
-   # print("There're", len(np.unique(labels)), " unique words out of", len(labels), "  ", end="" )
+   
     return labels
  
     
@@ -57,24 +58,25 @@ def remove_single_words(word_str):
     # find the locations of all single 'appearance word'    
     loc =  (pd.Series(word_str).duplicated(keep=False)).astype(int).tolist()
     loc = torch.ByteTensor(loc)
-#   Removing all single word(s):
+
     s = pd.Series(word_str)
-    word_str =  s[s.duplicated(keep=False)].tolist()    
+    word_str =  s[s.duplicated(keep=False)].tolist()  #   Removing all single word(s):   
     return word_str, loc
    
 
-def find_mAP_QbE(result, cf):       
-    # For QbE, we have to remove each single occurence words, 
+def find_mAP_QbE(result, cf):
+# For QbE, we have to remove each single occurence words, 
     # and the corresponding items in pred    
     pred = result['pred']       # test_phocs       
     pred = binarize_the_output(pred, cf.binarizing_thresh)      
     word_str = result['word_str']
+    
     query_labels, loc = remove_single_words(word_str)  
     pred = pred[loc]   
-    query_labels = word_to_label(query_labels)
+    query_labels = np.array(word_to_label(query_labels)).astype('uint32')
     mAP_QbE, avg_precs = map_from_feature_matrix(pred, query_labels, cf.mAP_dist_metric, False)    
     return mAP_QbE
-   
+          
     
 '''
  get unique words are not correct,
@@ -83,20 +85,29 @@ we should extract unique phocs from pred
 def find_mAP_QbS(result, cf):
     # For QbS, we have to use single (transcriptions) target phoc     
     # get unique phoc from target, target is the query 
-    word_str = result['word_str']   
+    pred = result['pred']       # test_phocs 
+    pred = binarize_the_output(pred, cf.binarizing_thresh)         
+    word_str = result['word_str']  
     pred_labels = word_str # word_to_label(word_str) 
-    pred = result['pred']       # test_phocs         
-    pred = binarize_the_output(pred, cf.binarizing_thresh) 
+        
+    le = preprocessing.LabelEncoder()
+    le.fit(word_str)
+    pred_labels = le.transform(word_str).astype('uint32')
+   
+    
     target = result['target']
-    target_labels, loc = get_unique_words(word_str)
+    target_labels, loc = get_unique_words(word_str) # target is the query
+    
+    target_labels = le.transform(target_labels).astype('uint32')
+    
     target = target[loc]
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
-    # target_labels = word_to_label(target_labels)
-    # pred_labels = word_to_label(pred_labels)
+    
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
                          target_labels, pred_labels, cf.mAP_dist_metric)
    
     return mAP_QbS
+
 
 '''  Args in- list of words/strings 
 ouptus: unique words and thier locations/positions'''
@@ -105,7 +116,7 @@ def get_unique_words(word_str):
     loc = [word_str.index(elem) for elem in set(word_str)]
     word_str = pd.Series(word_str)
     word_str = word_str.get(loc)   
-    print("There're", len(word_str), " unique words out of", len_orig, "  ", end="" )
+    print("There're", len(word_str), " unique words out of", len_orig, "  ", end = "" )
     return word_str, loc
 
 def test_varoius_dist(result, cf):    
@@ -118,7 +129,9 @@ def test_varoius_dist(result, cf):
     # 'wminkowski': requires a weighting vector
     for my_distance in all_distances:
         cf.mAP_dist_metric = my_distance
-        mAP_QbE,mAP_QbS = find_mAP(result, cf)
+        mAP_QbS = find_mAP_QbS(result, cf)
+        mAP_QbE = find_mAP_QbE(result, cf)
+      
         print('using', my_distance, '---- mAP(QbS)=', mAP_QbS, "---", 
                'mAP(QbE) = ', mAP_QbE, ' \n')
 

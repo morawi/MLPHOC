@@ -7,14 +7,13 @@ Created on Sat Jul 28 18:11:50 2018
 """
 
 import os
-
 os.chdir("..")
 
 from config.load_config_file import Configuration
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_iam_dataset import IAM_words
-from scripts.data_transformations import ImageThinning, image_thinning
+from scripts.data_transformations import ImageThinning, image_thinning, TheAugmentor
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc as matplot_rc
@@ -75,8 +74,22 @@ cf.gt_path_IFN = gt_path_IFN
 
 
 thin_image = ImageThinning(p = 0.25)
-image_transfrom = transforms.Compose([ thin_image,
-#                         transforms.ToPILImage(),
+the_augmentor = TheAugmentor(probability=1, grid_width=3, grid_height=3, magnitude=8)
+
+# p.shear(probability=1, max_shear_left=10, max_shear_right=10)
+
+sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
+random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
+
+image_transfrom = transforms.Compose([thin_image,
+                                    #  the_augmentor, 
+                                     sheer_tsfm, 
+                                      
+                                    #  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                      
+                                      
+                         # transforms.ToPILImage(),
+                                     
                          # transforms.ToTensor(),
                          # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                          # transforms.Normalize(mean, std),
@@ -86,6 +99,8 @@ cf.dataset_name = 'IAM';
 # data_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
 data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
 x1 = data_set[921][0]
+
+# x1 = x1.convert('L')
 plt.imshow(np.array(x1).squeeze(), 'gray')
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
@@ -95,7 +110,8 @@ plt.imshow(np.array(x1).squeeze(), 'gray')
 #data_set = IfnEnitDataset(cf, train=True, transform=None)
 
 # find_max_HW_in_data(data_set)
-hist_of_text_to_background_ratio(data_set)
+
+#hist_of_text_to_background_ratio(data_set)
 
 # test_thinning(data_set)
 
