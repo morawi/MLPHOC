@@ -31,8 +31,8 @@ def test_cnn_finetune(cf):
 #    the_augmentor = TheAugmentor(probability=.5, grid_width=3, 
 #                                 grid_height=3, magnitude=8)
 
-    sheer_tsfm = transforms.RandomAffine(0, shear=(-30, 10) )
-    random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
+    sheer_tsfm = transforms.RandomAffine(0, shear=(-30, 10) ) 
+    random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
 
     
     image_transfrom = transforms.Compose([
