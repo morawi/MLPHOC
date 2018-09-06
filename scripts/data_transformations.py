@@ -137,11 +137,11 @@ class TheAugmentor(object):
         image = self.transform(image)
         if type(image)==list:
             image = image[0]
-            image = np.array(image) #, dtype='float32') #for some reason augmentor returns a list  
-            image = image > image.mean()
-            image = image.astype('float32')
-            image = image.reshape(image.shape[0], image.shape[1], 1)
-            tsfm = transforms.ToPILImage()
-            image = tsfm(image)   
+        image = np.array(image) #, dtype='float32') #for some reason augmentor returns a list  
+        image = image > image.mean()
+        image = image.astype('float32')
+        image = image.reshape(image.shape[0], image.shape[1], 1)
+        tsfm = transforms.ToPILImage()
+        image = tsfm(image)   
            
         return image
