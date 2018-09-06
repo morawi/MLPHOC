@@ -6,8 +6,11 @@ from config.load_config_file import Configuration
 from tests.test_cnn_finetune import test_cnn_finetune
 from utils.some_functions import random_seeding, test_varoius_thresholds, word_str_moment, word_similarity_metric #test_varoius_dist, 
 from inspect import getmembers
-# from tests.test_dataset import test_dataload
 
+import sys
+import calendar as cal
+import datetime
+# from tests.test_dataset import test_dataload
 
 
 start_timer = time.time()
@@ -18,6 +21,12 @@ logger = logging.getLogger(__name__)
 # Load the configuration file
 configuration = Configuration(config_path, test_name)
 cf = configuration.load()
+
+# redirect printed results to ouptut file
+if cf.redirect_std_to_file:
+    dd = datetime.datetime.now()
+    sys.stdout = open(cf.dataset_name +'_'+ cal.month_abbr[dd.month]+ '_' + str(dd.day),  'w')
+
 xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
@@ -34,6 +43,7 @@ test_varoius_thresholds(result, cf)
 #print('testing set word vect Moment is: ', word_str_mom)
 #print('testing set word_similarity : ', word_similarity)
 
+# reverting back to console
 
-
+    
 
