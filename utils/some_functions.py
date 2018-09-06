@@ -88,18 +88,15 @@ def find_mAP_QbS(result, cf):
     pred = result['pred']       # test_phocs 
     pred = binarize_the_output(pred, cf.binarizing_thresh)         
     word_str = result['word_str']  
-    pred_labels = word_str # word_to_label(word_str) 
+    # pred_labels = word_str # word_to_label(word_str) 
         
     le = preprocessing.LabelEncoder()
     le.fit(word_str)
     pred_labels = le.transform(word_str).astype('uint32')
-   
     
     target = result['target']
-    target_labels, loc = get_unique_words(word_str) # target is the query
-    
-    target_labels = le.transform(target_labels).astype('uint32')
-    
+    target_labels, loc = get_unique_words(word_str) # target is the query    
+    target_labels = le.transform(target_labels).astype('uint32')    
     target = target[loc]
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
     
