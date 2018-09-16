@@ -74,7 +74,7 @@ cf.gt_path_IFN = gt_path_IFN
 
 
 thin_image = ImageThinning(p = 0.25)
-the_augmentor = TheAugmentor(probability=1, grid_width=3, grid_height=3, magnitude=8)
+the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitude=8)
 
 # p.shear(probability=1, max_shear_left=10, max_shear_right=10)
 
@@ -82,8 +82,8 @@ sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
 random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
 
 image_transfrom = transforms.Compose([thin_image,
-                                    #  the_augmentor, 
-                                     sheer_tsfm, 
+                                      the_augmentor, 
+                                     # sheer_tsfm, 
                                       
                                     #  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                       

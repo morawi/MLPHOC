@@ -1,6 +1,9 @@
 import time   # used to create a seed for the randomizers
 
-encoder = 'phoc' # ['rawhoc', 'phoc', 'pro_hoc']
+encoder         = 'phoc' # ['rawhoc', 'phoc', 'pro_hoc']
+dataset_name    = 'IFN'#  'WG+IFN'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
+
 
 phoc_levels = [2 ,3, 4, 5 ]
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
@@ -23,9 +26,17 @@ else:
 del phoc_levels                                
 
 
-# Dataset
-dataset_name            = 'WG+IFN'#  'WG+IFN'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 
+        
+keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
+keep_non_alphabet_of_GW_in_loaded_data    = True 
+use_weight_to_balance_data      = False
+use_distortion_augmentor        = False
+thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating 
+                                    # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
+                                    # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
+
+# Dataset
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
     MAX_IMAGE_HEIGHT = 120
@@ -37,7 +48,7 @@ elif dataset_name == 'IFN': # 1069 x 226
     
 elif dataset_name == 'IAM': # 1087 x 241
     MAX_IMAGE_WIDTH  = 1087
-    MAX_IMAGE_HEIGHT = 241
+    MAX_IMAGE_HEIGHFalseT = 241
     
     ''' for mix language, we have to scale IFN to WG size'''
 elif dataset_name == 'WG+IFN':  
@@ -50,21 +61,6 @@ elif dataset_name == 'IAM+IFN':
     MAX_IMAGE_WIDTH  = 1087
     MAX_IMAGE_HEIGHT = 241
     H_ifn_scale = 0
-
-        
-keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
-keep_non_alphabet_of_GW_in_loaded_data    = True 
-use_weight_to_balance_data      = False
-use_distortion_augmentor        = False
-thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating 
-                                    # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
-                                    # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
-
-
-train_split                  = True # When True, this is the training set 
-if train_split: 
-    split_percentage         = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-rnd_seed_value               = 1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
 
 
 # Input Images
@@ -81,7 +77,7 @@ else:
 # Model parameters
 model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
-epochs                       = 60
+epochs                       = 20
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
 learning_rate                = 0.1 #10e-4
@@ -90,7 +86,7 @@ lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 dropout_probability          = 0
-testing_print_frequency      = 11 # prime number, how frequent to test/print during training
+testing_print_frequency      = 5 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
 batch_size_train             = 4  # Prev works say the less the better, 10 is best?!
@@ -99,13 +95,18 @@ shuffle                      = True # shuffle the training set
 num_workers                  = 4
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # See options below
+rnd_seed_value               = 1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
 
 
-''' Path to  Data '''
-folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
+IFN_based_on_folds_experiment  = True
+train_split                    = True # When True, this is the training set 
+if train_split: 
+    split_percentage         = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+if IFN_based_on_folds_experiment == True: 
+    split_percentage         = 1
 
 
-IFN_test = 'set_b'
+IFN_test = 'set_c'
 dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test +'/bmp/' # path to IFN images
 gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
 # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
@@ -121,7 +122,10 @@ gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/
 dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
 gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
        
-del folder_of_data # not needed anymore
+# del folder_of_data # not needed anymore
+
+
+
 
 ''' Language / dataset to use '''
 if dataset_name == 'WG':
@@ -151,7 +155,7 @@ results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder t
 redirect_std_to_file   = False
 
 '''
-list of model_name : 
+ of model_name : 
     'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn',
     'resnext101_32x4d', 'resnext101_64x4d', 'nasnetalarge',   
     'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',

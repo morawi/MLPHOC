@@ -20,7 +20,7 @@ from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
-
+from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 
 
 def test_cnn_finetune(cf):
@@ -53,17 +53,28 @@ def test_cnn_finetune(cf):
     
     elif cf.dataset_name == 'IFN':
         print('...................Loading IFN dataset...................')        
-        train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
-        test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
-                            data_idx = train_set.data_idx, complement_idx = True)
-        
+        if not(cf.IFN_based_on_folds_experiment):
+            ''' randomly split training and testing according to split percentage 
+            the folder left for tesing is the cf.IFN_test '''
+            train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
+            test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
+                                data_idx = train_set.data_idx, complement_idx = True)            
+        else:
+            ''' leave one folder out of 'abcde' folders '''
+            train_set = IFN_XVAL_Dataset(cf, train=True, transform = image_transfrom)
+            test_set = IfnEnitDataset(cf, train=False, transform = image_transfrom)
+                    
     elif cf.dataset_name =='WG+IFN': 
         print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
+        
         train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
         test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
+    
+            
+        
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................') 
         train_set = IAM_words(cf, mode='train', transform = image_transfrom)
@@ -216,7 +227,8 @@ def test_cnn_finetune(cf):
     print('Chance level performance \n');  
     test(test_loader) # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
-        scheduler.step();  print("lr = ", scheduler.get_lr(), " ", end ="") # to be used with MultiStepLR
+        scheduler.step();  
+        print("lr = ", scheduler.get_lr(), end="") # to be used with MultiStepLR
         train(epoch)           
         if not(epoch % cf.testing_print_frequency):
             test(test_loader)

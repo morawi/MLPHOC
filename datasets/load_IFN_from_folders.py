@@ -14,7 +14,7 @@ which is skipped in IFN_XVAL_Dataset
 dataset fusion based on:
     https://github.com/xingyizhou/pytorch-pose-hg-3d/blob/master/src/datasets/fusion.py """
 
-import torch.utils.data.Dataset as Dataset
+import torch.utils.data as data
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 
 '''
@@ -23,24 +23,33 @@ from datasets.load_ifnenit_dataset import IfnEnitDataset
 ==
 '''
 # This can be used to only IFN data from four folders
-class IFN_XVAL_Dataset(Dataset):
+class IFN_XVAL_Dataset(data.Dataset):
   def __init__(self, cf, train=True, transform=None):
       
     cf.train_split = False # this should always be false, as we are keeping one folder for testing
     self.train = train  # training set or test set  
     
-    trn_floder = 'abcde'.replace(cf.IFN_test, '') # removing the test set from train folders
+    trn_folder = 'abcde'.replace(cf.IFN_test[-1], '') # removing the test set from train folders
+    # trn_floder = 'abcd'.replace(cf.IFN_test[-1], '') # removing the test set from train folders
+
+    # backing up the original paths
+    dataset_path = cf.dataset_path_IFN
+    gt_path = cf.gt_path_IFN 
     
-    cf.dataset_path_IFN = cf.dataset_path_IFN.replace(cf.IFN_test, 'set_'+ trn_floder[0] )    
+    cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[0] )
+    cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[0] )
     self.datasetIFN_1= IfnEnitDataset(cf, train=self.train, transform = transform)
     
-    cf.dataset_path_IFN = cf.dataset_path_IFN.replace(cf.IFN_test, 'set_'+ trn_floder[1] )    
+    cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[1] )   
+    cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[1] )
     self.datasetIFN_2= IfnEnitDataset(cf, train=self.train, transform = transform)
     
-    cf.dataset_path_IFN = cf.dataset_path_IFN.replace(cf.IFN_test, 'set_'+ trn_floder[2] )    
+    cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[2] )    
+    cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[2] )
     self.datasetIFN_3= IfnEnitDataset(cf, train=self.train, transform = transform)
     
-    cf.dataset_path_IFN = cf.dataset_path_IFN.replace(cf.IFN_test, 'set_'+ trn_floder[3] )    
+    cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[3] )    
+    cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[3] )
     self.datasetIFN_4= IfnEnitDataset(cf, train=self.train, transform = transform)
     
     self.IFN_1_len = len(self.datasetIFN_1)
@@ -53,15 +62,17 @@ class IFN_XVAL_Dataset(Dataset):
     if index < self.IFN_1_len:
         return self.datasetIFN_1[index]
     
-    elif index < self.IFN_2_len:
+    elif index < (self.IFN_1_len + self.IFN_2_len):
         index = index - (self.IFN_1_len)
         return self.datasetIFN_2[index]  # check: are we skipping a sample here?
     
-    elif index < self.IFN_3_len:
+    elif index < (self.IFN_1_len + self.IFN_2_len + self.IFN_3_len):
         index = index - (self.IFN_1_len + self.IFN_2_len)
         return self.datasetIFN_3[index]  
+    
     else: # This is IFN_4
-        index = index - (self.IFN_1_len + self.IFN_2_len+ self.IFN_3_len)
+        index = index - (self.IFN_1_len + self.IFN_2_len+ self.IFN_3_len )
+       
         return self.datasetIFN_4[index]          
     
 
