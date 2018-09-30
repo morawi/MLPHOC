@@ -148,10 +148,13 @@ class WashingtonDataset(Dataset):
         self.weights = weights
 
 #    def add_weights(self, weights):
-#        self.weights = weights # weights to be used to balance the data, as input to the loss
+#        self.weights = weights # weights to be used to balance the data, used later as input to the loss function
         
     def num_classes(self):
-        return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+        if self.cf.encoder=='label':
+            return 2
+        else:
+            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
     
     def __len__(self):
         return len(self.word_id)
@@ -162,11 +165,13 @@ class WashingtonDataset(Dataset):
         data = data.point(lambda p: p > 100 and 255) # threshold the image [0,255]
         data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
 
+        word_str = self.word_str[idx]        
+        if self.cf.encoder=='label':
+            target = 'English'  # labels for English wordss
+        else:
+            target = self.cf.PHOC(word_str, self.cf)
         if self.transform:
             data = self.transform(data)
-               
-        word_str = self.word_str[idx]        
-        target = self.cf.PHOC(word_str, self.cf)
         
         return data, target, word_str, self.weights[idx]
     
