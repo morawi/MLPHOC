@@ -35,7 +35,7 @@ def test_cnn_finetune(cf):
     random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
 
     
-    image_transfrom = transforms.Compose([
+    image_transform = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
             random_sheer if cf.use_distortion_augmentor else NoneTransform(),            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
@@ -47,8 +47,8 @@ def test_cnn_finetune(cf):
 #        
     if cf.dataset_name == 'WG':
         print('...................Loading WG dataset...................')
-        train_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
-        test_set = WashingtonDataset(cf, train=False, transform=image_transfrom, 
+        train_set = WashingtonDataset(cf, train=True, transform=image_transform)
+        test_set = WashingtonDataset(cf, train=False, transform=image_transform, 
                             data_idx =train_set.data_idx, complement_idx = True)
     
     elif cf.dataset_name == 'IFN':
@@ -56,19 +56,19 @@ def test_cnn_finetune(cf):
         if not(cf.IFN_based_on_folds_experiment):
             ''' randomly split training and testing according to split percentage 
             the folder left for tesing is the cf.IFN_test '''
-            train_set = IfnEnitDataset(cf, train=True, transform=image_transfrom)
-            test_set = IfnEnitDataset(cf, train=False, transform=image_transfrom, 
+            train_set = IfnEnitDataset(cf, train=True, transform=image_transform)
+            test_set = IfnEnitDataset(cf, train=False, transform=image_transform, 
                                 data_idx = train_set.data_idx, complement_idx = True)            
         else:
             ''' leave one folder out of 'abcde' folders '''
-            train_set = IFN_XVAL_Dataset(cf, train=True, transform = image_transfrom)
-            test_set = IfnEnitDataset(cf, train=False, transform = image_transfrom)
+            train_set = IFN_XVAL_Dataset(cf, train=True, transform = image_transform)
+            test_set = IfnEnitDataset(cf, train=False, transform = image_transform)
                     
     elif cf.dataset_name =='WG+IFN': 
         print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
         
-        train_set = WG_IFN_Dataset(cf, train=True, transform=image_transfrom)
-        test_set = WG_IFN_Dataset(cf, train=False, transform=image_transfrom, 
+        train_set = WG_IFN_Dataset(cf, train=True, transform = image_transform)
+        test_set = WG_IFN_Dataset(cf, train=False, transform = image_transform, 
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
@@ -77,8 +77,8 @@ def test_cnn_finetune(cf):
         
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................') 
-        train_set = IAM_words(cf, mode='train', transform = image_transfrom)
-        test_set = IAM_words(cf, mode='test', transform = image_transfrom)
+        train_set = IAM_words(cf, mode='train', transform = image_transform)
+        test_set = IAM_words(cf, mode='test', transform = image_transform)
         
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()

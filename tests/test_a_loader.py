@@ -41,15 +41,19 @@ def hist_of_text_to_background_ratio(data_set):
     matplot_rc('font', **font)
     hh = []    
     img = data_set[0][0]; 
-    img_max = np.array(img).max()
+    #  img.show() # img show has a problem!!!!!!!!!!! IFN showed this
+    # img = np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 1) # this line does inversion of the image, IFN abcd, donno why?!
+#    
+    img_max= img.getextrema()[1]
     print('max gray val is: ', img_max)
     for i in range(len(data_set)):    
-        img = np.array(data_set[i][0])
-        hh.append(img.sum()/(img.size*img_max))
-    # plt.hist(img.squeeze()) # to plot the hist of an image, rough one
+        img = data_set[i][0].getdata() 
+        img_sum = sum(img)     
+        hh.append(img_sum /( img.size[1]*img.size[0] ))
+    #plt.hist(img.squeeze()) # to plot the hist of an image, rough one
     plt.figure(" ")
-    plt.hist(hh)
-    plt.xticks(np.arange(0, 1.1, 0.2))
+    plt.hist(hh)    
+    plt.xticks(np.arange(0, 1.1, .2))    
     plt.show()
 
 
@@ -65,13 +69,17 @@ configuration = Configuration(config_path, '')
 cf = configuration.load()
 cf.split_percentage = 1
 
-
+cf.IFN_test = 'set_d'
 folder_of_data                = '/home/malrawi/Desktop/My Programs/all_data/'
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/set_d/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/set_d/tru/' # path to IFN ground_truth 
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/tru/' # path to IFN ground_truth 
 cf.dataset_path_IFN = dataset_path_IFN
 cf.gt_path_IFN = gt_path_IFN
 
+data_set = IfnEnitDataset(cf, train=True, transform=None)
+hist_of_text_to_background_ratio(data_set)
+
+'''
 
 thin_image = ImageThinning(p = 0.25)
 the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitude=8)
@@ -111,11 +119,11 @@ plt.imshow(np.array(x1).squeeze(), 'gray')
 
 # find_max_HW_in_data(data_set)
 
-#hist_of_text_to_background_ratio(data_set)
+hist_of_text_to_background_ratio(data_set)
 
 # test_thinning(data_set)
 
 
-
+'''
 
 
