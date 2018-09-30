@@ -1,9 +1,10 @@
 import time   # used to create a seed for the randomizers
 
-encoder         = 'phoc' # ['rawhoc', 'phoc', 'pro_hoc']
-dataset_name    = 'IFN'#  'WG+IFN'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
-folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 
+dataset_name    = 'WG+IFN'#  'WG+IFN'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
+folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
+redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 
 phoc_levels = [2 ,3, 4, 5 ]
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
@@ -25,18 +26,9 @@ else:
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')      
 del phoc_levels                                
 
-
-
         
-keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
-keep_non_alphabet_of_GW_in_loaded_data    = True 
-use_weight_to_balance_data      = False
-use_distortion_augmentor        = False
-thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating 
-                                    # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py
-                                    # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 
-# Dataset
+# Dataset max W and H
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
     MAX_IMAGE_HEIGHT = 120
@@ -56,7 +48,6 @@ elif dataset_name == 'WG+IFN':
     MAX_IMAGE_WIDTH  = 1069 # 
     MAX_IMAGE_HEIGHT = 120    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
     
-
 elif dataset_name == 'IAM+IFN':
     MAX_IMAGE_WIDTH  = 1087
     MAX_IMAGE_HEIGHT = 241
@@ -64,6 +55,10 @@ elif dataset_name == 'IAM+IFN':
 
 
 # Input Images
+use_weight_to_balance_data      = False
+use_distortion_augmentor        = False
+thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
+
 normalize_images             = False
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
@@ -73,11 +68,10 @@ else:
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
    
 
-
 # Model parameters
-model_name                   = 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+model_name                   = 'resnet152' # 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
-epochs                       = 20
+epochs                       = 100
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
 learning_rate                = 0.1 #10e-4
@@ -86,45 +80,60 @@ lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 dropout_probability          = 0
-testing_print_frequency      = 5 # prime number, how frequent to test/print during training
+testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-batch_size_train             = 4  # Prev works say the less the better, 10 is best?!
+
+
+batch_size_train             = 2  # Prev works used 10 .....  a value of 2 gives better results
+
+
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # See options below
-rnd_seed_value               = 1533323200 #0 # int(time.time())  #  0 # time.time() should be used later
+rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
+
+if encoder == 'label':
+    loss == 'CrossEntropyLoss'
 
 
-IFN_based_on_folds_experiment  = True
-train_split                    = True # When True, this is the training set 
-if train_split: 
-    split_percentage         = .8  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-if IFN_based_on_folds_experiment == True: 
-    split_percentage         = 1
+IFN_test = 'set_a'
+IFN_all_data_grouped_in_one_folder = False
 
-
-IFN_test = 'set_c'
-dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test +'/bmp/' # path to IFN images
-gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
-# For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
-'''
-# all the data in one folder
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
-'''
+if IFN_all_data_grouped_in_one_folder:
+    IFN_based_on_folds_experiment  = False
+    del IFN_test 
+    # all the data in one folder
+    dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+    gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+else:
+    
+    dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test +'/bmp/' # path to IFN images
+    gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
+    # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
 
 dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
 gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
 
 dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
 gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
+
+
+keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
+keep_non_alphabet_of_GW_in_loaded_data    = True 
+IFN_based_on_folds_experiment  = False
+train_split                    = True # When True, this is the training set 
+if train_split: 
+    split_percentage         = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+if IFN_based_on_folds_experiment==True and dataset_name=='IFN': 
+    train_split              = False # no split will be applied 
+    split_percentage         = 1
+    folders_to_use = 'eabcd'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
+
+
        
-# del folder_of_data # not needed anymore
-
-
 
 
 ''' Language / dataset to use '''
@@ -152,7 +161,7 @@ else:
 # Save results
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
-redirect_std_to_file   = False
+
 
 '''
  of model_name : 

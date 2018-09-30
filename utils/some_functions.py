@@ -88,8 +88,7 @@ def find_mAP_QbS(result, cf):
     pred = result['pred']       # test_phocs 
     pred = binarize_the_output(pred, cf.binarizing_thresh)         
     word_str = result['word_str']  
-    # pred_labels = word_str # word_to_label(word_str) 
-        
+            
     le = preprocessing.LabelEncoder()
     le.fit(word_str)
     pred_labels = le.transform(word_str).astype('uint32')
@@ -131,7 +130,6 @@ def test_varoius_dist(result, cf):
       
         print('using', my_distance, '---- mAP(QbS)=', mAP_QbS, "---", 
                'mAP(QbE) = ', mAP_QbE, ' \n')
-
     
     
 def binarize_the_output(pred, binarizing_thresh):        
