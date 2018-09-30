@@ -26,36 +26,38 @@ from datasets.load_ifnenit_dataset import IfnEnitDataset
 class IFN_XVAL_Dataset(data.Dataset):
   def __init__(self, cf, train=True, transform=None):
       
-    cf.train_split = False # this should always be false, as we are keeping one folder for testing
+    # cf.train_split = False # this should always be false, as we are keeping one folder for testing
     self.train = train  # training set or test set  
     
-    trn_folder = 'abcde'.replace(cf.IFN_test[-1], '') # removing the test set from train folders
-    # trn_floder = 'abcd'.replace(cf.IFN_test[-1], '') # removing the test set from train folders
-
-    # backing up the original paths
+    trn_folder = cf.folders_to_use.replace(cf.IFN_test[-1], '') # removing the test set from train folders
+    
+    # backing up the original paths    
     dataset_path = cf.dataset_path_IFN
     gt_path = cf.gt_path_IFN 
     
     cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[0] )
     cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[0] )
-    self.datasetIFN_1= IfnEnitDataset(cf, train=self.train, transform = transform)
+    self.datasetIFN_1 = IfnEnitDataset(cf, train=self.train, transform = transform)
     
     cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[1] )   
     cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[1] )
-    self.datasetIFN_2= IfnEnitDataset(cf, train=self.train, transform = transform)
+    self.datasetIFN_2 = IfnEnitDataset(cf, train=self.train, transform = transform)
     
     cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[2] )    
     cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[2] )
-    self.datasetIFN_3= IfnEnitDataset(cf, train=self.train, transform = transform)
+    self.datasetIFN_3 = IfnEnitDataset(cf, train=self.train, transform = transform)
     
     cf.dataset_path_IFN = dataset_path.replace(cf.IFN_test, 'set_'+ trn_folder[3] )    
     cf.gt_path_IFN     =  gt_path.replace(cf.IFN_test, 'set_'+ trn_folder[3] )
-    self.datasetIFN_4= IfnEnitDataset(cf, train=self.train, transform = transform)
+    self.datasetIFN_4 = IfnEnitDataset(cf, train=self.train, transform = transform)
     
     self.IFN_1_len = len(self.datasetIFN_1)
     self.IFN_2_len = len(self.datasetIFN_2)
     self.IFN_3_len = len(self.datasetIFN_3)
     self.IFN_4_len = len(self.datasetIFN_4)
+    
+    cf.dataset_path_IFN = dataset_path
+    cf.gt_path_IFN = gt_path   # this needs to be used in loading the test set
               
   
   def __getitem__(self, index):
