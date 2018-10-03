@@ -100,7 +100,7 @@ def script_recognition(cf):
             data, target = data.to(device), target.to(device) 
             optimizer.zero_grad()
             output = model(data)
-            loss = criterion(output.float(), target.float())
+            loss = criterion(output, target)
             total_loss += loss.item()
             total_size += data.size(0)
             loss.backward()
@@ -123,26 +123,22 @@ def script_recognition(cf):
             for data, target, word_str, weight in test_loader: # weight is trivial here
                 data, target = data.to(device), target.to(device)
                 output = model(data)
-                loss = criterion(output.float(), target.float())
-                test_loss += loss.item()
+                ''' loss = criterion(output.float(), target.float())                
+                loss = criterion(output, target )
+                test_loss += loss.item() 
+                '''
                 output = F.sigmoid(output)
-                pred = output.data
+                target = target.type(torch.cuda.LongTensor)
+                pred = output.data.max(1, keepdim=True)[1]
                 # pred = pred.type(torch.cuda.DoubleTensor)
                 correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
-                # Accumulate from batches to one variable (##_all)
-                pred_all = torch.cat((pred_all, pred), 0)
-                target_all = torch.cat((target_all, target), 0)
-                word_str_all = word_str_all + word_str        
-        
-        test_loss /= len(test_loader.dataset)             
-        result = {'word_str':word_str_all,'pred': pred_all,
-                  'target': target_all}
+               
                 
         print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
             100. * correct / (len(test_loader.dataset)*pred.size()[1] )))   
         
-        return result # to be used in case we want to try different distances later
+        return 0 # to be used in case we want to try different distances later
         
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
