@@ -13,11 +13,12 @@ import torch.nn.functional as F
 from cnn_finetune import make_model
 
 # from utils import globals
-from utils.some_functions import binarize_the_output, find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
+from utils.some_functions import find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
+from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
@@ -72,12 +73,18 @@ def test_cnn_finetune(cf):
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
-    
+    elif cf.dataset_name =='IAM+IFN': 
+        print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
+        
+        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'test', transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'validate', transform = image_transform,  # loading iam valid set for testing
+                                  data_idx_IFN = train_set.data_idx_IFN, 
+                                        complement_idx = True)
             
         
     elif cf.dataset_name =='IAM':
-        print('...................Loading IAM dataset...................') 
-        train_set = IAM_words(cf, mode='train', transform = image_transform)
+        print('...................Loading IAM dataset...................')  
+        train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
         test_set = IAM_words(cf, mode='test', transform = image_transform)
         
         print('IAM IAM')
@@ -123,7 +130,7 @@ def test_cnn_finetune(cf):
                           weight_decay = cf.weight_decay,
                           dampening = cf.damp_moment if not(cf.use_nestrov_moment) else 0
                           )    
-
+    
     def train(epoch):
         total_loss = 0
         total_size = 0
