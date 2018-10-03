@@ -12,7 +12,6 @@ import calendar as cal
 import datetime
 # from tests.test_dataset import test_dataload
 
-
 start_timer = time.time()
 config_path = 'config/config_file_wg.py'
 test_name = '' # Optional: name of the sub folder where to store the results
