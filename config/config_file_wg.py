@@ -1,7 +1,7 @@
 import time   # used to create a seed for the randomizers
 
 
-dataset_name    = 'WG+IFN'#  'WG+IFN'      # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'IAM+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
@@ -71,7 +71,6 @@ else:
 # Model parameters
 model_name                   = 'resnet152' # 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
-epochs                       = 100
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
 learning_rate                = 0.1 #10e-4
@@ -84,6 +83,7 @@ testing_print_frequency      = 11 # prime number, how frequent to test/print dur
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
 
+epochs                       = 100
 
 batch_size_train             = 2  # Prev works used 10 .....  a value of 2 gives better results
 
@@ -97,10 +97,14 @@ rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #
 
 if encoder == 'label':
     loss == 'CrossEntropyLoss'
+    batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
+    model_name               = 'resnet18'
+    testing_print_frequency  = 2 # prime number, how frequent to test/print during training
+    dataset_name    = 'WG+IFN'
 
 
-IFN_test = 'set_a'
-IFN_all_data_grouped_in_one_folder = False
+IFN_test = 'set_d'
+IFN_all_data_grouped_in_one_folder = True
 
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
@@ -155,9 +159,19 @@ elif dataset_name == 'IAM':
     # juse just lower case
     x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
     phoc_unigrams = ''.join(map(str, x))
+    del x
+
+elif dataset_name == 'IAM+IFN':
+    x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+    x = ''.join(map(str, x))
+    y  = "أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+    z  = x+y
+    phoc_unigrams = ''.join(set(z))
+    del x, y, z    
+
 else: 
     exit("Datasets to use: 'WG', 'IFN', 'IAM', or 'WG+IAM' ")
-    
+            
 # Save results
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
