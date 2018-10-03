@@ -40,8 +40,8 @@ def load_ifnedit_data(cf):
                 for token in tokens:
                     if "AW1" in str(token):
                         arabic_word = token.split(":")[1]                        
-                        phoc = cf.PHOC(arabic_word, cf)
-                        phoc_word.append(phoc)
+                        # phoc = cf.PHOC(arabic_word, cf)
+                        # phoc_word.append(phoc)
                         word_id.append(id)
                         word_str.append(arabic_word)
     return phoc_word, word_id, word_str
@@ -85,7 +85,7 @@ class IfnEnitDataset(Dataset):
             data_idx = np.sort( np.setdiff1d(all_idx, data_idx, assume_unique=False) )
 
         for idx in data_idx:
-            self.phoc_word.append(aux_phoc_word[idx])
+            # self.phoc_word.append(aux_phoc_word[idx])
             self.word_id.append(aux_word_id[idx])
             self.word_str.append(aux_word_str[idx])
         
@@ -105,7 +105,8 @@ class IfnEnitDataset(Dataset):
         if self.cf.encoder=='label':
             return 2
         else:
-            return len(self.phoc_word[0])
+            # return len(self.phoc_word[0])
+            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
         
         
     def __len__(self):
@@ -143,9 +144,10 @@ class IfnEnitDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         if self.cf.encoder=='label':
-            target = 'Arabic'  # label for Arabic words
+            target = 1 # 1: lable for Arabic script
         else:
-            target = self.phoc_word[idx]
+            # target = self.phoc_word[idx]
+            target = self.cf.PHOC(word_str, self.cf)
 
         return data, target, word_str, self.weights[idx]
     
