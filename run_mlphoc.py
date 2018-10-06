@@ -32,6 +32,8 @@ xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
 print('------- the_hoc length is: ', len(cf.PHOC('', cf)) )
+if cf.overlay_handwritting_on_STL_img:
+    print('------ Scene Handwritting Experiment ----------')
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 
 
