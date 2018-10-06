@@ -106,7 +106,7 @@ class IfnEnitDataset(Dataset):
             return 2
         else:
             # return len(self.phoc_word[0])
-            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+            return len(self.cf.PHOC('بجدهو', self.cf)) # pasing 'dump' word to get the length
         
         
     def __len__(self):
@@ -122,24 +122,17 @@ class IfnEnitDataset(Dataset):
             data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
 
         
-        maxG = data.getextrema() # [0] is the min, [1] is the max
+        maxG = data.getextrema() # [0] is the min, [1] is the max        
         if maxG[1]>200: # correcting the values of folder e, they do not match the other folders
+            data = data.point(lambda p: 0 if p == 255  else 1 )         
+            ''' set_e has max of 255, while other sets, namely a,b,c,d have max of 1,
+            abcd however need inversion, so, the one  line below works for all,
+            to check each dataset use data.show() 
+            if self.cf.IFN_test == 'set_e': '''
             
-          #  data = data.point(lambda p: 1 if p < 127  else 0 ) # threshold and invert            
- 
-            data = np.array(data.getdata(),
-                    np.uint8).reshape(data.size[1], data.size[0], 1)        
-            maxG = data.max() # correcting the values of folder e, they do not match the other folders
-            data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
-            tsfm = transforms.ToPILImage()
-            data = tsfm(data)            
-              
-#        ''' set_e has max of 255, while other sets, namely a,b,c,d have max of 1,
-#        abcd however need inversion, so, the one  line below works for all,
-#        to check each dataset use data.show() '''
-#        if self.cf.IFN_test == 'set_e':
-#            data = data.point(lambda p: 1 if p == 0  else 0 ) # inverting and normalizing set_e to 1  
-             
+        else:
+            data = data.point(lambda p: 1 if p == 0  else 0 ) # inverting and normalizing set_e to 1               
+        
         word_str = self.word_str[idx]
         if self.transform:
             data = self.transform(data)
@@ -151,11 +144,14 @@ class IfnEnitDataset(Dataset):
 
         return data, target, word_str, self.weights[idx]
     
-    
-# Convert data to numpy array
-#        data = np.array(data.getdata(),
-#                    np.uint8).reshape(data.size[1], data.size[0], 1)        
-#        maxG = data.max() # correcting the values of folder e, they do not match the other folders
-#        if maxG>200:  
-#            data = ( (maxG - data)/maxG ).astype('uint8') # this will result in float64
-#      
+   
+   
+#  data = data.point(lambda p: 1 if p < 127  else 0 ) # threshold and invert            
+'''
+data = np.array(data.getdata(),
+        np.uint8).reshape(data.size[1], data.size[0], 1)        
+# maxG = data.max() # correcting the values of folder e, they do not match the other folders
+data = ( (maxG[1] - data)/(maxG[1] - maxG[0]) ).astype('uint8') # this will result in float64
+tsfm = transforms.ToPILImage()
+data = tsfm(data)            
+'''             
