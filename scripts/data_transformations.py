@@ -10,7 +10,8 @@ import numpy as np
 from torchvision import transforms
 from skimage.morphology import thin as skimage_thinner
 import Augmentor
-
+from PIL import ImageChops, Image, ImageOps, ImageStat
+import torchvision
 
 #  Method to compute the padding odf the input image to the max image size
 def get_padding(image, output_size):
@@ -145,3 +146,50 @@ class TheAugmentor(object):
         image = tsfm(image)   
            
         return image
+
+
+class OverlayImage(object):
+    """ 
+        Use an image from dataset as background to the handwritting image (STL10 dataset is used)
+        
+    """
+    def __init__(self):
+       self.dataset = get_the_data()       
+    
+    
+
+    def stitch_images(self, hand_wrt_img):        
+        intended_w, intded_h = hand_wrt_img.size
+        w, h = self.dataset[0][0].size# .resize([128, 128], Image.ANTIALIAS) # rerurns a tuple, image at idx 0, and label at idx 1
+        no_of_images_to_stich = intended_w // w
+        if no_of_images_to_stich ==0:  no_of_images_to_stich = 1
+        imgs_idx = np.random.randint(0, len(self.dataset), no_of_images_to_stich) # idx of selected images
+        stiched_image = Image.new("RGB", (no_of_images_to_stich*w, h))        
+        for index in range(no_of_images_to_stich):  
+          img = self.dataset[imgs_idx[index]][0] # .resize([128, 128], Image.ANTIALIAS)  
+          x = index * w    
+          stiched_image.paste(img, (x , 0, x + w , h))        
+        stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS)        
+        hand_wrt_img.point(lambda p: 255 if p==1 else 0)
+        hand_wrt_img = hand_wrt_img.convert('RGB')
+        stiched_image.paste(hand_wrt_img , box=None, mask = hand_wrt_img.convert('1'))
+        # hand_wrt_img.show();  stiched_image.show();   # print(stiched_image.mode)
+        
+        return stiched_image
+    # mean_val = sum(ImageStat.Stat(stiched_image).mean)/3
+    # stiched_image.paste(ImageOps.invert(hand_wrt_img), box=None, mask=hand_wrt_img.convert('1'))
+    
+    def __call__(self, image): 
+        image = self.stitch_images(image)
+       
+        return image
+    
+    
+def get_the_data():
+    data_set_name = 'STL10'
+    print(data_set_name, ' ', end='')
+    folder_of_data = '/home/malrawi/Desktop/My Programs/all_data/data' 
+    the_root = folder_of_data + data_set_name            
+    # other split flags: ‘train’, 'test' ‘train+unlabeled’
+    unlabeled_set = torchvision.datasets.STL10(root = the_root, split= 'unlabeled', download=True, transform=None, target_transform = None )
+    return unlabeled_set
