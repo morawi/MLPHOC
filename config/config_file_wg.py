@@ -1,10 +1,15 @@
 import time   # used to create a seed for the randomizers
 
 
-dataset_name    = 'IAM+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'WG'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
+normalize_images       = False
+overlay_handwritting_on_STL_img = True
+if overlay_handwritting_on_STL_img:
+    normalize_images = True
+    
 
 phoc_levels = [2 ,3, 4, 5 ]
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
@@ -40,7 +45,7 @@ elif dataset_name == 'IFN': # 1069 x 226
     
 elif dataset_name == 'IAM': # 1087 x 241
     MAX_IMAGE_WIDTH  = 1087
-    MAX_IMAGE_HEIGHFalseT = 241
+    MAX_IMAGE_HEIGHT = 241
     
     ''' for mix language, we have to scale IFN to WG size'''
 elif dataset_name == 'WG+IFN':  
@@ -59,7 +64,6 @@ use_weight_to_balance_data      = False
 use_distortion_augmentor        = False
 thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 
-normalize_images             = False
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
 if resize_images:
@@ -100,11 +104,11 @@ if encoder == 'label':
     batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
     model_name               = 'resnet18'
     testing_print_frequency  = 2 # prime number, how frequent to test/print during training
-    dataset_name    = 'WG+IFN'
+    dataset_name    = 'WG+IFN' # or 'IAM+IFN'
 
 
-IFN_test = 'set_d'
-IFN_all_data_grouped_in_one_folder = True
+IFN_test = 'set_c'
+IFN_all_data_grouped_in_one_folder = False
 
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
@@ -175,6 +179,8 @@ else:
 # Save results
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
+
+
 
 
 '''
