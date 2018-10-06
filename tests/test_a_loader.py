@@ -48,7 +48,7 @@ def hist_of_text_to_background_ratio(data_set):
     print('max gray val is: ', img_max)
     for i in range(len(data_set)):    
         img = data_set[i][0].getdata() 
-        img_sum = sum(img)     
+        img_sum = sum(img)  
         hh.append(img_sum /( img.size[1]*img.size[0] ))
     #plt.hist(img.squeeze()) # to plot the hist of an image, rough one
     plt.figure(" ")
@@ -69,7 +69,7 @@ configuration = Configuration(config_path, '')
 cf = configuration.load()
 cf.split_percentage = 1
 
-cf.IFN_test = 'set_d'
+cf.IFN_test = 'set_e'
 folder_of_data                = '/home/malrawi/Desktop/My Programs/all_data/'
 dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/bmp/' # path to IFN images
 gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/tru/' # path to IFN ground_truth 
