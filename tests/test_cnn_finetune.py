@@ -19,8 +19,8 @@ from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
 from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
-from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, TheAugmentor
-from utils.some_functions import word_str_moment, word_similarity_metric #test_varoius_dist, 
+from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
+from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 
 
@@ -38,12 +38,13 @@ def test_cnn_finetune(cf):
     
     image_transform = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
-            random_sheer if cf.use_distortion_augmentor else NoneTransform(),            
-            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),
+            random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
+            OverlayImage() if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
+            # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
+            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-            transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
 #        
     if cf.dataset_name == 'WG':
@@ -80,12 +81,11 @@ def test_cnn_finetune(cf):
         test_set = IAM_IFN_Dataset(cf, train=False, mode = 'validate', transform = image_transform,  # loading iam valid set for testing
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
-            
         
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................')  
-        train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
-        test_set = IAM_words(cf, mode='test', transform = image_transform)
+        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_words(cf, mode='validate', transform = image_transform)
         
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
@@ -130,6 +130,7 @@ def test_cnn_finetune(cf):
                           weight_decay = cf.weight_decay,
                           dampening = cf.damp_moment if not(cf.use_nestrov_moment) else 0
                           )    
+    print('--- Total no. of params in model ', count_model_parameters(model), '-------')
     
     def train(epoch):
         total_loss = 0
