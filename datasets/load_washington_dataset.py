@@ -167,7 +167,7 @@ class WashingtonDataset(Dataset):
 
         word_str = self.word_str[idx]        
         if self.cf.encoder=='label':
-            target = 'English'  # labels for English wordss
+            target = 0 # 0: label for English script
         else:
             target = self.cf.PHOC(word_str, self.cf)
         if self.transform:
