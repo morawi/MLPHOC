@@ -18,7 +18,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from cnn_finetune import make_model
-
+from utils.some_functions import count_model_parameters
+from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, TheAugmentor
 
@@ -55,8 +56,15 @@ def script_recognition(cf):
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
+    elif cf.dataset_name =='IAM+IFN': 
+        print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
+        
+        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'test', transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'validate', transform = image_transform,  # loading iam valid set for testing
+                                  data_idx_IFN = train_set.data_idx_IFN, 
+                                        complement_idx = True)
     else: 
-        exit('only works for WG+IFN script recognition')
+        exit('only works for WG+IFN and IAM+IFN script recognition')
             
         
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
@@ -91,6 +99,8 @@ def script_recognition(cf):
                           weight_decay = cf.weight_decay,
                           dampening = cf.damp_moment if not(cf.use_nestrov_moment) else 0
                           )    
+    
+    print('--- Total no. of params in model ', count_model_parameters(model), '-------')
 
     def train(epoch):
         total_loss = 0
