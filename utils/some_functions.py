@@ -16,6 +16,8 @@ from sklearn import preprocessing
 
 # https://www.wordfrequency.info/comparison.asp
 
+
+
 def random_seeding(seed_value, use_cuda):
     ''' a function to randomly seed torch and np
         Args in: seed_value: (int)
@@ -28,6 +30,8 @@ def random_seeding(seed_value, use_cuda):
 
     if use_cuda: torch.cuda.manual_seed_all(seed_value)
     
+def count_model_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def word_to_label(word_str):
     """Example:
@@ -62,7 +66,46 @@ def remove_single_words(word_str):
     s = pd.Series(word_str)
     word_str =  s[s.duplicated(keep=False)].tolist()  #   Removing all single word(s):   
     return word_str, loc
-   
+
+def remove_stop_words(word_str) :
+    # for stop_words list: https://gist.github.com/sebleier/554280 
+    stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
+                  'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 
+                  'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
+                  "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 
+                  'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which',
+                  'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
+                  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
+                  'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
+                  'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
+                  'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
+                  'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+                  'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under',
+                  'again', 'further', 'then', 'once', 'here', 'there', 'when', 
+                  'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 
+                  'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 
+                  'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 
+                  'can', 'will', 'just', 'don', "don't", 'should', "should've", 
+                  'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 
+                  "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', 
+                  "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', 
+                  "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 
+                  'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
+                  'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
+                  'won', "won't", 'wouldn', "wouldn't"]
+    word_str= list(word_str)
+#    loc = []
+#    for word in word_str:  # iterating on a copy since removing will mess things up        
+#        if word in stop_words:
+#            loc.append( word_str.index(word) )
+#            word_str.remove(word)
+ 
+    loc = [i for i, x in enumerate(word_str) if x not in stop_words]
+    word_str = [word_str[i] for i in loc]
+#     word_str = [x for x in word_str if x not in stop_words]
+    
+    return tuple(word_str), loc
+
 
 def find_mAP_QbE(result, cf):
 # For QbE, we have to remove each single occurence words, 
@@ -71,6 +114,11 @@ def find_mAP_QbE(result, cf):
     pred = binarize_the_output(pred, cf.binarizing_thresh)      
     word_str = result['word_str']
     
+
+    if cf.dataset_name=='IAM' or cf.dataset_name=='IAM+IFN':
+        word_str, loc11 = remove_stop_words(word_str)
+        pred = pred[loc11]
+                
     query_labels, loc = remove_single_words(word_str)  
     pred = pred[loc]   
     query_labels = np.array(word_to_label(query_labels)).astype('uint32')
@@ -87,16 +135,20 @@ def find_mAP_QbS(result, cf):
     # get unique phoc from target, target is the query 
     pred = result['pred']       # test_phocs 
     pred = binarize_the_output(pred, cf.binarizing_thresh)         
-    word_str = result['word_str']  
+    word_str = result['word_str']      
             
     le = preprocessing.LabelEncoder()
     le.fit(word_str)
     pred_labels = le.transform(word_str).astype('uint32')
     
     target = result['target']
-    target_labels, loc = get_unique_words(word_str) # target is the query    
+    if cf.dataset_name=='IAM' or cf.dataset_name=='IAM+IFN':
+        word_str, loc11 = remove_stop_words(word_str)            
+        target = target[loc11]
+    
+    target_labels, loc_unique = get_unique_words(word_str) # target is the query    
     target_labels = le.transform(target_labels).astype('uint32')    
-    target = target[loc]
+    target = target[loc_unique]
     # function_form is: map_from...matrices(query_features, test_features, query_labels, test_labels
     
     mAP_QbS, avg_precs = map_from_query_test_feature_matrices(target, pred, 
