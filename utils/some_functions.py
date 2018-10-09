@@ -93,6 +93,10 @@ def remove_stop_words(word_str) :
                   'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
                   'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
                   'won', "won't", 'wouldn', "wouldn't"]
+    non_alphanumeric = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/']
+                        
+    stop_words = stop_words + non_alphanumeric
+                        
     word_str= list(word_str)
 #    loc = []
 #    for word in word_str:  # iterating on a copy since removing will mess things up        
@@ -113,7 +117,6 @@ def find_mAP_QbE(result, cf):
     pred = result['pred']       # test_phocs       
     pred = binarize_the_output(pred, cf.binarizing_thresh)      
     word_str = result['word_str']
-    
 
     if cf.dataset_name=='IAM' or cf.dataset_name=='IAM+IFN':
         word_str, loc11 = remove_stop_words(word_str)
