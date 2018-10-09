@@ -69,61 +69,47 @@ configuration = Configuration(config_path, '')
 cf = configuration.load()
 cf.split_percentage = 1
 
-cf.IFN_test = 'set_e'
-folder_of_data                = '/home/malrawi/Desktop/My Programs/all_data/'
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/data/'+cf.IFN_test+'/tru/' # path to IFN ground_truth 
-cf.dataset_path_IFN = dataset_path_IFN
-cf.gt_path_IFN = gt_path_IFN
-
-data_set = IfnEnitDataset(cf, train=True, transform=None)
-hist_of_text_to_background_ratio(data_set)
-
-'''
-
 thin_image = ImageThinning(p = 0.25)
 the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitude=8)
-
 # p.shear(probability=1, max_shear_left=10, max_shear_right=10)
-
 sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
 random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
-
 image_transfrom = transforms.Compose([thin_image,
                                       the_augmentor, 
                                      # sheer_tsfm, 
-                                      
                                     #  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                      
-                                      
-                         # transforms.ToPILImage(),
-                                     
+                         # transforms.ToPILImage(),                                     
                          # transforms.ToTensor(),
                          # transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                          # transforms.Normalize(mean, std),
                           ])
 
-cf.dataset_name = 'IAM'; 
-# data_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
-data_set  = IAM_words(cf, mode='validate', transform = image_transfrom)
-x1 = data_set[921][0]
+image_transfrom = None
 
+if cf.dataset_name == 'IFN':       
+    test_set = IfnEnitDataset(cf, train=True, transform = image_transfrom)
+
+elif cf.dataset_name == 'IAM':    
+    # test_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
+    test_set  = IAM_words(cf, mode='test', transform = image_transfrom)
+    
+elif cf.dataset_name == 'WG':
+    test_set = WashingtonDataset(cf, train=True, transform = image_transfrom)               
+else: 
+    print(' incorrect dataset_name')
+    
+x1 = test_set[921][0]
 # x1 = x1.convert('L')
-plt.imshow(np.array(x1).squeeze(), 'gray')
+# plt.imshow(np.array(x1).squeeze(), 'gray')
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
-#cf.dataset_name = 'WG'
-# data_set = WashingtonDataset(cf, train=True, transform=image_transfrom)
-#cf.dataset_name                 = 'IFN'   ; cf.H_ifn_scale = 0
-#data_set = IfnEnitDataset(cf, train=True, transform=None)
 
-# find_max_HW_in_data(data_set)
-
-hist_of_text_to_background_ratio(data_set)
-
-# test_thinning(data_set)
+#find_max_HW_in_data(test_set)
+# hist_of_text_to_background_ratio(test_set)
+# test_thinning(test_set)
 
 
-'''
+
+
 
 
