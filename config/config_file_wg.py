@@ -1,12 +1,12 @@
 import time   # used to create a seed for the randomizers
 
 
-dataset_name    = 'WG'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
-overlay_handwritting_on_STL_img = True
+overlay_handwritting_on_STL_img = False
 if overlay_handwritting_on_STL_img:
     normalize_images = True
     
@@ -107,8 +107,8 @@ if encoder == 'label':
     dataset_name    = 'WG+IFN' # or 'IAM+IFN'
 
 
-IFN_test = 'set_c'
-IFN_all_data_grouped_in_one_folder = False
+IFN_test = 'set_a'
+IFN_all_data_grouped_in_one_folder = True
 
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
@@ -129,8 +129,6 @@ dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path t
 gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
 
 
-keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
-keep_non_alphabet_of_GW_in_loaded_data    = True 
 IFN_based_on_folds_experiment  = False
 train_split                    = True # When True, this is the training set 
 if train_split: 
@@ -138,11 +136,11 @@ if train_split:
 if IFN_based_on_folds_experiment==True and dataset_name=='IFN': 
     train_split              = False # no split will be applied 
     split_percentage         = 1
-    folders_to_use = 'eabcd'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
+    folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
 
 
-       
-
+keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
+keep_non_alphabet_of_GW_in_loaded_data    = True 
 
 ''' Language / dataset to use '''
 if dataset_name == 'WG':
