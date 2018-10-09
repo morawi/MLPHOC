@@ -41,6 +41,9 @@ xx = getmembers(cf)
 for i in range(len(xx)): 
     print (xx[i])
 print('\n --------------- Script identification: English(0) vs Arabic(1) ----------')
+if cf.overlay_handwritting_on_STL_img:
+    print('------ Scene Handwritting Experiment ----------')
+
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True) # randomizer
 
 result, train_set, test_set, train_loader, test_loader = script_recognition(cf) # Test CNN finetune with WG dataset    
