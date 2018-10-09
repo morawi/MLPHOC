@@ -15,7 +15,7 @@ from datasets.load_ifnenit_dataset import IAM_words
 ==
 '''
 # This can be used to only IFN data from four folders
-class iam_train_valid_combined_Dataset(data.Dataset):
+class iam_train_valid_combined_dataset(data.Dataset):
   def __init__(self, cf, train=True, transform=None):
       
     # cf.train_split = False # this should always be false, as we are keeping one folder for testing
