@@ -74,10 +74,11 @@ def get_the_image(file_name, transform, cf):
     thresh = int(thresh)    
     img_name = cf.dataset_path_IAM + file_name + '.png'        
     data = Image.open(img_name)     # data.show()
-    data = data.point(lambda p: int(p < thresh) )
+    data = data.point(lambda p: 255 if int(p < thresh) else 0 )   # thresholding 
+    data = data.convert('1')                                    # converting to binary
+    data = data.point(lambda p: 1 if p == 255  else 0 )     # inverting
     if transform:
         data = transform(data)
-
     return data
 
 #    data = data.point(lambda p: p > thresh and 255) # threshold the image [0,255]
@@ -114,7 +115,8 @@ class IAM_words(Dataset):
         word = self.file_label[index]  
         word_str = word[1].lower() # word_str = word[1].lower(); # to only keep lower-case       
         img = get_the_image(word[0], self.transform, self.cf) 
-        target = PHOC(word_str, self.cf)        
+        target = PHOC(word_str, self.cf)   
+        
         return img, target, word_str, self.weights[index]
 
     def __len__(self):
