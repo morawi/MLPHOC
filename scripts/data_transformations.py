@@ -154,11 +154,14 @@ class OverlayImage(object):
         
     """
     def __init__(self):
-       self.dataset = get_the_data()       
+       self.dataset = get_the_data('STL10')       
     
     
 
     def stitch_images(self, hand_wrt_img):        
+        
+        # hand_wrt_img.show();
+        
         intended_w, intded_h = hand_wrt_img.size
         w, h = self.dataset[0][0].size# .resize([128, 128], Image.ANTIALIAS) # rerurns a tuple, image at idx 0, and label at idx 1
         no_of_images_to_stich = intended_w // w
@@ -170,10 +173,12 @@ class OverlayImage(object):
           x = index * w    
           stiched_image.paste(img, (x , 0, x + w , h))        
         stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS)        
-        hand_wrt_img.point(lambda p: 255 if p==1 else 0)
+        
+        hand_wrt_img = hand_wrt_img.point(lambda p: 255 if p==1 else 0)
         hand_wrt_img = hand_wrt_img.convert('RGB')
         stiched_image.paste(hand_wrt_img , box=None, mask = hand_wrt_img.convert('1'))
-        # hand_wrt_img.show();  stiched_image.show();   # print(stiched_image.mode)
+        
+        # stiched_image.show();   # print(stiched_image.mode)
         
         return stiched_image
     # mean_val = sum(ImageStat.Stat(stiched_image).mean)/3
@@ -185,8 +190,8 @@ class OverlayImage(object):
         return image
     
     
-def get_the_data():
-    data_set_name = 'STL10'
+def get_the_data(data_set_name):
+    # data_set_name = 'STL10'
     print(data_set_name, ' ', end='')
     folder_of_data = '/home/malrawi/Desktop/My Programs/all_data/data' 
     the_root = folder_of_data + data_set_name            
