@@ -1,7 +1,5 @@
 """
-Structure Based on:
-- https://github.com/pytorch/tutorials/blob/master/beginner_source/blitz/cifar10_tutorial.py
-- https://github.com/pytorch/examples/blob/master/mnist/main.py
+
 """
 
 import torch
@@ -34,7 +32,6 @@ def test_cnn_finetune(cf):
 
     sheer_tsfm = transforms.RandomAffine(0, shear=(-30, 10) ) 
     random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
-
     
     image_transform = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
@@ -42,7 +39,8 @@ def test_cnn_finetune(cf):
             OverlayImage() if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
             # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
+            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),
+            #transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
