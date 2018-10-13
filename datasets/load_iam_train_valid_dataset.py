@@ -7,7 +7,7 @@ Created on Wed Sep 26 10:59:35 2018
 """
 
 import torch.utils.data as data
-from datasets.load_ifnenit_dataset import IAM_words
+from datasets.load_iam_dataset import IAM_words
 
 '''
 - Args
@@ -22,7 +22,7 @@ class iam_train_valid_combined_dataset(data.Dataset):
     self.train = train  # training set or test set      
     
     self.train_set = IAM_words(cf, mode='train', transform = transform)
-    self.validate_set = IAM_words(cf, mode='valid', transform = transform)
+    self.validate_set = IAM_words(cf, mode='validate', transform = transform)
     # backing up the original paths    
     
     self.train_set_len = len(self.train_set)
@@ -38,7 +38,7 @@ class iam_train_valid_combined_dataset(data.Dataset):
         return self.validate_set[index]  # check: are we skipping a sample here? 
 
   def __len__(self):
-      return self.train_set_len + self.valid_set_len
+      return self.train_set_len + self.validte_set_len
 
 
   def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
