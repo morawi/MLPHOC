@@ -124,7 +124,7 @@ class IfnEnitDataset(Dataset):
         
         maxG = data.getextrema() # [0] is the min, [1] is the max        
         if maxG[1]>200: # correcting the values of folder e, they do not match the other folders
-            data = data.point(lambda p: 0 if p == 255  else 1 )         
+            data = data.point(lambda p: 0 if p == 255  else 255 )         
             ''' set_e has max of 255, while other sets, namely a,b,c,d have max of 1,
             abcd however need inversion, so, the one  line below works for all,
             to check each dataset use data.show() 
@@ -132,6 +132,10 @@ class IfnEnitDataset(Dataset):
             
         else:
             data = data.point(lambda p: 1 if p == 0  else 0 ) # inverting and normalizing set_e to 1               
+            # stragnely, this 
+                
+        data = data.convert('1')  # needs to be done to have all datasets in the same mode
+        
         
         word_str = self.word_str[idx]
         if self.transform:
