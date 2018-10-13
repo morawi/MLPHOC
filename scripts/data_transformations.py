@@ -172,10 +172,10 @@ class OverlayImage(object):
           img = self.dataset[imgs_idx[index]][0] # .resize([128, 128], Image.ANTIALIAS)  
           x = index * w    
           stiched_image.paste(img, (x , 0, x + w , h))        
-        stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS)        
+        stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS) 
         
-        hand_wrt_img = hand_wrt_img.point(lambda p: 255 if p==1 else 0)
         hand_wrt_img = hand_wrt_img.convert('RGB')
+        hand_wrt_img = hand_wrt_img.point(lambda p: 0 if p==0 else 255)
         stiched_image.paste(hand_wrt_img , box=None, mask = hand_wrt_img.convert('1'))
         
         # stiched_image.show();   # print(stiched_image.mode)
