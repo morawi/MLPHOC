@@ -38,69 +38,34 @@ def get_iam_file_label(cf, mode):
                 data_te = f_te.readlines()
                 file_label = [i[:-1].split(' ') for i in data_te]
         
-        # np.random.shuffle(file_label_tr)
-        
         return file_label
 
 
-''' Auxliary functions '''
-def label_padding(labels, output_max_len):
-    new_label_len = []
-    the_labels = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    letter2index = {label: n for n, label in enumerate(the_labels)}        
-    tokens = {'GO_TOKEN': 0, 'END_TOKEN': 1, 'PAD_TOKEN': 2}
-    num_tokens = len(tokens.keys())
-    ll = [letter2index[i] for i in labels]
-    num = output_max_len - len(ll) - 2
-    new_label_len.append(len(ll)+2)
-    ll = np.array(ll) + num_tokens
-    ll = list(ll)
-    ll = [tokens['GO_TOKEN']] + ll + [tokens['END_TOKEN']]
-    if not num == 0:
-        ll.extend([tokens['PAD_TOKEN']] * num) # replace PAD_TOKEN
-
-    def make_weights(seq_lens, output_max_len):
-        new_out = []
-        for i in seq_lens:
-            ele = [1]*i + [0]*(output_max_len -i)
-            new_out.append(ele)
-        return new_out
-    return ll, make_weights(new_label_len, output_max_len)
-
-
+def remove_non_words(word_str):
+    non_words = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/']
+    loc = [i for i, x,y in enumerate(word_str) if y not in non_words]
+    word_str = [word_str[i] for i in loc]
+    
+    
 def get_the_image(file_name, transform, cf):
    
     file_name, thresh = file_name.split(',')        
     thresh = int(thresh)    
     img_name = cf.dataset_path_IAM + file_name + '.png'        
     data = Image.open(img_name)     # data.show()
-    data = data.point(lambda p: 255 if int(p < thresh) else 0 )   # thresholding 
-    data = data.convert('1')                                    # converting to binary
-    data = data.point(lambda p: 1 if p == 255  else 0 )     # inverting
+    data = data.point(lambda p: 255 if int(p < thresh) else 0 )   # thresholding   and inversion  
+    data = data.convert('1')    # This is necessary to have all datasets in the same mode, it has to be befor the lambda function, for some reasone!
+    # I have settled on using 255 as the max, even after convert(), max is 255, to convert to max 1, use: data = data.point(lambda p: 1 if p == 255  else 0 )  # even after convert-'1', 255 values are still there
+    
     if transform:
         data = transform(data)
     return data
-
-#    data = data.point(lambda p: p > thresh and 255) # threshold the image [0,255]
-#    data = data.point(lambda p: 0 if p==255 else 1 ) # invert and replace 255 by 1
-
-
-#   print(data.getextrema())
-#  data.show()
-# data = ImageOps.invert(data)    # Invert the input image  
-# data = data.convert('L')  # this convers an image to grayscale
-# Convert data to numpy array, so that we use it as input to transform    
-#    data = np.array(data.getdata(),
-#                np.uint8).reshape(data.size[1], data.size[0], 1)
-#    data = (data/data.max()).astype('uint8') # normalized to [0,1] 
-# data = data/data.max()
 
 
 
 class IAM_words(Dataset):
     def __init__(self, cf, mode='train', transform = None):
-        # mode: 'train', 'validate', or 'test'
-        #def __init__(self, cf, train=True, transform=None, data_idx = np.arange(1), complement_idx=False):
+        # mode: 'train', 'validate', or 'test'        
         self.cf = cf
         self.mode = mode
         self.file_label = get_iam_file_label(self.cf, self.mode)
@@ -108,8 +73,7 @@ class IAM_words(Dataset):
         self.transform = transform
         self.len_phoc = len( PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
-        
-        # label, label_mask = label_padding(' '.join(word[1:]), self.output_max_len)
+               
         
     def __getitem__(self, index):
         word = self.file_label[index]  
@@ -125,6 +89,32 @@ class IAM_words(Dataset):
     def num_classes(self):
         return self.len_phoc
 
-        
+   
+     
 
-    
+#    # label, label_mask = label_padding(' '.join(word[1:]), self.output_max_len) iside the class
+#    
+#    ''' Auxliary functions '''
+#def label_padding(labels, output_max_len):
+#    new_label_len = []
+#    the_labels = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+#    letter2index = {label: n for n, label in enumerate(the_labels)}        
+#    tokens = {'GO_TOKEN': 0, 'END_TOKEN': 1, 'PAD_TOKEN': 2}
+#    num_tokens = len(tokens.keys())
+#    ll = [letter2index[i] for i in labels]
+#    num = output_max_len - len(ll) - 2
+#    new_label_len.append(len(ll)+2)
+#    ll = np.array(ll) + num_tokens
+#    ll = list(ll)
+#    ll = [tokens['GO_TOKEN']] + ll + [tokens['END_TOKEN']]
+#    if not num == 0:
+#        ll.extend([tokens['PAD_TOKEN']] * num) # replace PAD_TOKEN
+#
+#    def make_weights(seq_lens, output_max_len):
+#        new_out = []
+#        for i in seq_lens:
+#            ele = [1]*i + [0]*(output_max_len -i)
+#            new_out.append(ele)
+#        return new_out
+#    return ll, make_weights(new_label_len, output_max_len)
+#
