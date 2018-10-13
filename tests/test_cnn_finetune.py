@@ -20,6 +20,7 @@ from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
+from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
 
 
 def test_cnn_finetune(cf):
@@ -39,8 +40,7 @@ def test_cnn_finetune(cf):
             OverlayImage() if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
             # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),
-            #transforms.Scale(cf.input_size) if cf.resize_images else NoneTransform(),
+            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
@@ -82,8 +82,12 @@ def test_cnn_finetune(cf):
         
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................')  
-        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
-        test_set = IAM_words(cf, mode='validate', transform = image_transform)
+        # train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
+#        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
+#        test_set = IAM_words(cf, mode='validate', transform = image_transform)
+#        
+        train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_words(cf, mode='test', transform = image_transform)
         
         print('IAM IAM')
         # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
