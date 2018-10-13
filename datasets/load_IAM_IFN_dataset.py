@@ -13,6 +13,7 @@ dataset fusion based on:
 import torch.utils.data as data
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_iam_dataset import IAM_words
+from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
 import numpy as np
 
 '''
@@ -45,10 +46,17 @@ class IAM_IFN_Dataset(data.Dataset):
     else:
         self.datasetIFN = IfnEnitDataset(cf, train=self.train, transform = transform,
                                          data_idx = data_idx_IFN, complement_idx = True)
-    if len(data_idx_IAM)==1:                
-        self.datasetIAM = IAM_words(cf, mode = self.mode, transform = transform)                
+    if len(data_idx_IAM)==1: 
+        if mode == 'train':
+            self.datasetIAM = iam_train_valid_combined_dataset(cf, train=True, transform = transform) # mode is one of train, test, or validate            
+        else:            
+            assert(mode == 'test')
+            self.datasetIAM = IAM_words(cf, mode = self.mode, transform = transform) 
+            
     else:
-        self.datasetIAM = IAM_words(cf, mode = self.mode, transform = transform)
+         # this is deprecated for IAM dataset as we are splitting based on train, validate, and test folders
+        # self.datasetIAM = IAM_words(cf, mode = self.mode, transform = transform)
+        print('Deprecated by Rawi, as the split is based on train, validate and test')
 
     self.data_idx_IFN = self.datasetIFN.data_idx # this is needed, to be passed from one set to another
    #  self.data_idx_IAM = self.datasetIAM.data_idx # this is needed, to be passed from one set to another
