@@ -94,8 +94,9 @@ def remove_stop_words(word_str) :
                   'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
                   'won', "won't", 'wouldn', "wouldn't"]
     non_alphanumeric = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/']
-                        
-    stop_words = stop_words + non_alphanumeric
+#                        
+    # stop_words = stop_words + non_alphanumeric
+    
                         
     word_str= list(word_str)
 #    loc = []
