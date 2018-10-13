@@ -1,14 +1,14 @@
 import time   # used to create a seed for the randomizers
 
 
-dataset_name    = 'IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'WG+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
 overlay_handwritting_on_STL_img = False
 if overlay_handwritting_on_STL_img:
-    normalize_images = True
+    normalize_images = True # have not used it in the analysis, yet
     
 
 phoc_levels = [2 ,3, 4, 5 ]
