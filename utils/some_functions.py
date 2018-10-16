@@ -13,9 +13,20 @@ from collections import Counter
 from nltk.corpus import wordnet
 import random
 from sklearn import preprocessing
+# from nltk.corpus import stopwords
 
 # https://www.wordfrequency.info/comparison.asp
 
+def remove_non_words(word_str):
+    
+    non_words =["'", '.' '-',  ' ', '"', ',' , 
+                '/', '!', '#', '&',  '(', ')', 
+                '*', '+', ':', ';', '?', '_']    
+        
+    loc = [i for i, x in enumerate(word_str) if x[1] not in non_words]
+    word_str = [word_str[i] for i in loc]
+    return word_str
+    
 
 
 def random_seeding(seed_value, use_cuda):
@@ -69,6 +80,10 @@ def remove_single_words(word_str):
 
 def remove_stop_words(word_str) :
     # for stop_words list: https://gist.github.com/sebleier/554280 
+    '''Toggle this on and replace the list below if there is an update for stop
+    words in NLTK, also toggle on the above from nltk.corpus import stopwords'''
+    # stop_words = stopwords.words('english') 
+    
     stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
                   'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 
                   'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
@@ -93,10 +108,7 @@ def remove_stop_words(word_str) :
                   'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
                   'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
                   'won', "won't", 'wouldn', "wouldn't"]
-    non_alphanumeric = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/']
-#                        
-    # stop_words = stop_words + non_alphanumeric
-    
+ 
                         
     word_str= list(word_str)
 #    loc = []
