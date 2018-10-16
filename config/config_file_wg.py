@@ -1,7 +1,7 @@
 import time   # used to create a seed for the randomizers
 
 
-dataset_name    = 'WG+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'IAM'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
@@ -89,7 +89,9 @@ binarizing_thresh            = 0.5 # threshold to be used to binarize the net si
 
 epochs                       = 100
 
-batch_size_train             = 2  # Prev works used 10 .....  a value of 2 gives better results
+
+batch_size_train             = 6 #  value of 2 gives better results
+
 
 
 batch_size_test              = 100  # Higher values may trigger memory problems
@@ -139,41 +141,42 @@ if IFN_based_on_folds_experiment==True and dataset_name=='IFN':
     folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
 
 
+''' I need to remove these keep flags'''
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 
-''' Language / dataset to use '''
-if dataset_name == 'WG':
-    if keep_non_alphabet_of_GW_in_analysis == True:
-        phoc_unigrams =".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
-    else:
-        phoc_unigrams ='abcdefghijklmnopqrstuvwxyz0123456789'
-elif dataset_name =='IFN':
-    phoc_unigrams ="0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-elif dataset_name == 'WG+IFN':
-    if keep_non_alphabet_of_GW_in_analysis==True:
-        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz,-;':()£|0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-    else:
-        phoc_unigrams ="abcdefghijklmnopqrstuvwxyz0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-        
-elif dataset_name == 'IAM':
-    # all symbol    # x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    # juse just lower case
-    x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    phoc_unigrams = ''.join(map(str, x))
-    del x
 
-elif dataset_name == 'IAM+IFN':
-    x = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '?', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-    x = ''.join(map(str, x))
-    y  = "أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-    z  = x+y
-    phoc_unigrams = ''.join(set(z))
-    del x, y, z    
+''' Language / script dataset to use '''       
+iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', 
+            '/', ':', ';', '?', '_',  
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
+            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
+            'w', 'x', 'y', 'z'] # upper case removed
+iam_char = ''.join(map(str, iam_char))
+ifn_char = "0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
+
+if dataset_name == 'WG':   
+    phoc_unigrams = gw_char    
+
+elif dataset_name =='IFN':
+    phoc_unigrams = ifn_char    
+
+elif dataset_name == 'WG+IFN':    
+    phoc_unigrams =''.join(sorted( set(ifn_char + gw_char) ))        
+
+elif dataset_name == 'IAM':    
+    phoc_unigrams = ''.join(map(str, iam_char))
+    
+elif dataset_name == 'IAM+IFN':                 
+    phoc_unigrams = ''.join(sorted(set(iam_char + ifn_char)))    
 
 else: 
-    exit("Datasets to use: 'WG', 'IFN', 'IAM', or 'WG+IAM' ")
+    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', or 'IAM+IFN' ")
             
+del iam_char, ifn_char, gw_char
+
 # Save results
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
