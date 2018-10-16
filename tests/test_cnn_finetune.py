@@ -81,16 +81,16 @@ def test_cnn_finetune(cf):
                                         complement_idx = True)
         
     elif cf.dataset_name =='IAM':
-        print('...................Loading IAM dataset...................')  
-        # train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
-#        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
-#        test_set = IAM_words(cf, mode='validate', transform = image_transform)
-#        
+        print('...................Loading IAM dataset...................')         
         train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform) # mode is one of train, test, or validate
         test_set = IAM_words(cf, mode='test', transform = image_transform)
         
-        print('IAM IAM')
-        # plt.imshow(train_set[29][0], cmap='gray'); plt.show()
+        print('IAM IAM')        
+#  separate set loading
+#        train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
+#        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
+#        test_set = IAM_words(cf, mode='validate', transform = image_transform)
+
                
     if cf.use_weight_to_balance_data: 
         print('Adding weights to balance the data')
@@ -182,7 +182,7 @@ def test_cnn_finetune(cf):
                 output = F.sigmoid(output)
                 pred = output.data
                 # pred = pred.type(torch.cuda.DoubleTensor)
-                correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
+                # correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
                 # Accumulate from batches to one variable (##_all)
                 pred_all = torch.cat((pred_all, pred), 0)
                 target_all = torch.cat((target_all, target), 0)
