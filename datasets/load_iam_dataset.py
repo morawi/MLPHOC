@@ -1,7 +1,8 @@
 from torch.utils.data import Dataset
 import numpy as np
-from scripts.Word2PHOC import build_phoc as PHOC
+# from scripts.Word2PHOC import build_phoc as PHOC
 from PIL import Image, ImageOps
+from utils.some_functions import remove_non_words
 
 
 # from torchvision import transforms
@@ -37,15 +38,12 @@ def get_iam_file_label(cf, mode):
             with open(cf.gt_path_IAM + gt_te, 'r') as f_te:
                 data_te = f_te.readlines()
                 file_label = [i[:-1].split(' ') for i in data_te]
+                
+        file_label = remove_non_words(file_label)
         
         return file_label
 
 
-def remove_non_words(word_str):
-    non_words = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', '/']
-    loc = [i for i, x,y in enumerate(word_str) if y not in non_words]
-    word_str = [word_str[i] for i in loc]
-    
     
 def get_the_image(file_name, transform, cf):
    
@@ -71,7 +69,7 @@ class IAM_words(Dataset):
         self.file_label = get_iam_file_label(self.cf, self.mode)
         self.output_max_len = OUTPUT_MAX_LEN            
         self.transform = transform
-        self.len_phoc = len( PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
+        self.len_phoc = len( self.cf.PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
                
         
@@ -79,7 +77,7 @@ class IAM_words(Dataset):
         word = self.file_label[index]  
         word_str = word[1].lower() # word_str = word[1].lower(); # to only keep lower-case       
         img = get_the_image(word[0], self.transform, self.cf) 
-        target = PHOC(word_str, self.cf)   
+        target = self.cf.PHOC(word_str, cf = self.cf)   
         
         return img, target, word_str, self.weights[index]
 
