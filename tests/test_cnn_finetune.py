@@ -1,4 +1,5 @@
 """
+Main @author: malrawi
 
 """
 
@@ -66,19 +67,31 @@ def test_cnn_finetune(cf):
                     
     elif cf.dataset_name =='WG+IFN': 
         print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
-        
+        # Main loaders
         train_set = WG_IFN_Dataset(cf, train=True, transform = image_transform)
         test_set = WG_IFN_Dataset(cf, train=False, transform = image_transform, 
                                   data_idx_WG = train_set.data_idx_WG, 
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
+        # pto do a separte testing, for each script
+        test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
+                                data_idx = train_set.data_idx, complement_idx = True)
+        test_set_gw = WashingtonDataset(cf, train=False, transform=image_transform, 
+                            data_idx =train_set.data_idx, complement_idx = True)
+        
+        
     elif cf.dataset_name =='IAM+IFN': 
         print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
         
-        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'test', transform = image_transform) # mode is one of train, test, or validate
-        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'validate', transform = image_transform,  # loading iam valid set for testing
+        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'train', transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'test', transform = image_transform,  # loading iam valid set for testing
                                   data_idx_IFN = train_set.data_idx_IFN, 
                                         complement_idx = True)
+        
+        # to do a separte testing, for each script
+        test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
+                                data_idx = train_set.data_idx, complement_idx = True) 
+        test_set_iam = test_set = IAM_words(cf, mode='test', transform = image_transform)
         
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................')         
@@ -97,12 +110,28 @@ def test_cnn_finetune(cf):
         # train_set = add_weights_of_words(train_set)
         train_set.add_weights_of_words()
         
+    # the main loaders
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
                                   shuffle = cf.shuffle, num_workers=cf.num_workers)
 
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
    
+    # the per-script loaders
+    if cf.dataset_name =='IAM+IFN':
+        test_loader_ifn = torch.utils.data.DataLoader(test_set_ifn, batch_size=cf.batch_size_test,
+                                  shuffle = False, num_workers=cf.num_workers)
+        test_loader_iam = torch.utils.data.DataLoader(test_set_iam, batch_size=cf.batch_size_test,
+                                  shuffle = False, num_workers=cf.num_workers)
+    elif cf.dataset_name =='WG+IFN':
+        test_loader_ifn = torch.utils.data.DataLoader(test_set_ifn, batch_size=cf.batch_size_test,
+                                  shuffle = False, num_workers=cf.num_workers)
+        test_loader_gw = torch.utils.data.DataLoader(test_set_gw, batch_size=cf.batch_size_test,
+                                  shuffle = False, num_workers=cf.num_workers)
+        
+    
+        
+    
 
     model = make_model(
         cf.model_name,
@@ -229,8 +258,6 @@ def test_cnn_finetune(cf):
                 # print('word Similarity =--: ', word_similarity, '\n')
                 print(  word_str_mom, " ", end="")
                 print( word_similarity)
-
-
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     # print('PHOC length', train_set.)
@@ -242,8 +269,20 @@ def test_cnn_finetune(cf):
         train(epoch)           
         if not(epoch % cf.testing_print_frequency):
             test(test_loader)
-            
+    print('Bi-script retrieval testing')        
     result = test(test_loader)
+    if cf.dataset_name =='WG+IFN':
+        print('Per-script testing  IFN --------'); 
+        result = test(test_loader_ifn)
+        print('Per-script testing  GW --------'); 
+        result = test(test_loader_gw)
+    elif cf.dataset_name =='IAM+IFN':
+        print('Per-script testing  IFN --------'); 
+        result = test(test_loader_ifn)
+        print('Per-script testing  IAM --------'); 
+        result = test(test_loader_iam)
+               
+        
     # test_moment_and_word_sim(result)
     
     return result, train_set, test_set, train_loader, test_loader # returned to be checked from command console, this is provisary
