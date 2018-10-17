@@ -1,3 +1,9 @@
+''' 
+Main @author: malrawi 
+
+'''
+
+
 from __future__ import print_function, division
 
 #import glob
@@ -93,18 +99,20 @@ def image_thinning(img, p):
         sum_img = img.sum()/(img.size* img.max())
         if sum_img>p:
             img = skimage_thinner(img, max_iter= thin_iter_step)
-            ''' remove below maybe '''
+            
         else: 
-            # img = (img/img.max())
-            break
-    
+            if i==1:
+                return 0, 0 # this indicates no thinning at all, so return back
+            else:
+                break
+            # break    
     img = img.reshape(img.shape[0], img.shape[1], 1)
     img = img*img_max_orig   # Now, bringing the normalization back to all images
     img = img.astype('float32')
     tsfm = transforms.ToPILImage()
     img = tsfm(img)   
     
-    return img 
+    return 1, img  # the value 1 is used as a flag that there was thinning
 
 class ImageThinning(object):
     """ Thin the image input as PIL and output a PIL
@@ -118,7 +126,11 @@ class ImageThinning(object):
         
     def __call__(self, image):
         # image =self.image_thinning(image, self.p)                      
-        image = image_thinning(image, self.p) 
+        x, y = image_thinning(image, self.p) 
+        if x != 0:
+            image = y
+            
+            
         
         return image
 
