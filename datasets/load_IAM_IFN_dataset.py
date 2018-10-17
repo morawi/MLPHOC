@@ -8,7 +8,8 @@ Created on Tue Oct  2 17:30:47 2018
 
 """
 dataset fusion based on:
-    https://github.com/xingyizhou/pytorch-pose-hg-3d/blob/master/src/datasets/fusion.py """
+    https://github.com/xingyizhou/pytorch-pose-hg-3d/blob/master/src/datasets/fusion.py 
+"""
 
 import torch.utils.data as data
 from datasets.load_ifnenit_dataset import IfnEnitDataset

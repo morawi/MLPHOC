@@ -1,3 +1,10 @@
+"""
+Created on Thu Jul  7 12:08:22 2018
+
+@author: malrawi
+
+"""
+
 from torch.utils.data import Dataset
 import numpy as np
 # from scripts.Word2PHOC import build_phoc as PHOC
