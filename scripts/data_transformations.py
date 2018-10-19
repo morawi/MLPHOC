@@ -92,27 +92,26 @@ class NoneTransform(object):
 
 def image_thinning(img, p):
     # input image as PIL, output image as PIL
-    img= np.array(img).squeeze()
     thin_iter_step  = 1   
-    img_max_orig = img.max()
-    for i in range(25): 
+    max_no_of_thin_iterations = 25 # the algorithm will mostly used 2 or 3, as shown in our tests    
+    img_max_orig = img.getextrema()[1] # we need this to normalize the image back to the max value
+    img= np.array(img).squeeze() # the img max will be 1 now, which is suitable for our thinning algorithm
+    sum_img = img.sum()/(img.size* img.max())   
+    for i in range(max_no_of_thin_iterations): 
         sum_img = img.sum()/(img.size* img.max())
         if sum_img>p:
-            img = skimage_thinner(img, max_iter= thin_iter_step)
-            
-        else: 
-            if i==1:
-                return 0, 0 # this indicates no thinning at all, so return back
-            else:
-                break
-            # break    
-    img = img.reshape(img.shape[0], img.shape[1], 1)
-    img = img*img_max_orig   # Now, bringing the normalization back to all images
+            img = skimage_thinner(img, max_iter= thin_iter_step)            
+        else:           
+            break        
+    
+    img = img.reshape(img.shape[0], img.shape[1], 1)    
+    img = img*img_max_orig   # Now, bringing the normalization back to all images    
     img = img.astype('float32')
     tsfm = transforms.ToPILImage()
     img = tsfm(img)   
-    
-    return 1, img  # the value 1 is used as a flag that there was thinning
+    img = img.convert('1')  # image will have max value (even 255) after this conversion, looks crazey but it had to be done!!
+        
+    return img  # the value 1 is used as a flag that there was thinning
 
 class ImageThinning(object):
     """ Thin the image input as PIL and output a PIL
@@ -126,11 +125,11 @@ class ImageThinning(object):
         
     def __call__(self, image):
         # image =self.image_thinning(image, self.p)                      
-        x, y = image_thinning(image, self.p) 
-        if x != 0:
-            image = y
-            
-            
+        image = image_thinning(image, self.p) 
+#        if x == 0:
+#            image = y
+#            
+       
         
         return image
 
