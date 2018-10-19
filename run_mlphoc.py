@@ -1,3 +1,10 @@
+
+''' 
+Main @author: malrawi 
+
+'''
+
+
 from __future__ import division
 import time
 import logging
@@ -51,9 +58,9 @@ else:
 
 print("Execution time is: ", time.time() - start_timer )
     
-'''   
- test_varoius_thresholds(result, cf)  
- '''
+  
+# test_varoius_thresholds(result, cf)  
+ 
 # word_str_mom = word_str_moment(result['word_str'])
 # word_similarity = word_similarity_metric(result['word_str'])
 #print('testing set word vect Moment is: ', word_str_mom)
