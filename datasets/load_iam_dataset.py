@@ -62,9 +62,8 @@ def get_the_image(file_name, transform, cf):
     data = data.convert('1')    # This is necessary to have all datasets in the same mode, it has to be befor the lambda function, for some reasone!
     # I have settled on using 255 as the max, even after convert(), max is 255, to convert to max 1, use: data = data.point(lambda p: 1 if p == 255  else 0 )  # even after convert-'1', 255 values are still there
     
-    if transform:
-        data = transform(data)
     return data
+    
 
 
 
@@ -73,8 +72,7 @@ class IAM_words(Dataset):
         # mode: 'train', 'validate', or 'test'        
         self.cf = cf
         self.mode = mode
-        self.file_label = get_iam_file_label(self.cf, self.mode)
-        self.output_max_len = OUTPUT_MAX_LEN            
+        self.file_label = get_iam_file_label(self.cf, self.mode)        
         self.transform = transform
         self.len_phoc = len( self.cf.PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
@@ -83,8 +81,22 @@ class IAM_words(Dataset):
     def __getitem__(self, index):
         word = self.file_label[index]  
         word_str = word[1].lower() # word_str = word[1].lower(); # to only keep lower-case       
-        img = get_the_image(word[0], self.transform, self.cf) 
-        target = self.cf.PHOC(word_str, cf = self.cf)   
+        img = get_the_image(word[0], self.transform, self.cf)         
+        if not(self.cf.H_iam_scale ==0): # resizing just the height            
+            new_w = int(img.size[0]*self.cf.H_iam_scale/img.size[1])
+            if new_w>self.cf.MAX_IMAGE_WIDTH: 
+                new_w = self.cf.MAX_IMAGE_WIDTH
+            img = img.resize( (new_w, self.cf.H_iam_scale), Image.ANTIALIAS)
+        
+        if self.cf.encoder=='label':
+            target = 1 # 1: lable for Arabic script
+        else:
+            # target = self.phoc_word[idx]
+            target = self.cf.PHOC(word_str, cf = self.cf)
+            target = self.cf.PHOC(word_str, cf = self.cf)  
+        
+        if self.transform:
+            img = self.transform(img)    
         
         return img, target, word_str, self.weights[index]
 
