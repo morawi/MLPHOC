@@ -165,9 +165,7 @@ class WashingtonDataset(Dataset):
         data = data.point(lambda p: p > 100 and 255) # threshold the image [0,255]
         data = data.point(lambda p: 0 if p==255 else 255 ) # invert and replace 255 by 1
         
-        data = data.convert('1')
-        
-        
+        data = data.convert('1')      
         
         word_str = self.word_str[idx]        
         if self.cf.encoder=='label':
