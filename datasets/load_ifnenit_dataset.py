@@ -118,9 +118,9 @@ class IfnEnitDataset(Dataset):
         data = Image.open(img_name)
         if not(self.cf.H_ifn_scale ==0): # resizing just the height            
             new_w = int(data.size[0]*self.cf.H_ifn_scale/data.size[1])
-            if new_w>self.cf.MAX_IMAGE_WIDTH: new_w = self.cf.MAX_IMAGE_WIDTH
+            if new_w>self.cf.MAX_IMAGE_WIDTH: 
+                new_w = self.cf.MAX_IMAGE_WIDTH
             data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
-
         
         maxG = data.getextrema() # [0] is the min, [1] is the max        
         if maxG[1]>200: # correcting the values of folder e, they do not match the other folders
@@ -135,7 +135,6 @@ class IfnEnitDataset(Dataset):
             # stragnely, this 
                 
         data = data.convert('1')  # needs to be done to have all datasets in the same mode
-        
         
         word_str = self.word_str[idx]
         if self.transform:
