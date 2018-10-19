@@ -22,7 +22,7 @@ from scripts.data_transformations import PadImage, ImageThinning, NoneTransform,
 from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
-
+import matplotlib.pyplot as plt
 
 def test_cnn_finetune(cf):
     
@@ -45,6 +45,7 @@ def test_cnn_finetune(cf):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
+    
 #        
     if cf.dataset_name == 'WG':
         print('...................Loading WG dataset...................')
@@ -90,8 +91,8 @@ def test_cnn_finetune(cf):
         
         # to do a separte testing, for each script
         test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
-                                data_idx = train_set.data_idx, complement_idx = True) 
-        test_set_iam = test_set = IAM_words(cf, mode='test', transform = image_transform)
+                                data_idx = train_set.data_idx_IFN, complement_idx = True) 
+        test_set_iam = IAM_words(cf, mode='test', transform = image_transform)
         
     elif cf.dataset_name =='IAM':
         print('...................Loading IAM dataset...................')         
@@ -104,7 +105,9 @@ def test_cnn_finetune(cf):
 #        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
 #        test_set = IAM_words(cf, mode='validate', transform = image_transform)
 
-               
+    # just display a couple of images to make sure everything is OK
+#    test_set[110][0].show()
+#    train_set[110][0].show()
     if cf.use_weight_to_balance_data: 
         print('Adding weights to balance the data')
         # train_set = add_weights_of_words(train_set)
@@ -129,8 +132,15 @@ def test_cnn_finetune(cf):
         test_loader_gw = torch.utils.data.DataLoader(test_set_gw, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
         
+    # displaying images for overlay diagnostics, or see if they are correctly formated
+    to_pil = transforms.ToPILImage() 
+    img  = to_pil(train_set[41][0]) # we can also use test_set[1121][0].numpy()    
+    plt.imshow(np.array(img).squeeze()); plt.show()
+    print('one train image: ', img, ' has max val', img.getextrema())  
     
-        
+    img  = to_pil(test_set[1121][0])    
+    plt.imshow(np.array(img).squeeze()); plt.show()
+    print('one train image: ', img, ' has max val', img.getextrema())  
     
 
     model = make_model(
