@@ -1,3 +1,7 @@
+''' 
+Main @author: malrawi 
+'''
+
 import time   # used to create a seed for the randomizers
 
 
@@ -6,7 +10,7 @@ encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used
 folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
-overlay_handwritting_on_STL_img = False
+overlay_handwritting_on_STL_img = True
 if overlay_handwritting_on_STL_img:
     normalize_images = True # have not used it in the analysis, yet
     
@@ -45,24 +49,33 @@ elif dataset_name == 'IFN': # 1069 x 226
     
 elif dataset_name == 'IAM': # 1087 x 241
     MAX_IMAGE_WIDTH  = 1087
-    MAX_IMAGE_HEIGHT = 241
+    # MAX_IMAGE_HEIGHT = 241
+    
+    '''Testing latest normalization'''
+    MAX_IMAGE_HEIGHT = 120
+    
+    H_iam_scale      = 120 
+    # In IAM
+    #Max Image Height is 241 n02-049-03-02 (182, 241) test set
+    #Max Image Width is 1087 c06-103-00-01 (1087, 199) train set
     
     ''' for mix language, we have to scale IFN to WG size'''
-elif dataset_name == 'WG+IFN':  
-    H_ifn_scale      = 120 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
+elif dataset_name == 'WG+IFN':      
     MAX_IMAGE_WIDTH  = 1069 # 
     MAX_IMAGE_HEIGHT = 120    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
+    H_ifn_scale      = 120 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
     
 elif dataset_name == 'IAM+IFN':
     MAX_IMAGE_WIDTH  = 1087
     MAX_IMAGE_HEIGHT = 241
-    H_ifn_scale = 0
+    H_iam_scale      = 120 
+    H_ifn_scale      = 120 # to skip scaling the height, use 0, pr, use WG_IMAGE_HEIGHT = 120
 
 
 # Input Images
 use_weight_to_balance_data      = False
 use_distortion_augmentor        = False
-thinning_threshold              = 1 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
+thinning_threshold              = .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
 resize_images                = True         # Resize the dataset images to a fixed size
@@ -88,11 +101,9 @@ batch_log                    = 2000  # how often to report/print the training lo
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
 
 epochs                       = 100
-
-
-batch_size_train             = 6 #  value of 2 gives better results
-
-
+batch_size_train             = 2 
+if dataset_name=='IAM' or dataset_name == 'IAM+IFN':
+    batch_size_train             = 6 #  value of 2 gives better results
 
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
