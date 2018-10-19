@@ -41,7 +41,7 @@ def hist_of_text_to_background_ratio(data_set):
     matplot_rc('font', **font)
     hh = []    
     img = data_set[0][0]; 
-    #  img.show() # img show has a problem!!!!!!!!!!! IFN showed this
+   
     # img = np.array(img.getdata(), np.uint8).reshape(img.size[1], img.size[0], 1) # this line does inversion of the image, IFN abcd, donno why?!
 #    
     img_max= img.getextrema()[1]
@@ -49,10 +49,10 @@ def hist_of_text_to_background_ratio(data_set):
     for i in range(len(data_set)):    
         img = data_set[i][0].getdata() 
         img_sum = sum(img)  
-        hh.append(img_sum /( img.size[1]*img.size[0] ))
+        hh.append(img_sum /(img_max*img.size[1]*img.size[0] ))
     #plt.hist(img.squeeze()) # to plot the hist of an image, rough one
     plt.figure(" ")
-    plt.hist(hh)    
+    plt.hist(hh, 100)    
     plt.xticks(np.arange(0, 1.1, .2))    
     plt.show()
 
@@ -75,7 +75,7 @@ the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitu
 sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
 random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
 image_transfrom = transforms.Compose([thin_image,
-                                      the_augmentor, 
+                                     # the_augmentor, 
                                      # sheer_tsfm, 
                                     #  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                          # transforms.ToPILImage(),                                     
@@ -84,28 +84,30 @@ image_transfrom = transforms.Compose([thin_image,
                          # transforms.Normalize(mean, std),
                           ])
 
-image_transfrom = None
+# image_transfrom = None
 
 if cf.dataset_name == 'IFN':       
     test_set = IfnEnitDataset(cf, train=True, transform = image_transfrom)
 
 elif cf.dataset_name == 'IAM':    
     # test_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
-    test_set  = IAM_words(cf, mode='test', transform = image_transfrom)
+    test_set  = IAM_words(cf, mode='train', transform = image_transfrom)
     
 elif cf.dataset_name == 'WG':
     test_set = WashingtonDataset(cf, train=True, transform = image_transfrom)               
 else: 
     print(' incorrect dataset_name')
     
-x1 = test_set[921][0]
+x1 = test_set[561][0]
+plt.imshow(np.array(x1).squeeze(), 'gray')
+hist_of_text_to_background_ratio(test_set)
 # x1 = x1.convert('L')
 # plt.imshow(np.array(x1).squeeze(), 'gray')
 # data_set  = IAM_words(cf, mode='test', transform = None)
 #x2, _,_ = data_set2[1]
 
 #find_max_HW_in_data(test_set)
-# hist_of_text_to_background_ratio(test_set)
+
 # test_thinning(test_set)
 
 
