@@ -12,6 +12,7 @@ os.chdir("..")
 from config.load_config_file import Configuration
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_washington_dataset import WashingtonDataset
+from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
 from scripts.data_transformations import ImageThinning, image_thinning, TheAugmentor
 import numpy as np
@@ -74,7 +75,7 @@ the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitu
 # p.shear(probability=1, max_shear_left=10, max_shear_right=10)
 sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
 random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
-image_transfrom = transforms.Compose([thin_image,
+image_transform = transforms.Compose([thin_image,
                                      # the_augmentor, 
                                      # sheer_tsfm, 
                                     #  transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
@@ -87,14 +88,27 @@ image_transfrom = transforms.Compose([thin_image,
 # image_transfrom = None
 
 if cf.dataset_name == 'IFN':       
-    test_set = IfnEnitDataset(cf, train=True, transform = image_transfrom)
+    test_set = IfnEnitDataset(cf, train=True, transform = image_transform)
 
 elif cf.dataset_name == 'IAM':    
     # test_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
-    test_set  = IAM_words(cf, mode='train', transform = image_transfrom)
+    test_set  = IAM_words(cf, mode='train', transform = image_transform)
     
 elif cf.dataset_name == 'WG':
-    test_set = WashingtonDataset(cf, train=True, transform = image_transfrom)               
+    test_set = WashingtonDataset(cf, train=True, transform = image_transform)               
+elif cf.dataset_name =='IAM+IFN': 
+        print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
+        
+        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'train', transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'test', transform = image_transform,  # loading iam valid set for testing
+                                  data_idx_IFN = train_set.data_idx_IFN, 
+                                        complement_idx = True)
+        
+        # to do a separte testing, for each script
+        test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
+                                data_idx = train_set.data_idx_IFN, complement_idx = True) 
+        test_set_iam = IAM_words(cf, mode='test', transform = image_transform)
+
 else: 
     print(' incorrect dataset_name')
     
