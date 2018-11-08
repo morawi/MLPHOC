@@ -76,9 +76,9 @@ def test_cnn_finetune(cf):
                                         complement_idx = True)
         # pto do a separte testing, for each script
         test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
-                                data_idx = train_set.data_idx, complement_idx = True)
+                                data_idx = train_set.data_idx_IFN, complement_idx = True)
         test_set_gw = WashingtonDataset(cf, train=False, transform=image_transform, 
-                            data_idx =train_set.data_idx, complement_idx = True)
+                            data_idx =train_set.data_idx_WG, complement_idx = True)
         
         
     elif cf.dataset_name =='IAM+IFN': 
@@ -140,7 +140,7 @@ def test_cnn_finetune(cf):
     
     img  = to_pil(test_set[1121][0])    
     plt.imshow(np.array(img).squeeze()); plt.show()
-    print('one train image: ', img, ' has max val', img.getextrema())  
+    print('one test image: ', img, ' has max val', img.getextrema())  
     
 
     model = make_model(
