@@ -1,13 +1,15 @@
 ''' 
 Main @author: malrawi 
+
 '''
 
 import time   # used to create a seed for the randomizers
+import numpy as np
 
 
-dataset_name    = 'IAM+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
-encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
-folder_of_data              = '/home/malrawi/Desktop/My Programs/all_data/'
+dataset_name    = 'WG+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+encoder         = 'label' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
+folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
 overlay_handwritting_on_STL_img = False
@@ -132,13 +134,16 @@ rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #
 if encoder == 'label':
     loss == 'CrossEntropyLoss'
     batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
-    model_name               = 'resnet18'
-    testing_print_frequency  = 2 # prime number, how frequent to test/print during training
+    # model_name               = 'resnet18'
+    testing_print_frequency  = 11 # prime number, how frequent to test/print during training
     dataset_name    = 'WG+IFN' # or 'IAM+IFN'
+    English_label = np.array([1,0], 'double')
+    Arabic_label = np.array([0,1], 'double')
+    
 
 
 IFN_test = 'set_a'
-IFN_all_data_grouped_in_one_folder = True
+IFN_all_data_grouped_in_one_folder = False
 
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
