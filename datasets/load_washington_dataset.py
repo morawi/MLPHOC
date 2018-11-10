@@ -1,3 +1,11 @@
+"""
+Created on Thu Jul  7 12:08:22 2018
+
+@author: malrawi
+
+"""
+
+
 from __future__ import print_function, division
 
 import os
@@ -169,7 +177,7 @@ class WashingtonDataset(Dataset):
         
         word_str = self.word_str[idx]        
         if self.cf.encoder=='label':
-            target = 0 # 0: label for English script
+            target = self.cf.English_label  # 0: label for English script
         else:
             target = self.cf.PHOC(word_str, self.cf)
         if self.transform:

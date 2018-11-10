@@ -89,7 +89,7 @@ class IAM_words(Dataset):
             img = img.resize( (new_w, self.cf.H_iam_scale), Image.ANTIALIAS)
         
         if self.cf.encoder=='label':
-            target = 1 # 1: lable for Arabic script
+            target = cf.English_label # 1: lable for Arabic script
         else:
             # target = self.phoc_word[idx]
             target = self.cf.PHOC(word_str, cf = self.cf)

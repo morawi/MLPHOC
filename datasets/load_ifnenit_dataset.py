@@ -1,3 +1,11 @@
+"""
+Created on Thu Jul  7 12:08:22 2018
+
+@author: malrawi
+
+"""
+
+
 from __future__ import print_function, division
 
 import os
@@ -140,7 +148,7 @@ class IfnEnitDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         if self.cf.encoder=='label':
-            target = 1 # 1: lable for Arabic script
+            target = self.cf.Arabic_label # 1: lable for Arabic script
         else:
             # target = self.phoc_word[idx]
             target = self.cf.PHOC(word_str, self.cf)
