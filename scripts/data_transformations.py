@@ -164,10 +164,9 @@ class OverlayImage(object):
         Use an image from dataset as background to the handwritting image (STL10 dataset is used)
         
     """
-    def __init__(self):
-       self.dataset = get_the_data('STL10')       
-    
-    
+    def __init__(self, cf):
+       self.dataset = get_the_data('STL10')
+       self.cf=cf       
 
     def stitch_images(self, hand_wrt_img):        
         
@@ -186,7 +185,16 @@ class OverlayImage(object):
         stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS) 
         
         hand_wrt_img = hand_wrt_img.convert('RGB')
-        hand_wrt_img = hand_wrt_img.point(lambda p: 0 if p==0 else 255)
+        if self.cf.change_hand_wrt_color:
+            rr, gg, bb = hand_wrt_img.split()
+            rr = rr.point(lambda p: 0 if p==0 else np.random.randint(256) )
+            gg = gg.point(lambda p: 0 if p==0 else np.random.randint(256) )
+            bb = bb.point(lambda p: 0 if p==0 else np.random.randint(256) )
+            hand_wrt_img = Image.merge("RGB", (rr, gg, bb))
+        else:
+            # keep it white
+            hand_wrt_img = hand_wrt_img.point(lambda p: 0 if p==0 else 255)
+        
         stiched_image.paste(hand_wrt_img , box=None, mask = hand_wrt_img.convert('1'))
         
         # stiched_image.show();   # print(stiched_image.mode)

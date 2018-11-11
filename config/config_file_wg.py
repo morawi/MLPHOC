@@ -7,12 +7,13 @@ import time   # used to create a seed for the randomizers
 import numpy as np
 
 
-dataset_name    = 'WG+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+dataset_name    = 'IAM+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
 encoder         = 'label' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
-overlay_handwritting_on_STL_img = False
+overlay_handwritting_on_STL_img = True
+change_hand_wrt_color = True
 if overlay_handwritting_on_STL_img:
     normalize_images = True # have not used it in the analysis, yet
     
@@ -134,16 +135,16 @@ rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #
 if encoder == 'label':
     loss == 'CrossEntropyLoss'
     batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
-    # model_name               = 'resnet18'
-    testing_print_frequency  = 11 # prime number, how frequent to test/print during training
-    dataset_name    = 'WG+IFN' # or 'IAM+IFN'
-    English_label = np.array([1,0], 'double')
-    Arabic_label = np.array([0,1], 'double')
+    model_name               = 'resnet18'
+    testing_print_frequency  = 3 # prime number, how frequent to test/print during training
+    English_label = np.array([1, 0], 'double')
+    Arabic_label = np.array([0, 1], 'double')
+    assert(dataset_name == 'WG+IFN' or  dataset_name == 'IAM+IFN') # or 'IAM+IFN'
     
 
 
 IFN_test = 'set_a'
-IFN_all_data_grouped_in_one_folder = False
+IFN_all_data_grouped_in_one_folder = True
 
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
@@ -174,7 +175,7 @@ if IFN_based_on_folds_experiment==True and dataset_name=='IFN':
     folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
 
 
-''' I need to remove these keep flags'''
+''' I need to remove these keep flags.....later !!'''
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 
