@@ -38,7 +38,7 @@ def test_cnn_finetune(cf):
     image_transform = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
             random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
-            OverlayImage() if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
+            OverlayImage(cf) if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
             # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
@@ -207,6 +207,7 @@ def test_cnn_finetune(cf):
         model.eval()        
         test_loss = 0
         correct = 0
+        mAP_QbE = 0; mAP_QbS = 0 # forward assignment, in case of using label  encoder
         pred_all = torch.tensor([], dtype=torch.float32, device=device)
         target_all = torch.tensor([], dtype=torch.float32, device=device)
         word_str_all = ()
@@ -217,29 +218,34 @@ def test_cnn_finetune(cf):
                 loss = criterion(output.float(), target.float())
                 if cf.use_weight_to_balance_data:
                     test_loss += torch.mean(loss).item()
-                else: test_loss += loss.item()
+                else: 
+                    test_loss += loss.item()
                 output = F.sigmoid(output)
                 pred = output.data
-                # pred = pred.type(torch.cuda.DoubleTensor)
-                # correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
+                if cf.encoder == 'label': 
+                    pred = pred.type(torch.cuda.DoubleTensor)
+                    pred = pred.round()
+                    correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
                 # Accumulate from batches to one variable (##_all)
-                pred_all = torch.cat((pred_all, pred), 0)
-                target_all = torch.cat((target_all, target), 0)
+                pred_all = torch.cat((pred_all, pred.float()), 0)
+                target_all = torch.cat((target_all.float(), target.float()), 0)
                 word_str_all = word_str_all + word_str        
         
         test_loss /= len(test_loader.dataset)             
-        result = {'word_str':word_str_all,'pred': pred_all,
+        result = {'word_str':word_str_all,
+                  'pred': pred_all,
                   'target': target_all}
         
-        '''
-        print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+        if cf.encoder == 'label':
+            print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
             test_loss, correct, len(test_loader.dataset)*pred.size()[1],
-            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))   
-        '''
-       
-        mAP_QbS = find_mAP_QbS(result, cf)
-        mAP_QbE = find_mAP_QbE(result, cf)
-        print( 'QbS ',  mAP_QbS, " QbE ",  mAP_QbE, " ")        
+            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))  
+            
+        else:   
+            mAP_QbS = find_mAP_QbS(result, cf)
+            mAP_QbE = find_mAP_QbE(result, cf)
+            print( 'QbS ',  mAP_QbS, " QbE ",  mAP_QbE, " ")        
+        
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
         
