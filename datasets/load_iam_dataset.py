@@ -73,8 +73,7 @@ class IAM_words(Dataset):
         self.cf = cf
         self.mode = mode
         self.file_label = get_iam_file_label(self.cf, self.mode)        
-        self.transform = transform
-        self.len_phoc = len( self.cf.PHOC(word='abcd', cf = self.cf) ) # passing an arbitrary string to get the phoc lenght
+        self.transform = transform        
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
                
         
@@ -89,7 +88,7 @@ class IAM_words(Dataset):
             img = img.resize( (new_w, self.cf.H_iam_scale), Image.ANTIALIAS)
         
         if self.cf.encoder=='label':
-            target = cf.English_label # 1: lable for Arabic script
+            target = self.cf.English_label # 1: lable for Arabic script
         else:
             # target = self.phoc_word[idx]
             target = self.cf.PHOC(word_str, cf = self.cf)
@@ -104,7 +103,12 @@ class IAM_words(Dataset):
         return len(self.file_label)
      
     def num_classes(self):
-        return self.len_phoc
+        if self.cf.encoder=='label':
+            return len(self.cf.English_label)
+        else:
+            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+
+
 
    
      

@@ -111,7 +111,7 @@ class IfnEnitDataset(Dataset):
 
     def num_classes(self):
         if self.cf.encoder=='label':
-            return 2
+            return len(self.cf.Arabic_label)
         else:
             # return len(self.phoc_word[0])
             return len(self.cf.PHOC('بجدهو', self.cf)) # pasing 'dump' word to get the length
