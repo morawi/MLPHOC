@@ -183,19 +183,20 @@ class OverlayImage(object):
           x = index * w    
           stiched_image.paste(img, (x , 0, x + w , h))        
         stiched_image = stiched_image.resize([intended_w,intded_h], Image.ANTIALIAS) 
-        
+        my_mask = hand_wrt_img.convert('1')
         hand_wrt_img = hand_wrt_img.convert('RGB')
         if self.cf.change_hand_wrt_color:
             rr, gg, bb = hand_wrt_img.split()
             rr = rr.point(lambda p: 0 if p==0 else np.random.randint(256) )
             gg = gg.point(lambda p: 0 if p==0 else np.random.randint(256) )
             bb = bb.point(lambda p: 0 if p==0 else np.random.randint(256) )
-            hand_wrt_img = Image.merge("RGB", (rr, gg, bb))
+            hand_wrt_img = Image.merge("RGB", (rr, gg, bb))  
+            my_mask = hand_wrt_img.convert('1') # comment this to remove gaps from the handwriting
         else:
             # keep it white
             hand_wrt_img = hand_wrt_img.point(lambda p: 0 if p==0 else 255)
         
-        stiched_image.paste(hand_wrt_img , box=None, mask = hand_wrt_img.convert('1'))
+        stiched_image.paste(hand_wrt_img , box=None, mask = my_mask)
         
         # stiched_image.show();   # print(stiched_image.mode)
         
