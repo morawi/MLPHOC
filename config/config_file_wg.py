@@ -7,12 +7,12 @@ import time   # used to create a seed for the randomizers
 import numpy as np
 
 
-dataset_name    = 'IAM+IFN'#  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
-encoder         = 'label' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
+dataset_name    = 'TFSPCH' #  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
+encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
 folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 normalize_images       = False
-overlay_handwritting_on_STL_img = True
+overlay_handwritting_on_STL_img = False
 change_hand_wrt_color = True
 if overlay_handwritting_on_STL_img:
     normalize_images = True # have not used it in the analysis, yet
@@ -42,6 +42,11 @@ del phoc_levels
         
 
 # Dataset max W and H
+if dataset_name ==  'TFSPCH': # 645 x 120
+    MAX_IMAGE_WIDTH  = 255
+    MAX_IMAGE_HEIGHT = 255
+
+
 if dataset_name ==  'WG': # 645 x 120
     MAX_IMAGE_WIDTH  = 645
     MAX_IMAGE_HEIGHT = 120
@@ -66,7 +71,7 @@ elif dataset_name == 'IAM': # 1087 x 241
     #Max Image Height is 241 n02-049-03-02 (182, 241) test set
     #Max Image Width is 1087 c06-103-00-01 (1087, 199) train set
     
-    ''' for mix language, we have to scale IFN to WG size'''
+    ''' for mix language, we have to scale IFN to WG size '''
 elif dataset_name == 'WG+IFN':      
     MAX_IMAGE_WIDTH  = 1069 # 
     MAX_IMAGE_HEIGHT = 226    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
@@ -91,20 +96,29 @@ use_distortion_augmentor        = False
 
 
 
-thinning_threshold              = .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
+thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 
 
 
 pad_images                   = True         # Pad the input images to a fixed size [576, 226]
-resize_images                = True         # Resize the dataset images to a fixed size
+
+
+resize_images                = False         # Resize the dataset images to a fixed size
+
+
+
+
 if resize_images:
-    input_size               = (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+    input_size               =  (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
 else: 
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
    
 
 # Model parameters
 model_name                   = 'resnet152' # 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+
+
+
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
@@ -117,8 +131,7 @@ dropout_probability          = 0
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-
-epochs                       = 60
+epochs                       = 150 # 60
 batch_size_train             = 2 
 if dataset_name=='IAM' or dataset_name == 'IAM+IFN':
     batch_size_train             = 6 #  value of 2 gives better results
@@ -194,6 +207,10 @@ gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
 if dataset_name == 'WG':   
     phoc_unigrams = gw_char    
 
+if dataset_name == 'TFSPCH':   
+    phoc_unigrams = gw_char    
+
+
 elif dataset_name =='IFN':
     phoc_unigrams = ifn_char    
 
@@ -216,7 +233,9 @@ save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
 
 
-
+TFSPCH_ifn_scale = 0
+dataset_path_TF_SPEECH = ''
+split_percentage_TFSPCH = 0.5
 
 '''
  of model_name : 
