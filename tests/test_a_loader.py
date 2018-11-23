@@ -9,7 +9,10 @@ Created on Sat Jul 28 18:11:50 2018
 import os
 os.chdir("..")
 
+
+
 from config.load_config_file import Configuration
+from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
@@ -81,15 +84,19 @@ image_transform = transforms.Compose([
             random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
             OverlayImage(cf) if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
             # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
-            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
+            # PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
+            # transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
            
            # transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
 
 image_transfrom = None
 
-if cf.dataset_name == 'IFN':       
+if cf.dataset_name == 'TFSPCH':       
+    test_set = TfSpeechDataset(cf, train=True, transform = image_transform)
+
+
+elif cf.dataset_name == 'IFN':       
     test_set = IfnEnitDataset(cf, train=True, transform = image_transform)
 
 elif cf.dataset_name == 'IAM':    
