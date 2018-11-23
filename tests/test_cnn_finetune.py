@@ -18,6 +18,7 @@ from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
 from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
+from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
@@ -39,15 +40,23 @@ def test_cnn_finetune(cf):
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
             random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
             OverlayImage(cf) if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
-            # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
+            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
+            # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                                   
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
             ])
     
 #        
-    if cf.dataset_name == 'WG':
+    if cf.dataset_name == 'TFSPCH':
+        print('...................Loading TensorFlow Speech Recog dataset...................')
+        train_set = TfSpeechDataset(cf, train=True, transform=image_transform)
+        test_set = TfSpeechDataset(cf, train=False, transform=image_transform, 
+                            data_idx =train_set.data_idx, complement_idx = True)
+
+    
+    elif cf.dataset_name == 'WG':
         print('...................Loading WG dataset...................')
         train_set = WashingtonDataset(cf, train=True, transform=image_transform)
         test_set = WashingtonDataset(cf, train=False, transform=image_transform, 
@@ -105,13 +114,10 @@ def test_cnn_finetune(cf):
 #        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
 #        test_set = IAM_words(cf, mode='validate', transform = image_transform)
 
-    # just display a couple of images to make sure everything is OK
-#    test_set[110][0].show()
-#    train_set[110][0].show()
-    if cf.use_weight_to_balance_data: 
-        print('Adding weights to balance the data')
+        if cf.use_weight_to_balance_data: 
+            print('Adding weights to balance the data')
         # train_set = add_weights_of_words(train_set)
-        train_set.add_weights_of_words()
+            train_set.add_weights_of_words()
         
     # the main loaders
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
@@ -120,7 +126,7 @@ def test_cnn_finetune(cf):
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
    
-    # the per-script loaders
+    # the per-script test loaders
     if cf.dataset_name =='IAM+IFN':
         test_loader_ifn = torch.utils.data.DataLoader(test_set_ifn, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
@@ -136,13 +142,14 @@ def test_cnn_finetune(cf):
     to_pil = transforms.ToPILImage() 
     img  = to_pil(train_set[41][0]) # we can also use test_set[1121][0].numpy()    
     plt.imshow(np.array(img).squeeze()); plt.show()
-    print('one train image: ', img, ' has max val', img.getextrema())  
+    print('one train image: ', img, ' has min-max vals', img.getextrema())  
     
     img  = to_pil(test_set[1121][0])    
     plt.imshow(np.array(img).squeeze()); plt.show()
-    print('one test image: ', img, ' has max val', img.getextrema())  
+    print('one test image: ', img, ' has min-max vals', img.getextrema())
+        
     
-
+# build the model
     model = make_model(
         cf.model_name,
         pretrained = cf.pretrained,
@@ -152,7 +159,7 @@ def test_cnn_finetune(cf):
     )
     model = model.to(device)
 
-   
+# define the loss function
     if cf.loss == 'BCEWithLogitsLoss':
         if cf.use_weight_to_balance_data:         
             criterion = nn.BCEWithLogitsLoss(reduce = None) # size_average=True, reduction='sum')
@@ -163,7 +170,7 @@ def test_cnn_finetune(cf):
     else: 
         criterion = nn.MSELoss()
         
-
+# the optimizer
     optimizer = optim.SGD( model.parameters(), 
                           lr = cf.learning_rate, 
                           momentum = cf.momentum,
