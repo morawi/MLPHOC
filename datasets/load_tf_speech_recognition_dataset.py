@@ -7,28 +7,45 @@ Created on Thu Nov 22 17:27:42 2018
 
 TensorFlow Speech Recognition dataset
 
+Version 1: Has 64727 audio samples
+https://www.kaggle.com/c/tensorflow-speech-recognition-challenge
+(we used Kaggle train set)
+http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz". 
+BibTeX @article{speechcommands, title={Speech Commands: 
+    A public dataset for single-word speech recognition.}, author={Warden, Pete}, 
+    journal={Dataset available from http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz}, year={2017} }
+
+    stored in /My Programs/all_data/tf_speech_recognition
+    
+
+Vresion 2: 
+https://www.tensorflow.org/tutorials/sequences/audio_recognition
+(2018) Speech commands dataset version 2. [Online]. Available:
+http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz
+Speech Commands: A Dataset for Limited-Vocabulary Speech Recognition at 
+https://arxiv.org/abs/1804.03209
+
+
+
+
 """
 import os
 import warnings
-import glob
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
-from utils import globals
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
-from matplotlib.backend_bases import RendererBase
 from scipy import signal
 from scipy.io import wavfile
-# import soundfile as sf
-from scipy.fftpack import fft
+
 
 # matplotlib inline
 warnings.filterwarnings("ignore")
 
-folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
-tf_speech_recognition_data = 'tf_speech_recognition/train/'
-audio_path = folder_of_data + tf_speech_recognition_data + 'audio/' 
+# folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
+# tf_speech_recognition_data = 'tf_speech_recognition/train/audio/'
+# audio_path = folder_of_data + tf_speech_recognition_data 
 # test_pict_Path  = folder_of_data + tf_speech_recognition_data + 'images'
 
 
@@ -67,7 +84,7 @@ def get_file_names(audio_path):
         if os.path.isdir(audio_path + '/' + x):
             word_names.append(x)
                               
-    sample_audio = []    
+   # sample_audio = []    
     all_files = [] 
     all_words  = []
     for a_word_name in word_names:    
@@ -76,26 +93,12 @@ def get_file_names(audio_path):
         all_files = all_files + word_files
         all_words =  all_words + [a_word_name]*len(word_files)
         # collect the first file from each dir
-        sample_audio.append(audio_path  + a_word_name + '/'+ word_files[0])
+        # sample_audio.append(audio_path  + a_word_name + '/'+ word_files[0])
         
         
     return all_files, all_words #, sample_audio, word_names
  
     
-'''    
-all_files, all_words = get_file_names(audio_path)
-# top_9_different_words_spectogram(sample_audio)
-print('total', len(all_files))
-
-
-for idx in range(5):
-    #   wav2img(audio_path + x + '/' + file, pict_Path + x)
-    img = wav2img(audio_path + all_words[idx] + '/' + all_files[idx])
-    plt.imshow(img.T, aspect='auto', origin='lower')
-    plt.show()
-    print(img.shape)
-
-'''
 
 class TfSpeechDataset(Dataset):
 
@@ -120,7 +123,7 @@ class TfSpeechDataset(Dataset):
         self.file_name = []
         self.words = []
                 
-        all_files, all_words = get_file_names(audio_path)
+        all_files, all_words = get_file_names(self.folder_of_data)
         len_data = len(all_files)
         
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
@@ -157,7 +160,7 @@ class TfSpeechDataset(Dataset):
     
         
     def __getitem__(self, idx):
-        img = wav2img(audio_path + self.words[idx] + '/' + self.file_name[idx])
+        img = wav2img(self.folder_of_data + self.words[idx] + '/' + self.file_name[idx])
         
         plt.imshow(img.T, aspect='auto', origin='lower')
         img = img.reshape(img.shape[0], img.shape[1], 1)
@@ -171,12 +174,12 @@ class TfSpeechDataset(Dataset):
                         
         # data = data.convert('RGB')  # needs to be done to have all datasets in the same mode
         
-        words = self.words[idx]
+        word_str = self.words[idx]
         if self.transform:
             data = self.transform(data)
         
-        target = self.cf.PHOC(words, self.cf)
+        target = self.cf.PHOC(word_str, self.cf)
 
-        return data, target, words, self.weights[idx]
+        return data, target, word_str, self.weights[idx]
     
 
