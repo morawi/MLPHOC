@@ -19,22 +19,22 @@ from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
 from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
+from datasets.load_cifar100_dataset import Cifar100Dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
 from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
 import matplotlib.pyplot as plt
+from sys import exit as sys_exit
 
 def test_cnn_finetune(cf):
     
-    use_cuda = torch.cuda.is_available()
-    device = torch.device('cuda' if use_cuda else 'cpu')
-    
-#    the_augmentor = TheAugmentor(probability=.5, grid_width=3, 
-#                                 grid_height=3, magnitude=8)
+    # use_cuda = torch.cuda.is_available()
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     sheer_tsfm = transforms.RandomAffine(0, shear=(-30, 10) ) 
     random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
+    RGB_img = (cf.overlay_handwritting_on_STL_img) or (cf.dataset_name == 'Cifar100') # one channel images will be replicated, but not RGBs
     
     image_transform = transforms.Compose([
             ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
@@ -44,24 +44,39 @@ def test_cnn_finetune(cf):
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
-            # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                                   
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
+            
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1))  if not(RGB_img)  else NoneTransform(), # this is becuase the overlay, and Cifar100 produces an RGB image            
+            transforms.Normalize( (.5, .5, .5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                                   
             ])
     
-#        
-    if cf.dataset_name == 'TFSPCH':
+    if cf.dataset_name == 'Cifar100':
+        train_set = Cifar100Dataset(cf, 'train', transform=image_transform) 
+        test_set = Cifar100Dataset(cf, 'test', transform=image_transform) 
+        
+    
+    elif cf.dataset_name == 'TFSPCH':
         print('...................Loading TensorFlow Speech Recog dataset...................')
         train_set = TfSpeechDataset(cf, train=True, transform=image_transform)
         test_set = TfSpeechDataset(cf, train=False, transform=image_transform, 
                             data_idx =train_set.data_idx, complement_idx = True)
-
+        
+        cf1 = cf
+        cf1.dataset_path_TF_SPEECH= cf1.dataset_path_TF_SPEECH.replace('train', 'test') # to read from test folder        
+        cf1.split_percentage_TFSPCH = 1
+        test_set_TFSPCH = TfSpeechDataset(cf1, train=True, transform=image_transform)
+        del cf1     
+                
     
     elif cf.dataset_name == 'WG':
         print('...................Loading WG dataset...................')
         train_set = WashingtonDataset(cf, train=True, transform=image_transform)
         test_set = WashingtonDataset(cf, train=False, transform=image_transform, 
-                            data_idx =train_set.data_idx, complement_idx = True)
-    
+                            data_idx = train_set.data_idx, complement_idx = True)
+    elif cf.dataset_name =='IAM':
+        print('...................Loading IAM dataset...................')         
+        train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform) # mode is one of train, test, or validate
+        test_set = IAM_words(cf, mode='test', transform = image_transform) # 'mode=validate' is another option
+
     elif cf.dataset_name == 'IFN':
         print('...................Loading IFN dataset...................')        
         if not(cf.IFN_based_on_folds_experiment):
@@ -103,21 +118,15 @@ def test_cnn_finetune(cf):
                                 data_idx = train_set.data_idx_IFN, complement_idx = True) 
         test_set_iam = IAM_words(cf, mode='test', transform = image_transform)
         
-    elif cf.dataset_name =='IAM':
-        print('...................Loading IAM dataset...................')         
-        train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform) # mode is one of train, test, or validate
-        test_set = IAM_words(cf, mode='test', transform = image_transform)
+    else:
+        print('Please select correct dataset name, one of dataset_name in config_file_wg.py')
+        sys_exit('Incorrect dataset name')
+    
         
-        print('IAM IAM')        
-#  separate set loading
-#        train_set = IAM_words(cf, mode='train', transform = image_transform) # mode is one of train, test, or validate
-#        train_set = IAM_words(cf, mode='test', transform = image_transform) # mode is one of train, test, or validate
-#        test_set = IAM_words(cf, mode='validate', transform = image_transform)
-
-        if cf.use_weight_to_balance_data: 
-            print('Adding weights to balance the data')
-        # train_set = add_weights_of_words(train_set)
-            train_set.add_weights_of_words()
+    
+    if cf.use_weight_to_balance_data: 
+        print('Adding weights to balance the data')        
+        train_set.add_weights_of_words()
         
     # the main loaders
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=cf.batch_size_train,
@@ -126,7 +135,7 @@ def test_cnn_finetune(cf):
     test_loader = torch.utils.data.DataLoader(test_set, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
    
-    # the per-script test loaders
+    # the per-script test loaders, extra loaders for testing
     if cf.dataset_name =='IAM+IFN':
         test_loader_ifn = torch.utils.data.DataLoader(test_set_ifn, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
@@ -137,16 +146,20 @@ def test_cnn_finetune(cf):
                                   shuffle = False, num_workers=cf.num_workers)
         test_loader_gw = torch.utils.data.DataLoader(test_set_gw, batch_size=cf.batch_size_test,
                                   shuffle = False, num_workers=cf.num_workers)
-        
+    elif cf.dataset_name == 'TFSPCH':
+        test_loader_TFSPCH =  torch.utils.data.DataLoader(test_set_TFSPCH, batch_size=cf.batch_size_test,
+                                  shuffle = False, num_workers=cf.num_workers)
+   
+    print(train_set[41][0])    
     # displaying images for overlay diagnostics, or see if they are correctly formated
     to_pil = transforms.ToPILImage() 
     img  = to_pil(train_set[41][0]) # we can also use test_set[1121][0].numpy()    
     plt.imshow(np.array(img).squeeze()); plt.show()
-    print('one train image: ', img, ' has min-max vals', img.getextrema())  
+    print('one train image: ', img, ' has min-max vals', train_set[41][0].min(), train_set[41][0].max())  
     
     img  = to_pil(test_set[1121][0])    
     plt.imshow(np.array(img).squeeze()); plt.show()
-    print('one test image: ', img, ' has min-max vals', img.getextrema())
+    print('one test image: ', img, ' has min-max vals', test_set[1121][0].min(), test_set[1121][0].max() )
         
     
 # build the model
@@ -283,7 +296,7 @@ def test_cnn_finetune(cf):
                 print( word_similarity)
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
-    # print('PHOC length', train_set.)
+    
     print('Chance level performance \n');  
     test(test_loader) # nice to know the performance prior to training
     for epoch in range(1, cf.epochs + 1):
@@ -304,6 +317,11 @@ def test_cnn_finetune(cf):
         result = test(test_loader_ifn)
         print('Per-script testing  IAM --------'); 
         result = test(test_loader_iam)
+    elif cf.dataset_name == 'TFSPCH':
+        print('Using  TFSPCH test set --------');         
+        result = test(test_loader_TFSPCH)
+
+        
                
         
     # test_moment_and_word_sim(result)
