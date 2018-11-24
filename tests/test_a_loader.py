@@ -17,6 +17,7 @@ from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from datasets.load_iam_dataset import IAM_words
+from datasets.load_cifar100_dataset import Cifar100Dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
 import numpy as np
 import matplotlib.pyplot as plt
@@ -92,13 +93,12 @@ image_transform = transforms.Compose([
 
 image_transfrom = None
 
-if cf.dataset_name == 'TFSPCH':       
+if cf.dataset_name == 'Cifar100':       
+    test_set = Cifar100Dataset(cf, 'train')  
+elif cf.dataset_name == 'TFSPCH':       
     test_set = TfSpeechDataset(cf, train=True, transform = image_transform)
-
-
 elif cf.dataset_name == 'IFN':       
     test_set = IfnEnitDataset(cf, train=True, transform = image_transform)
-
 elif cf.dataset_name == 'IAM':    
     # test_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
     test_set  = IAM_words(cf, mode='train', transform = image_transform)
@@ -121,7 +121,7 @@ elif cf.dataset_name =='IAM+IFN':
 else: 
     print(' incorrect dataset_name')
     
-x1 = test_set[561][0]
+x1 = test_set[561]
 # plt.imshow(np.array(x1).squeeze(), 'gray')
 # hist_of_text_to_background_ratio(test_set)
 # x1 = x1.convert('L')
