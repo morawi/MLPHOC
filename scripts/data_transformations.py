@@ -27,7 +27,7 @@ def get_padding(image, output_size):
 
     pad_width = output_max_width - w
     if pad_width<0 : 
-        print('MAX_IMAGE_WIDTH is smaller than expected, config_file'); 
+        print('MAX_IMAGE_WIDTH is smaller than expected, check config_file'); 
         exit(0)
     
     if pad_width < 2:
@@ -165,13 +165,19 @@ class OverlayImage(object):
         
     """
     def __init__(self, cf):
-       self.dataset = get_the_data('STL10')
-       self.cf=cf       
+       self.cf=cf     
+       self.dataset = self.get_the_data('STL10')
+       
+       
+    def get_the_data(self, data_set_name):
+        # data_set_name = 'STL10'
+        print(data_set_name, ' ', end='')
+        # other split flags: ‘train’, 'test' ‘train+unlabeled’
+        unlabeled_set = torchvision.datasets.STL10(root = self.cf.stl100_path, split= 'unlabeled', download=True, transform=None, target_transform = None )
+        return unlabeled_set
 
     def stitch_images(self, hand_wrt_img):        
-        
-        # hand_wrt_img.show();
-        
+                
         intended_w, intded_h = hand_wrt_img.size
         w, h = self.dataset[0][0].size# .resize([128, 128], Image.ANTIALIAS) # rerurns a tuple, image at idx 0, and label at idx 1
         no_of_images_to_stich = intended_w // w
@@ -197,8 +203,7 @@ class OverlayImage(object):
             hand_wrt_img = hand_wrt_img.point(lambda p: 0 if p==0 else 255)
         
         stiched_image.paste(hand_wrt_img , box=None, mask = my_mask)
-        
-        # stiched_image.show();   # print(stiched_image.mode)
+                
         
         return stiched_image
     # mean_val = sum(ImageStat.Stat(stiched_image).mean)/3
@@ -210,11 +215,3 @@ class OverlayImage(object):
         return image
     
     
-def get_the_data(data_set_name):
-    # data_set_name = 'STL10'
-    print(data_set_name, ' ', end='')
-    folder_of_data = '/home/malrawi/Desktop/My Programs/all_data/data' 
-    the_root = folder_of_data + data_set_name            
-    # other split flags: ‘train’, 'test' ‘train+unlabeled’
-    unlabeled_set = torchvision.datasets.STL10(root = the_root, split= 'unlabeled', download=True, transform=None, target_transform = None )
-    return unlabeled_set
