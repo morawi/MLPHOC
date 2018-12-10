@@ -169,9 +169,15 @@ class WashingtonDataset(Dataset):
 
     def __getitem__(self, idx):
         img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
-        data = Image.open(img_name)           
+        data = Image.open(img_name)
+        if not(self.cf.H_gw_scale ==0): # resizing just the height            
+            new_w = int(data.size[0]*self.cf.H_gw_scale/data.size[1])
+            if new_w>self.cf.MAX_IMAGE_WIDTH: 
+                new_w = self.cf.MAX_IMAGE_WIDTH
+            data = data.resize( (new_w, self.cf.H_gw_scale), Image.ANTIALIAS)
+           
         data = data.point(lambda p: p > 100 and 255) # threshold the image [0,255]
-        data = data.point(lambda p: 0 if p==255 else 255 ) # invert and replace 255 by 1
+        data = data.point(lambda p: 0 if p==255 else 255 ) # invert 
         
         data = data.convert('1')      
         
