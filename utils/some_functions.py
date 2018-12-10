@@ -7,7 +7,7 @@ Created on Thu Jul  5 18:18:18 2018
 """
 import numpy as np
 import pandas as pd
-from utils.retrieval import map_from_query_test_feature_matrices, map_from_feature_matrix
+from utils.retrieval_torch import map_from_query_test_feature_matrices, map_from_feature_matrix
 import torch
 from collections import Counter
 from nltk.corpus import wordnet
@@ -230,6 +230,7 @@ def test_varoius_thresholds(result, cf):
         mAP_QbS = find_mAP_QbS(result, cf)
         mAP_QbE = find_mAP_QbE(result, cf)        
         print('Thresh val', my_thresh, '  mAP(QbS)=', mAP_QbS, '  ', 'mAP(QbE) = ', mAP_QbE, '----\n')
+
 
 
         
