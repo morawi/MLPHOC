@@ -35,7 +35,6 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 from scipy import signal
 from scipy.io import wavfile
 
@@ -66,15 +65,12 @@ def log_specgram(audio, sample_rate, window_size=20,
      
 def wav2img(wav_path):
 
-    """        takes in wave file path       """
-    
+    """        takes in wave file path       """    
     # use soundfile library to read in the wave files
     samplerate, test_sound  = wavfile.read(wav_path)
     _, spectrogram = log_specgram(test_sound, samplerate)
        
     return spectrogram
-    
-  
 
 
 def get_file_names(audio_path):
@@ -84,7 +80,7 @@ def get_file_names(audio_path):
         if os.path.isdir(audio_path + '/' + x):
             word_names.append(x)
                               
-   # sample_audio = []    
+   
     all_files = [] 
     all_words  = []
     for a_word_name in word_names:    
@@ -92,8 +88,6 @@ def get_file_names(audio_path):
         word_files = [y for y in os.listdir(audio_path + a_word_name) if '.wav' in y]
         all_files = all_files + word_files
         all_words =  all_words + [a_word_name]*len(word_files)
-        # collect the first file from each dir
-        # sample_audio.append(audio_path  + a_word_name + '/'+ word_files[0])
         
         
     return all_files, all_words #, sample_audio, word_names
@@ -157,22 +151,20 @@ class TfSpeechDataset(Dataset):
         return len(self.data_idx)
      
         
-    
-        
     def __getitem__(self, idx):
         img = wav2img(self.folder_of_data + self.words[idx] + '/' + self.file_name[idx])
         
-        plt.imshow(img.T, aspect='auto', origin='lower')
-        img = img.reshape(img.shape[0], img.shape[1], 1)
+        img = img.reshape(img.shape[0], img.shape[1], 1) 
+         # img  = np.tile(img, (1, 1, 3))
+        
         ToPIL = transforms.ToPILImage() 
         data = ToPIL(img)
-        if not(self.cf.TFSPCH_ifn_scale ==0): # resizing just the height            
-            new_w = int(data.size[0]*self.cf.H_ifn_scale/data.size[1])
+        if not(self.cf.H_TFSPCH_scale ==0): # resizing just the height            
+            new_w = int(data.size[0]*self.cf.H_TFSPCH_scale/data.size[1])
             if new_w>self.cf.MAX_IMAGE_WIDTH: 
                 new_w = self.cf.MAX_IMAGE_WIDTH
-            data = data.resize( (new_w, self.cf.H_ifn_scale), Image.ANTIALIAS)
-                        
-        # data = data.convert('RGB')  # needs to be done to have all datasets in the same mode
+            data = data.resize( (new_w, self.cf.H_TFSPCH_scale), Image.ANTIALIAS)
+                                
         
         word_str = self.words[idx]
         if self.transform:
