@@ -4,25 +4,17 @@
 Created on Sat Jul 28 18:11:50 2018
 
 @author: malrawi
-"""
+j"""
 
 import os
 os.chdir("..")
 
-
-
 from config.load_config_file import Configuration
-from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
-from datasets.load_ifnenit_dataset import IfnEnitDataset
-from datasets.load_washington_dataset import WashingtonDataset
-from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
-from datasets.load_iam_dataset import IAM_words
-from datasets.load_cifar100_dataset import Cifar100Dataset
-from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage, TheAugmentor
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc as matplot_rc
-import torchvision.transforms as transforms
+
+from datasets.get_datasets import get_datasets,  get_dataloaders, get_transforms
 
 def find_max_HW_in_data(data_set):
     max_w=0; max_h = 0
@@ -69,59 +61,18 @@ def test_thinning(data_set):
     plt.imshow(np.array(img1).squeeze(), 'gray')
 
 
-config_path = 'config/config_file_wg.py'
-configuration = Configuration(config_path, '')
+
+configuration = Configuration(config_path='config/config_file_wg.py', test_name='')
 cf = configuration.load()
+image_transform = get_transforms(cf)
+train_set, test_set, test_per_data = get_datasets(cf, image_transform)
+train_loader, test_loader, per_data_loader = get_dataloaders(cf, train_set, test_set, test_per_data)       
+            
 
 
-thin_image = ImageThinning(p = 0.25)
-the_augmentor = TheAugmentor(probability=1, grid_width=8, grid_height=3, magnitude=8)
-# p.shear(probability=1, max_shear_left=10, max_shear_right=10)
-sheer_tsfm = transforms.RandomAffine(0, shear=(-30,10) )
-random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7)
 
-image_transform = transforms.Compose([
-            ImageThinning(p = cf.thinning_threshold) if cf.thinning_threshold < 1 else NoneTransform(),            
-            random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
-            OverlayImage(cf) if cf.overlay_handwritting_on_STL_img else NoneTransform(), # Add random image background here, to mimic scenetext, or, let's call it scenehandwritten
-            # transforms.Normalize( (0.5, 0.5, 0.5), (0.25, 0.25 , 0.25) ) if cf.normalize_images else NoneTransform(),                        
-            # PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            # transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
-           
-           # transforms.Lambda(lambda x: x.repeat(3, 1, 1)) if not cf.overlay_handwritting_on_STL_img else NoneTransform(), # this is becuase the overlay produces an RGB image            
-            ])
 
-image_transfrom = None
-
-if cf.dataset_name == 'Cifar100':       
-    test_set = Cifar100Dataset(cf, 'train')  
-elif cf.dataset_name == 'TFSPCH':       
-    test_set = TfSpeechDataset(cf, train=True, transform = image_transform)
-elif cf.dataset_name == 'IFN':       
-    test_set = IfnEnitDataset(cf, train=True, transform = image_transform)
-elif cf.dataset_name == 'IAM':    
-    # test_set  = IAM_words(cf, mode='validate', transform = None) #image_transfrom)
-    test_set  = IAM_words(cf, mode='train', transform = image_transform)
-    
-elif cf.dataset_name == 'WG':
-    test_set = WashingtonDataset(cf, train=True, transform = image_transform)               
-elif cf.dataset_name =='IAM+IFN': 
-        print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
-        
-        train_set = IAM_IFN_Dataset(cf, train=True, mode = 'train', transform = image_transform) # mode is one of train, test, or validate
-        test_set = IAM_IFN_Dataset(cf, train=False, mode = 'test', transform = image_transform,  # loading iam valid set for testing
-                                  data_idx_IFN = train_set.data_idx_IFN, 
-                                        complement_idx = True)
-        
-        # to do a separte testing, for each script
-        test_set_ifn = IfnEnitDataset(cf, train=False, transform=image_transform, 
-                                data_idx = train_set.data_idx_IFN, complement_idx = True) 
-        test_set_iam = IAM_words(cf, mode='test', transform = image_transform)
-
-else: 
-    print(' incorrect dataset_name')
-    
-x1 = test_set[561]
+# x1 = test_set[561]
 # plt.imshow(np.array(x1).squeeze(), 'gray')
 # hist_of_text_to_background_ratio(test_set)
 # x1 = x1.convert('L')
