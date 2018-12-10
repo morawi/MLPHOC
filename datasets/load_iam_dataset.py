@@ -15,12 +15,8 @@ from utils.some_functions import remove_non_words
 # from torchvision import transforms
 # import Augmentor
 
-VGG_NORMAL = True
-RM_BACKGROUND = True
-FLIP = False # flip the image
+
 OUTPUT_MAX_LEN = 23 # max-word length is 21  This value should be larger than 21+2 (<GO>+groundtruth+<END>)
-IMG_WIDTH = 1011 # m01-084-07-00 max_length
-IMG_HEIGHT = 64
 
 #IMG_WIDTH = 256 # img_width < 256: padding   img_width > 256: resize to 256
 ''' IAM has 46945 train data; 7554 alid data; and 20304 test data '''
@@ -52,7 +48,7 @@ def get_iam_file_label(cf, mode):
 
 
     
-def get_the_image(file_name, transform, cf):
+def get_the_image(file_name, cf):
    
     file_name, thresh = file_name.split(',')        
     thresh = int(thresh)    
@@ -80,8 +76,8 @@ class IAM_words(Dataset):
     def __getitem__(self, index):
         word = self.file_label[index]  
         word_str = word[1].lower() # word_str = word[1].lower(); # to only keep lower-case       
-        img = get_the_image(word[0], self.transform, self.cf)         
-        if not(self.cf.H_iam_scale ==0): # resizing just the height            
+        img = get_the_image(word[0], self.cf)         
+        if not(self.cf.H_iam_scale ==0): # resizing just the height             
             new_w = int(img.size[0]*self.cf.H_iam_scale/img.size[1])
             if new_w>self.cf.MAX_IMAGE_WIDTH: 
                 new_w = self.cf.MAX_IMAGE_WIDTH
