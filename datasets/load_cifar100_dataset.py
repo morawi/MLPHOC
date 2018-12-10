@@ -52,7 +52,7 @@ class Cifar100Dataset(Dataset):
         self.weights = np.ones( len(self.dataset) , dtype = 'uint8')        
         
     def num_classes(self):          
-           return len(self.cf.PHOC('abcd', self.cf)) # pasing 'dump' word to get the length
+        return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
             
       
     def __len__(self):
@@ -60,6 +60,7 @@ class Cifar100Dataset(Dataset):
         
     def __getitem__(self, idx):
         img = self.dataset[idx][0]
+        img = img.resize( (self.cf.w_new_size, self.cf.h_new_size)) # zooming in is magic for cifar100
         if self.transform:
             img = self.transform(img)
         class_id = self.dataset[idx][1]
