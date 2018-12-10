@@ -3,21 +3,34 @@ Main @author: malrawi
 
 '''
 
+
+''' torch distanc for retrieval
+https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
+'''
+
 import time   # used to create a seed for the randomizers
 import numpy as np
 
+data_set_id  = 2
+all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
+                'Cifar100+TFSPCH+GW+IFN',   # 1
+                'Cifar100+TFSPCH+IAM+IFN+safe-driver',   # 2
+                'WG+IFN' ,  # 3 
+                'IAM+IFN', # 4
+                'WG', # 5
+                'IFN', # 6 
+                'IAM', # 7
+                'Cifar100', # 8
+                'TFSPCH', # 9
+                'safe_driver', # 10
+                ]
 
-dataset_name    = 'TFSPCH' #  'WG+IFN' , 'IAM+IFN'     # Dataset name: ['WG', 'IFN', 'WG+IFN', IAM]
-encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only
+dataset_name    = all_datasets[data_set_id]
+del all_datasets, data_set_id
 folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
-normalize_images       = False
-overlay_handwritting_on_STL_img = False
-change_hand_wrt_color = True
-if overlay_handwritting_on_STL_img:
-    normalize_images = True # have not used it in the analysis, yet
-    
-
+encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
+sampled_testing = True # to be used if the testing set islarger than 30K
 phoc_levels = [ 2, 3, 4, 5]
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
 if encoder =='phoc':
@@ -39,86 +52,92 @@ else:
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')      
 del phoc_levels                                
 
-        
+resize_images        = False         # Resize the dataset images to a fixed size
+pad_images           = True         # Pad the input images to a fixed size [576, 226]
+normalize_images     = True
+overlay_handwritting_on_STL_img = False
+if overlay_handwritting_on_STL_img:
+    change_hand_wrt_color = True 
+    normalize_images = True # have not used it in the analysis, yet
+  
 
 # Dataset max W and H
-if dataset_name ==  'TFSPCH': # 645 x 120
-    MAX_IMAGE_WIDTH  = 255
-    MAX_IMAGE_HEIGHT = 255
+universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
 
+if dataset_name  == 'safe_driver':
+    MAX_IMAGE_WIDTH  = 267 # 640
+    MAX_IMAGE_HEIGHT = 200 # 480
+    H_sfDrive_scale = universal_H
+    
+    
+elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+GW+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
+    MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
+    MAX_IMAGE_HEIGHT = universal_H 
+    w_new_size = universal_H # these are used to up-scale Cifar100 dataset 
+    h_new_size = universal_H
+    H_ifn_scale  = universal_H
+    H_iam_scale  = universal_H
+    H_gw_scale = universal_H
+    H_sfDrive_scale = universal_H
+    H_TFSPCH_scale = 0 # do not scale speech data
+    ''' Better to set resize_images to False in this case
+    IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
+    Cifar100 will have w_new_size, TSFPCH will be the same  '''
+        
+elif dataset_name == 'Cifar100':
+    MAX_IMAGE_WIDTH  = 260
+    MAX_IMAGE_HEIGHT = 260
+    w_new_size = 256
+    h_new_size = 256
 
-if dataset_name ==  'WG': # 645 x 120
+elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to the sepectogram function
+    MAX_IMAGE_WIDTH  = 260
+    MAX_IMAGE_HEIGHT = 260
+    H_TFSPCH_scale = 0
+
+elif dataset_name ==  'WG': # 645 x 120 (largest size in GW dataset)
     MAX_IMAGE_WIDTH  = 645
     MAX_IMAGE_HEIGHT = 120
+    H_gw_scale = 0
 
 elif dataset_name == 'IFN': # 1069 x 226
     MAX_IMAGE_WIDTH  = 1069 # (set_a: h226, w1035); (set_b: h214, w1069); (set_c: w211, h1028); (set_d: h195, w1041);  (set_e: h-197, w-977)
-    MAX_IMAGE_HEIGHT = 226  
-    H_ifn_scale      = 120  # to skip scaling the height, use 0
-    if H_ifn_scale == 120:
-        MAX_IMAGE_HEIGHT = 120
+    MAX_IMAGE_HEIGHT = universal_H  
+    H_ifn_scale      = universal_H  # to skip scaling the height, use 0
+    
         
+elif dataset_name == 'IAM': # 1087 x 241 (largest size in IAM datasaet)
+    MAX_IMAGE_WIDTH  = 1087     
+    MAX_IMAGE_HEIGHT = universal_H              
+    H_iam_scale      = universal_H
+    ''' In IAM max image height is 241 n02-049-03-02 (182, 241) test set   Max Image Width is 1087 c06-103-00-01 (1087, 199) train set '''
     
     
-elif dataset_name == 'IAM': # 1087 x 241
-    MAX_IMAGE_WIDTH  = 1087
-    MAX_IMAGE_HEIGHT = 241              
-    H_iam_scale      = 120
-    if H_iam_scale ==120:
-        MAX_IMAGE_HEIGHT = 120 
-        
-    # In IAM
-    #Max Image Height is 241 n02-049-03-02 (182, 241) test set
-    #Max Image Width is 1087 c06-103-00-01 (1087, 199) train set
-    
-    ''' for mix language, we have to scale IFN to WG size '''
-elif dataset_name == 'WG+IFN':      
+    ''' To merge WG and IFN sets, we have to scale IFN to match WG height(120) '''
+elif dataset_name == 'WG+IFN':  # max is 226x1069    
     MAX_IMAGE_WIDTH  = 1069 # 
-    MAX_IMAGE_HEIGHT = 226    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
-    H_ifn_scale      = 120 # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
-    if H_ifn_scale == 120:
-        MAX_IMAGE_HEIGHT = 120
-        
+    MAX_IMAGE_HEIGHT = universal_H    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
+    H_ifn_scale      = universal_H # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
+    H_gw_scale = 0
     
-elif dataset_name == 'IAM+IFN':
-    MAX_IMAGE_WIDTH  = 1087
-    MAX_IMAGE_HEIGHT = 241   #241
-    H_iam_scale      = 120 
-    H_ifn_scale      = 120 # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
-    if H_iam_scale == 120 and H_ifn_scale== 120:
-        MAX_IMAGE_HEIGHT = 120
+elif dataset_name == 'IAM+IFN': # 241 x 1087
+    MAX_IMAGE_WIDTH  = 1087 
+    MAX_IMAGE_HEIGHT = universal_H   # originaloly 241, changing it to universal_H
+    H_iam_scale      = universal_H 
+    H_ifn_scale      = universal_H # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
         
-
-
-# Input Images
-use_weight_to_balance_data      = False
-use_distortion_augmentor        = False
-
-
-
-thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
-
-
-
-pad_images                   = True         # Pad the input images to a fixed size [576, 226]
-
-
-resize_images                = False         # Resize the dataset images to a fixed size
-
-
 
 
 if resize_images:
-    input_size               =  (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+    input_size       =  (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
 else: 
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
+
    
 
 # Model parameters
 model_name                   = 'resnet152' # 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
-
-
-
+thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
@@ -131,10 +150,11 @@ dropout_probability          = 0
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-epochs                       = 150 # 60
-batch_size_train             = 2 
-if dataset_name=='IAM' or dataset_name == 'IAM+IFN':
-    batch_size_train             = 6 #  value of 2 gives better results
+epochs                       = 10# 10 # 60
+
+split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
+split_percentage_TFSPCH    = .90 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
+                                # If not 1, say 0.90 this means the 90% of the data will be used for training. 
 
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
@@ -142,10 +162,76 @@ num_workers                  = 4
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
 mAP_dist_metric              = 'cosine' # 'correlation' # 'cosine' # See options below
 
-
 rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
 
-if encoder == 'label':
+batch_size_train             =  10
+
+''' Folders of data: STL is embedded  '''
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+    
+dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
+gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
+
+dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
+gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
+
+dataset_path_TF_SPEECH = folder_of_data + 'tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+cifar100_path = folder_of_data + '/dataCifar100/'
+stl100_path = folder_of_data +'dataSTL10'   
+safe_driver_path = folder_of_data + 'safe_driver/train/'
+        
+
+''' Language / script dataset to use '''       
+iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', 
+            '/', ':', ';', '?', '_',  
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
+            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
+            'w', 'x', 'y', 'z'] # upper case removed
+iam_char = ''.join(map(str, iam_char))
+ifn_char = "0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
+gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
+iam_ifn_char = ''.join(sorted(set(iam_char + ifn_char))) 
+wg_ifn_char = ''.join(sorted( set(ifn_char + gw_char) )) 
+
+
+if dataset_name == 'safe_driver':
+    phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
+elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
+    phoc_unigrams = wg_ifn_char       
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
+    phoc_unigrams = iam_ifn_char    
+elif dataset_name == 'Cifar100':
+    phoc_unigrams = gw_char    # this depends on the alphabets used to name the classes, gw is English so that's fine 
+    
+elif dataset_name == 'WG':   
+    phoc_unigrams = gw_char    
+
+elif dataset_name == 'TFSPCH':   
+    phoc_unigrams = gw_char    # this depends on the alphabets used to name the classes, gw is English so that's fine 
+
+elif dataset_name =='IFN':
+    phoc_unigrams = ifn_char    
+
+elif dataset_name == 'WG+IFN':    
+    phoc_unigrams = wg_ifn_char       
+
+elif dataset_name == 'IAM':    
+    phoc_unigrams = iam_char
+    
+elif dataset_name == 'IAM+IFN':                 
+    phoc_unigrams = iam_ifn_char  
+
+else: 
+    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', or 'TFSPCH' ")
+            
+del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char
+
+
+
+
+if encoder == 'label': # label used for script identification/separation
     loss == 'CrossEntropyLoss'
     batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
     model_name               = 'resnet18'
@@ -153,12 +239,30 @@ if encoder == 'label':
     English_label = np.array([1, 0], 'double')
     Arabic_label = np.array([0, 1], 'double')
     assert(dataset_name == 'WG+IFN' or  dataset_name == 'IAM+IFN') # or 'IAM+IFN'
-    
 
+
+
+''' I need to remove these keep flags.....later !!'''
+use_weight_to_balance_data      = False
+use_distortion_augmentor        = False
+
+
+keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
+keep_non_alphabet_of_GW_in_loaded_data    = True 
+
+# Save results
+save_results           = False                            # Save Log file
+results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
+
+
+
+
+'''
+# testing based on folder sets, depriciated as no difference between our random split and this
 
 IFN_test = 'set_a'
 IFN_all_data_grouped_in_one_folder = True
-
+IFN_based_on_folds_experiment  = False
 if IFN_all_data_grouped_in_one_folder:
     IFN_based_on_folds_experiment  = False
     del IFN_test 
@@ -171,71 +275,12 @@ else:
     gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
     # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
 
-dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
-gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
-
-dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
-gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
-
-
-IFN_based_on_folds_experiment  = False
-train_split                    = True # When True, this is the training set 
-if train_split: 
-    split_percentage         = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-if IFN_based_on_folds_experiment==True and dataset_name=='IFN': 
-    train_split              = False # no split will be applied 
+if IFN_based_on_folds_experiment==True and dataset_name=='IFN':     
     split_percentage         = 1
     folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
 
+'''
 
-''' I need to remove these keep flags.....later !!'''
-keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
-keep_non_alphabet_of_GW_in_loaded_data    = True 
-
-
-''' Language / script dataset to use '''       
-iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', 
-            '/', ':', ';', '?', '_',  
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
-            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
-            'w', 'x', 'y', 'z'] # upper case removed
-iam_char = ''.join(map(str, iam_char))
-ifn_char = "0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
-
-if dataset_name == 'WG':   
-    phoc_unigrams = gw_char    
-
-if dataset_name == 'TFSPCH':   
-    phoc_unigrams = gw_char    
-
-
-elif dataset_name =='IFN':
-    phoc_unigrams = ifn_char    
-
-elif dataset_name == 'WG+IFN':    
-    phoc_unigrams =''.join(sorted( set(ifn_char + gw_char) ))        
-
-elif dataset_name == 'IAM':    
-    phoc_unigrams = ''.join(map(str, iam_char))
-    
-elif dataset_name == 'IAM+IFN':                 
-    phoc_unigrams = ''.join(sorted(set(iam_char + ifn_char)))    
-
-else: 
-    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', or 'IAM+IFN' ")
-            
-del iam_char, ifn_char, gw_char
-
-# Save results
-save_results           = False                            # Save Log file
-results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
-
-
-TFSPCH_ifn_scale = 0
-dataset_path_TF_SPEECH = ''
-split_percentage_TFSPCH = 0.5
 
 '''
  of model_name : 
