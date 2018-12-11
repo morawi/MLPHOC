@@ -8,7 +8,7 @@ Created on Thu Jul  7 12:08:22 2018
 from torch.utils.data import Dataset
 import numpy as np
 # from scripts.Word2PHOC import build_phoc as PHOC
-from PIL import Image, ImageOps
+from PIL import Image
 from utils.some_functions import remove_non_words
 
 
@@ -85,11 +85,9 @@ class IAM_words(Dataset):
         
         if self.cf.encoder=='label':
             target = self.cf.English_label # 1: lable for Arabic script
-        else:
-            # target = self.phoc_word[idx]
+        else:            
             target = self.cf.PHOC(word_str, cf = self.cf)
-            target = self.cf.PHOC(word_str, cf = self.cf)  
-        
+                    
         if self.transform:
             img = self.transform(img)    
         
