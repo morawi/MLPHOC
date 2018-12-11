@@ -11,7 +11,7 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 import time   # used to create a seed for the randomizers
 import numpy as np
 
-data_set_id  = 2
+data_set_id  = 11
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
                 'Cifar100+TFSPCH+IAM+IFN+safe-driver',   # 2
@@ -23,11 +23,12 @@ all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100', # 8
                 'TFSPCH', # 9
                 'safe_driver', # 10
+                'imdb_movie', # 11
                 ]
 
 dataset_name    = all_datasets[data_set_id]
 del all_datasets, data_set_id
-folder_of_data         = '/home/malrawi/Desktop/My Programs/all_data/'
+folder_of_data         = '/home/malrawi/Desktop/My Programs/'
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
 sampled_testing = True # to be used if the testing set islarger than 30K
@@ -83,7 +84,12 @@ elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPC
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
-        
+
+elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass to the sepectogram function
+    MAX_IMAGE_WIDTH  = 300 # to get a better max width, one must load/train the gensim model at this stage
+    MAX_IMAGE_HEIGHT = universal_H
+    H_imdb_scale = 0 # universal_H
+      
 elif dataset_name == 'Cifar100':
     MAX_IMAGE_WIDTH  = 260
     MAX_IMAGE_HEIGHT = 260
@@ -104,8 +110,7 @@ elif dataset_name == 'IFN': # 1069 x 226
     MAX_IMAGE_WIDTH  = 1069 # (set_a: h226, w1035); (set_b: h214, w1069); (set_c: w211, h1028); (set_d: h195, w1041);  (set_e: h-197, w-977)
     MAX_IMAGE_HEIGHT = universal_H  
     H_ifn_scale      = universal_H  # to skip scaling the height, use 0
-    
-        
+            
 elif dataset_name == 'IAM': # 1087 x 241 (largest size in IAM datasaet)
     MAX_IMAGE_WIDTH  = 1087     
     MAX_IMAGE_HEIGHT = universal_H              
@@ -125,8 +130,7 @@ elif dataset_name == 'IAM+IFN': # 241 x 1087
     MAX_IMAGE_HEIGHT = universal_H   # originaloly 241, changing it to universal_H
     H_iam_scale      = universal_H 
     H_ifn_scale      = universal_H # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
-        
-
+      
 
 if resize_images:
     input_size       =  (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
@@ -150,7 +154,7 @@ dropout_probability          = 0
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-epochs                       = 10# 10 # 60
+epochs                       = 30# 10 # 60
 
 split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
 split_percentage_TFSPCH    = .90 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
@@ -167,19 +171,19 @@ rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #
 batch_size_train             =  10
 
 ''' Folders of data: STL is embedded  '''
-dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+dataset_path_IFN              = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
     
-dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
-gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
+dataset_path_WG              = folder_of_data + 'all_data/washingtondb-v1.0/data/word_images_normalized'    # path to WG images
+gt_path_WG                   = folder_of_data + 'all_data/washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
 
-dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
-gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
+dataset_path_IAM             = folder_of_data + 'all_data/IAM-V3/iam-images/'    # path to IAM images
+gt_path_IAM                  = folder_of_data + 'all_data/IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
 
-dataset_path_TF_SPEECH = folder_of_data + 'tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
-cifar100_path = folder_of_data + '/dataCifar100/'
-stl100_path = folder_of_data +'dataSTL10'   
-safe_driver_path = folder_of_data + 'safe_driver/train/'
+dataset_path_TF_SPEECH = folder_of_data + 'all_data/tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+cifar100_path = folder_of_data + 'all_data//dataCifar100/'
+stl100_path = folder_of_data +'all_data/dataSTL10'   
+safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
         
 
 ''' Language / script dataset to use '''       
@@ -196,20 +200,14 @@ iam_ifn_char = ''.join(sorted(set(iam_char + ifn_char)))
 wg_ifn_char = ''.join(sorted( set(ifn_char + gw_char) )) 
 
 
-if dataset_name == 'safe_driver':
+if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH':
     phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
+
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
     phoc_unigrams = wg_ifn_char       
+
 elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
     phoc_unigrams = iam_ifn_char    
-elif dataset_name == 'Cifar100':
-    phoc_unigrams = gw_char    # this depends on the alphabets used to name the classes, gw is English so that's fine 
-    
-elif dataset_name == 'WG':   
-    phoc_unigrams = gw_char    
-
-elif dataset_name == 'TFSPCH':   
-    phoc_unigrams = gw_char    # this depends on the alphabets used to name the classes, gw is English so that's fine 
 
 elif dataset_name =='IFN':
     phoc_unigrams = ifn_char    
@@ -224,11 +222,11 @@ elif dataset_name == 'IAM+IFN':
     phoc_unigrams = iam_ifn_char  
 
 else: 
-    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', or 'TFSPCH' ")
+    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', imdb_movie or 'TFSPCH' ")
             
 del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char
 
-
+word_corpus = 'Google_news' # else, will use Brown corpus
 
 
 if encoder == 'label': # label used for script identification/separation
