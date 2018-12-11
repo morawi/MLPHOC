@@ -153,7 +153,6 @@ class TfSpeechDataset(Dataset):
         
     def __getitem__(self, idx):
         img = wav2img(self.folder_of_data + self.words[idx] + '/' + self.file_name[idx])
-        
         img = img.reshape(img.shape[0], img.shape[1], 1) 
          # img  = np.tile(img, (1, 1, 3))
         
