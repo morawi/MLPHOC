@@ -14,6 +14,7 @@ from datasets.load_IAM_IFN_dataset import IAM_IFN_Dataset
 from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
 from datasets.load_cifar100_dataset import Cifar100Dataset
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
+from datasets.load_imdb_dataset import IMDB_dataset
 from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage
 from sys import exit as sys_exit
@@ -55,7 +56,7 @@ def get_transforms(cf):
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
             transforms.Normalize( mu, (8, 8, 8) ) if cf.normalize_images else NoneTransform(),                                   
-            # transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
+            # mu might need to be replaced, as 0.25 is not a correct mean!
             ])
     
     image_transform['safe_driver']  = transforms.Compose([            
@@ -64,6 +65,15 @@ def get_transforms(cf):
             transforms.ToTensor(),
             transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
             ])  
+     
+    image_transform['image_transform_imdb'] = transforms.Compose([            
+            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
+            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
+            transforms.ToTensor(),
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+            
+            transforms.Normalize( ((0.0),) * 3, ((2),) * 3 ) if cf.normalize_images else NoneTransform(),                                   
+            ])
     
     
     
@@ -90,6 +100,12 @@ def get_safe_driver(cf, image_transform):
      
      return train_set, test_set
      
+def get_imdb(cf, image_transform):
+     print('...................Large Image Movie Dataset...................')
+     train_set = IMDB_dataset(cf, mode='train', transform = image_transform['image_transform_imdb'])
+     test_set = IMDB_dataset(cf, mode='test', transform = image_transform['image_transform_imdb'])
+     
+     return train_set, test_set
 
 def get_cifar100(cf, image_transform):
     print('...................Cifar100 dataset...................')
@@ -176,7 +192,11 @@ def get_wg_ifn(cf, image_transform):
 def get_datasets(cf, image_transform):
         
     test_per_data = {}
-    if cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
+    
+    if cf.dataset_name == 'imdb_movie':
+        train_set, test_set  = get_imdb(cf, image_transform)        
+    
+    elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
         train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
         train_set_tfspch, test_set_tfspch, test_per_data['test_set_TFSPCH'] = get_tf_speech(cf, image_transform)
         train_set_iam_ifn, test_set_iam_ifn, test_per_data['test_set_iam'], test_per_data['test_set_ifn'] = get_iam_ifn(cf, image_transform)
@@ -189,8 +209,7 @@ def get_datasets(cf, image_transform):
     
     elif cf.dataset_name == 'safe_driver':
         train_set, test_set, test_set = get_safe_driver(cf, image_transform)
-        train_set, test_set, test_set = get_safe_driver(cf, image_transform)
-        
+                
     elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN':
         train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
         train_set_tfspch, test_set_tfspch, test_per_data['test_set_TFSPCH'] = get_tf_speech(cf, image_transform)
@@ -233,7 +252,6 @@ def get_datasets(cf, image_transform):
     else:
         print('Please select correct dataset name, one of dataset_name in config_file_wg.py')
         sys_exit('Incorrect dataset name')
-         
        
     
     ''' Diagnostics: displaying images for overlay diagnostics, or see if they are correctly formated '''
