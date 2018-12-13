@@ -8,6 +8,7 @@ Created on Thu Jul  5 18:18:18 2018
 import numpy as np
 import pandas as pd
 from utils.retrieval_torch import map_from_query_test_feature_matrices, map_from_feature_matrix
+# from utils.retrieval import map_from_query_test_feature_matrices, map_from_feature_matrix # based on numpy
 import torch
 from collections import Counter
 from nltk.corpus import wordnet
