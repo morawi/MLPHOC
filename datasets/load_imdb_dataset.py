@@ -10,6 +10,9 @@ Created on Mon Dec 10 16:45:02 2018
 Sentence cleaning and preprocessing
 https://hackernoon.com/word2vec-part-1-fe2ec6514d70
 
+https://fasttext.cc/docs/en/english-vectors.html
+https://towardsdatascience.com/word-embedding-with-word2vec-and-fasttext-a209c1d3e12c
+
 Google trained Word2Vec model:
 http://mccormickml.com/2016/04/12/googles-pretrained-word2vec-model-in-python/
 
@@ -20,12 +23,12 @@ More sophisticated data preparation may see results as high as 86% with 10-fold 
 
 Datasets:
 https://pytorchnlp.readthedocs.io/en/latest/source/torchnlp.datasets.html
+The original paper and dataset
+http://ai.stanford.edu/~amaas/data/sentiment/
 
 https://machinelearningmastery.com/develop-word-embeddings-python-gensim/
 
 
-WILL USE gTTS later, it is very slow, though
-Uses: gTTS  https://pypi.org/project/gTTS/
 
 Using NLTK’s Wordnet to find the meanings of words, synonyms, antonyms, and more. In addition, we use WordNetLemmatizer to get the root word.
 https://datascienceplus.com/topic-modeling-in-python-with-nltk-and-gensim/
@@ -70,21 +73,6 @@ import re
 #[('They', 'PRP'), ('refuse', 'VBP'), ('to', 'TO'), ('permit', 'VB'), ('us', 'PRP'),
 #('to', 'TO'), ('obtain', 'VB'), ('the', 'DT'), ('refuse', 'NN'), ('permit', 'NN')]
 
-def play_with(cf):
-    train = imdb_dataset(directory='/home/malrawi/Desktop/My Programs/all_data/imdb/', train=True)
-    len(train[1]['text'].split()) 
-            
-    
-    if cf.word_corpus == 'Google_news' :
-        print('Load Google\'s pre-trained Word2Vec model')
-        model = gensim.models.KeyedVectors.load_word2vec_format(cf.folder_of_data + '/models/GoogleNews-vectors-negative300.bin', binary=True)      
-        
-    else :
-        model = gensim.models.Word2Vec(brown.sents()) # using Brown corpus
-        
-    xx= model['universe']
-    print(xx)
-
 
 ''' Some data clearning '''
 def clean_the_text(text):     
@@ -104,7 +92,7 @@ class IMDB_dataset(Dataset):
     def __init__(self, cf, mode='train', transform = None):
         # mode: 'train' or 'test'        
         if mode =='train': # this way, gensim model will be created only once, but shared with all other instances
-            if  cf.word_corpus == '_________Google_news' :
+            if  cf.word_corpus_4_text_understanding == 'Google_news' :
                 print('--- Load Google\'s pre-trained Word2Vec model')
                 IMDB_dataset.gensim_model = gensim.models.KeyedVectors.load_word2vec_format(cf.folder_of_data + 
                                                                             '/models/GoogleNews-vectors-negative300.bin', binary=True)      
@@ -124,29 +112,36 @@ class IMDB_dataset(Dataset):
         
     def get_sample(self, index):
         
-        i=0
-        img  = np.zeros([len(self.gensim_model['universe']), self.cf.MAX_IMAGE_HEIGHT], dtype='float32')       
+        
+        img  = np.zeros([len(self.gensim_model['universe']), 
+                         self.cf.W_imdb_width], dtype='float32')       
         sentiment = self.data[index]['sentiment'] 
         sentiment = 'negative.135' if  sentiment=='neg' else  'posative.792'  # the hashing number is added to be identified from other keywords in other datasets             
         text  = clean_the_text(self.data[index]['text'] )
         sentences = split_sentences(text) # returns a list of sentences
-        
-        # Picking the first two and last two sentences
-        sentences = [sentences[0],sentences[1],sentences[len(sentences)-2],sentences[-1]]
-        for sentence_ in sentences:   
+                          
             
-            sentence_ = word_tokenize(sentence_)    
-            # sentence_struct = pos_tag(sentence_) # breaking it down to its structure
-            for word in sentence_:                
+        no_of_words=0  
+        for sent_x in sentences:              
+            sent_x = word_tokenize(sent_x)    
+            ''' sentence_struct = pos_tag(sentence_) # breaking it down to its structure '''
+            for word in sent_x:                  
                 word_vectors = IMDB_dataset.gensim_model.wv        
-                if word in word_vectors.vocab:              
+                if word in word_vectors.vocab:   
                     wrd2_vector = IMDB_dataset.gensim_model[word]
-                    img[:,i] = wrd2_vector
-                    i=i+1
+                    img[0:len(wrd2_vector), no_of_words] = wrd2_vector
+                    # img[:, no_of_words] = wrd2_vector
+                    no_of_words += 1
+                if no_of_words > (self.cf.W_imdb_width-1): 
+                    break
+            else: # else belongs to the for-loop
+                continue # only executed if the inner loop did NOT break
+            break 
+            
         img = img.reshape(img.shape[0], img.shape[1], 1)                 
         return img, sentiment
         
-    
+        
     def __getitem__(self, index):
                
         img, word_str = self.get_sample(index)
