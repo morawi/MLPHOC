@@ -87,12 +87,11 @@ def test_cnn_finetune(cf):
     def test(test_loader):               
         
         model.eval()        
-        test_loss = 0
-        correct = 0
-        mAP_QbE = 0; mAP_QbS = 0 # forward assignment, in case of using label  encoder
+        test_loss = 0;  correct = 0;  mAP_QbE = 0; mAP_QbS = 0 # forward assignment, in case of using label  encoder
+        word_str_all = ()
         pred_all = torch.tensor([], dtype=torch.float32, device=device)
         target_all = torch.tensor([], dtype=torch.float32, device=device)
-        word_str_all = ()
+        
         with torch.no_grad():
             for data, target, word_str, weight in test_loader: # weight is trivial here
                 data, target = data.to(device), target.to(device)
@@ -103,14 +102,14 @@ def test_cnn_finetune(cf):
                 else: 
                     test_loss += loss.item()
                 output = F.sigmoid(output)
-                pred = output.data
-                if cf.encoder == 'label': 
-                    pred = pred.type(torch.cuda.DoubleTensor)
-                    pred = pred.round()
-                    correct += pred.eq(target.data.view_as(pred)).long().cpu().sum().item()                
+                
+                if cf.print_accuracy == True: 
+                    pred = output.data                
+                    correct += (torch.sum(torch.abs(target-pred.round())<10, dim=1) ==0).sum().cpu().numpy() #  is the difference 0, so they are equal
+                    
                 # Accumulate from batches to one variable (##_all)
-                pred_all = torch.cat((pred_all, pred.float()), 0)
-                target_all = torch.cat((target_all.float(), target.float()), 0)
+                pred_all = torch.cat((pred_all, pred), 0)
+                target_all = torch.cat( (target_all, target), 0)
                 word_str_all = word_str_all + word_str        
         
         test_loss /= len(test_loader.dataset)             
@@ -118,16 +117,14 @@ def test_cnn_finetune(cf):
                   'pred': pred_all,
                   'target': target_all}
         
-        if cf.encoder == 'label':
-            print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
-            test_loss, correct, len(test_loader.dataset)*pred.size()[1],
-            100. * correct / (len(test_loader.dataset)*pred.size()[1] )))  
-            
-        else:   
+        if cf.print_accuracy == True:
+            print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.1f}%)'.format(
+            test_loss, correct, len(test_loader.dataset), 100. * correct / pred_all.size()[0]))
+        if not cf.encoder == 'label' :
             mAP_QbS = find_mAP_QbS(result, cf)
             mAP_QbE = find_mAP_QbE(result, cf)
             print( 'QbS ',  mAP_QbS, " QbE ",  mAP_QbE, " ")        
-        
+    
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
         
@@ -154,15 +151,16 @@ def test_cnn_finetune(cf):
                 word_similarity = word_similarity_metric(res['word_str'])
                 # print('word Moment =--: ', word_str_mom, end="")
                 # print('word Similarity =--: ', word_similarity, '\n')
-                print(  word_str_mom, " ", end="")
-                print( word_similarity)
+                print(word_str_mom, " ", end="")
+                print(word_similarity)
                 
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     
+    # perroms testing for multidata, bu teating each data separately
     def splitted_sets_testing():
         for item in test_per_data.items():
             print('Split the merged data: Per-script/data testing  --------', item[0]); 
-            result = test(per_data_loader[item[0]])
+            result = test(per_data_loader[item[0]]) 
         return result
 
     print('Chance level performance \n');  
