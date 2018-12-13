@@ -24,7 +24,7 @@ import torchvision.transforms as transforms
 import torch
 
 
-''' The reason for having two transforms is that handwring images come with one channel'''
+''' The reason for having more than two transforms is that handwring images come with one channel'''
 def get_transforms(cf):
     image_transform = {}
     mu = ((0.5),) * 3
@@ -55,7 +55,7 @@ def get_transforms(cf):
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-            transforms.Normalize( mu, (8, 8, 8) ) if cf.normalize_images else NoneTransform(),                                   
+            transforms.Normalize( ((0.0),) * 3, (8, 8, 8) ) if cf.normalize_images else NoneTransform(),                                   
             # mu might need to be replaced, as 0.25 is not a correct mean!
             ])
     
@@ -70,9 +70,8 @@ def get_transforms(cf):
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
-            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-            
-            transforms.Normalize( ((0.0),) * 3, ((2),) * 3 ) if cf.normalize_images else NoneTransform(),                                   
+            transforms.Lambda(lambda x: x.repeat(3, 1, 1)),            
+            transforms.Normalize( ((0.0),) * 3, ((.5),) * 3 ) if cf.normalize_images else NoneTransform(),                                   
             ])
     
     
@@ -82,8 +81,6 @@ def get_transforms(cf):
     # random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
     # can be used in the transform random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
     
- 
- 
 
 def display_img(img, str_v):
     to_pil = transforms.ToPILImage() 
@@ -102,8 +99,8 @@ def get_safe_driver(cf, image_transform):
      
 def get_imdb(cf, image_transform):
      print('...................Large Image Movie Dataset...................')
-     train_set = IMDB_dataset(cf, mode='train', transform = image_transform['image_transform_imdb'])
-     test_set = IMDB_dataset(cf, mode='test', transform = image_transform['image_transform_imdb'])
+     train_set = IMDB_dataset(cf, mode='train', transform = image_transform['image_transform_imdb']) # should use mode as 'train'
+     test_set = IMDB_dataset(cf, mode='test', transform = image_transform['image_transform_imdb']) # should use mode as 'test'
      
      return train_set, test_set
 
@@ -194,7 +191,23 @@ def get_datasets(cf, image_transform):
     test_per_data = {}
     
     if cf.dataset_name == 'imdb_movie':
-        train_set, test_set  = get_imdb(cf, image_transform)        
+        train_set, test_set  = get_imdb(cf, image_transform)
+        test_per_data['test_set_imdb'] = test_set     
+        
+    elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+        train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
+        train_set_tfspch, test_set_tfspch, test_per_data['test_set_TFSPCH'] = get_tf_speech(cf, image_transform)
+        train_set_iam_ifn, test_set_iam_ifn, test_per_data['test_set_iam'], test_per_data['test_set_ifn'] = get_iam_ifn(cf, image_transform)
+        train_set_sf_drive, test_per_data['test_set_safe_driver'] = get_safe_driver(cf, image_transform)
+        
+        train_set_imdb, test_per_data['test_set_imdb']  = get_imdb(cf, image_transform)
+         
+        
+        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, train_set_imdb,
+                                                     train_set_tfspch, train_set_iam_ifn, train_set_sf_drive] )
+        test_set = torch.utils.data.ConcatDataset( [test_per_data['test_set_cifar100'], test_per_data['test_set_imdb'],
+                                                    test_set_tfspch, test_set_iam_ifn, test_per_data['test_set_safe_driver']] )
+
     
     elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
         train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
@@ -228,19 +241,23 @@ def get_datasets(cf, image_transform):
                
         
     elif cf.dataset_name == 'Cifar100':
-        train_set, test_set = get_cifar100(cf, image_transform)      
+        train_set, test_set = get_cifar100(cf, image_transform)  
+        test_per_data['test_set_cifar100'] = test_set 
     
     elif cf.dataset_name == 'TFSPCH':
         train_set, test_set, test_per_data['test_set_TFSPCH'] = get_tf_speech(cf, image_transform)
     
     elif cf.dataset_name == 'WG':
-        train_set, test_set = get_gw(cf, image_transform)        
+        train_set, test_set = get_gw(cf, image_transform)    
+        test_per_data['test_set_gw'] = test_set 
         
     elif cf.dataset_name =='IAM':
-        train_set, test_set = get_iam(cf, image_transform)      
+        train_set, test_set = get_iam(cf, image_transform) 
+        test_per_data['test_set_iam'] = test_set 
 
     elif cf.dataset_name == 'IFN':
         train_set, test_set = get_ifn(cf, image_transform)        
+        test_per_data['test_set_ifn'] = test_set 
                     
     elif cf.dataset_name =='WG+IFN': 
         train_set, test_set, test_per_data['test_set_wg'], test_per_data['test_set_ifn'] = get_wg_ifn(cf, image_transform)
@@ -266,7 +283,7 @@ def get_datasets(cf, image_transform):
 
 def get_sampled_loader(cf, test_set):
         no_of_samples  = len(test_set)
-        sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:25000]                     
+        sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:cf.no_of_sampled_data]                     
         if len(sample_idx) ==0:  
             exit('exiting function get_the_sampler(), sample_idx size is 0')    
         my_sampler = torch.utils.data.sampler.SubsetRandomSampler(sample_idx)  
