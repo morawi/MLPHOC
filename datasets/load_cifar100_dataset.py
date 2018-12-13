@@ -60,7 +60,7 @@ class Cifar100Dataset(Dataset):
         
     def __getitem__(self, idx):
         img = self.dataset[idx][0]
-        img = img.resize( (self.cf.w_new_size, self.cf.h_new_size)) # zooming in is magic for cifar100
+        img = img.resize( (self.cf.w_new_size_cifar100, self.cf.h_new_size_cifar100)) # zooming in is magic for cifar100
         if self.transform:
             img = self.transform(img)
         class_id = self.dataset[idx][1]
