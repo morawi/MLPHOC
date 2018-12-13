@@ -10,11 +10,11 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 
 import time   # used to create a seed for the randomizers
 import numpy as np
-
-data_set_id  = 11
+print_accuracy = True
+data_set_id  = 12
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
-                'Cifar100+TFSPCH+IAM+IFN+safe-driver',   # 2
+                'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
                 'WG+IFN' ,  # 3 
                 'IAM+IFN', # 4
                 'WG', # 5
@@ -24,14 +24,19 @@ all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'TFSPCH', # 9
                 'safe_driver', # 10
                 'imdb_movie', # 11
+                 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
                 ]
 
 dataset_name    = all_datasets[data_set_id]
 del all_datasets, data_set_id
+
+word_corpus_4_text_understanding = 'Google_news' # else, will use 'Brown' corpus
+
 folder_of_data         = '/home/malrawi/Desktop/My Programs/'
-redirect_std_to_file   = False  # The output 'll be stored in a file if True 
+redirect_std_to_file   = True  # The output 'll be stored in a file if True 
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
-sampled_testing = True # to be used if the testing set islarger than 30K
+sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
+if sampled_testing: no_of_sampled_data = 25000 
 phoc_levels = [ 2, 3, 4, 5]
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
 if encoder =='phoc':
@@ -74,20 +79,44 @@ if dataset_name  == 'safe_driver':
 elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+GW+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
     MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
     MAX_IMAGE_HEIGHT = universal_H 
-    w_new_size = universal_H # these are used to up-scale Cifar100 dataset 
-    h_new_size = universal_H
+    w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
+    h_new_size_cifar100 = universal_H
     H_ifn_scale  = universal_H
     H_iam_scale  = universal_H
     H_gw_scale = universal_H
     H_sfDrive_scale = universal_H
     H_TFSPCH_scale = 0 # do not scale speech data
+    resize_images = False # override in case resize_images is True
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
 
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+    MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
+    MAX_IMAGE_HEIGHT = universal_H 
+    w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
+    h_new_size_cifar100 = universal_H
+    H_ifn_scale  = universal_H
+    H_iam_scale  = universal_H
+    H_gw_scale = universal_H
+    H_sfDrive_scale = universal_H
+    H_TFSPCH_scale = 0 # do not scale speech data
+    resize_images = False # override in case resize_images is True
+    W_imdb_width  = 600
+    H_imdb_scale = 0 # universal_H   
+    if word_corpus_4_text_understanding=='Google_news':  MAX_IMAGE_HEIGHT = 300
+   
+    ''' Better to set resize_images to False in this case
+    IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
+    Cifar100 will have w_new_size, TSFPCH will be the same  '''
+
+
+
 elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass to the sepectogram function
-    MAX_IMAGE_WIDTH  = 300 # to get a better max width, one must load/train the gensim model at this stage
-    MAX_IMAGE_HEIGHT = universal_H
+    MAX_IMAGE_WIDTH  = 600 # should be >=  W_imdb_width    
+    MAX_IMAGE_HEIGHT = 100 # universal_H # to get a better max width, one must load/train the gensim model at this stage
+    if word_corpus_4_text_understanding=='Google_news':  MAX_IMAGE_HEIGHT = 300
+    W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H
       
 elif dataset_name == 'Cifar100':
@@ -154,7 +183,7 @@ dropout_probability          = 0
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-epochs                       = 30# 10 # 60
+epochs                       = 60 # 60# 10 # 60
 
 split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
 split_percentage_TFSPCH    = .90 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
@@ -206,7 +235,7 @@ if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
     phoc_unigrams = wg_ifn_char       
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     phoc_unigrams = iam_ifn_char    
 
 elif dataset_name =='IFN':
@@ -222,11 +251,11 @@ elif dataset_name == 'IAM+IFN':
     phoc_unigrams = iam_ifn_char  
 
 else: 
-    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', imdb_movie or 'TFSPCH' ")
+    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
             
 del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char
 
-word_corpus = 'Google_news' # else, will use Brown corpus
+
 
 
 if encoder == 'label': # label used for script identification/separation
