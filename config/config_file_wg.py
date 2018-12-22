@@ -11,7 +11,7 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 import time   # used to create a seed for the randomizers
 import numpy as np
 print_accuracy = True
-data_set_id  = 12
+data_set_id  = 11
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
                 'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
@@ -33,7 +33,7 @@ del all_datasets, data_set_id
 word_corpus_4_text_understanding = 'Google_news' # else, will use 'Brown' corpus
 
 folder_of_data         = '/home/malrawi/Desktop/My Programs/'
-redirect_std_to_file   = True  # The output 'll be stored in a file if True 
+redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
 sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
@@ -92,6 +92,10 @@ elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPC
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
 
 elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+    if word_corpus_4_text_understanding=='Google_news':  
+        MAX_IMAGE_HEIGHT = 300
+        universal_H = 300
+   
     MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
     MAX_IMAGE_HEIGHT = universal_H 
     w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
@@ -104,8 +108,7 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     resize_images = False # override in case resize_images is True
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
-    if word_corpus_4_text_understanding=='Google_news':  MAX_IMAGE_HEIGHT = 300
-   
+    
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
@@ -122,8 +125,8 @@ elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass t
 elif dataset_name == 'Cifar100':
     MAX_IMAGE_WIDTH  = 260
     MAX_IMAGE_HEIGHT = 260
-    w_new_size = 256
-    h_new_size = 256
+    w_new_size_cifar100 = 256
+    h_new_size_cifar100 = 256
 
 elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to the sepectogram function
     MAX_IMAGE_WIDTH  = 260
