@@ -12,6 +12,7 @@ from cnn_finetune import make_model
 from utils.some_functions import find_mAP_QbS, find_mAP_QbE #, add_weights_of_words
 from utils.some_functions import word_str_moment, word_similarity_metric, count_model_parameters #test_varoius_dist, 
 from datasets.get_datasets import get_datasets,  get_dataloaders, get_transforms
+from sklearn.metrics import accuracy_score
 
 
 
@@ -87,7 +88,8 @@ def test_cnn_finetune(cf):
     def test(test_loader):               
         
         model.eval()        
-        test_loss = 0;  correct = 0;  mAP_QbE = 0; mAP_QbS = 0 # forward assignment, in case of using label  encoder
+        test_loss = 0; total_size=0; correct = 0;  
+        mAP_QbE = 0; mAP_QbS = 0 # forward assignment, in case of using label  encoder
         word_str_all = ()
         pred_all = torch.tensor([], dtype=torch.float32, device=device)
         target_all = torch.tensor([], dtype=torch.float32, device=device)
@@ -102,24 +104,20 @@ def test_cnn_finetune(cf):
                 else: 
                     test_loss += loss.item()
                 output = F.sigmoid(output)
-                
-                if cf.print_accuracy == True: 
-                    pred = output.data                
-                    correct += (torch.sum(torch.abs(target-pred.round())<10, dim=1) ==0).sum().cpu().numpy() #  is the difference 0, so they are equal
-                    
-                # Accumulate from batches to one variable (##_all)
-                pred_all = torch.cat((pred_all, pred), 0)
+                pred = output.data .round()                  
+                pred_all = torch.cat((pred_all, pred), 0) # Accumulate from batches to one variable (##_all)
                 target_all = torch.cat( (target_all, target), 0)
-                word_str_all = word_str_all + word_str        
-        
-        test_loss /= len(test_loader.dataset)             
+                word_str_all = word_str_all + word_str     
+                total_size += data.size(0)
+        correct = accuracy_score(target_all, pred_all, normalize=False)
+        test_loss /= total_size
         result = {'word_str':word_str_all,
                   'pred': pred_all,
                   'target': target_all}
         
         if cf.print_accuracy == True:
             print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.1f}%)'.format(
-            test_loss, correct, len(test_loader.dataset), 100. * correct / pred_all.size()[0]))
+            test_loss, correct, pred_all.size()[0], 100. * correct / pred_all.size()[0]))
         if not cf.encoder == 'label' :
             mAP_QbS = find_mAP_QbS(result, cf)
             mAP_QbE = find_mAP_QbE(result, cf)
@@ -129,6 +127,8 @@ def test_cnn_finetune(cf):
         result['mAP_QbS'] = mAP_QbS
         
         return result # to be used in case we want to try different distances later
+    
+    
     
     def test_moment_and_word_sim(result, test_set):
         print('--------------Moment and similarity statistics ----------------- ')
