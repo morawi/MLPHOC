@@ -11,6 +11,8 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 import time   # used to create a seed for the randomizers
 import numpy as np
 print_accuracy = True
+normalize_images     = True
+redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 data_set_id  = 11
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
@@ -30,10 +32,11 @@ all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
 dataset_name    = all_datasets[data_set_id]
 del all_datasets, data_set_id
 
-word_corpus_4_text_understanding = 'Google_news' # else, will use 'Brown' corpus
+word_corpus_4_text_understanding = 'Custom' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
+
+min_occurane = 10  # minimum number of words to appear in building the custom W2V model
 
 folder_of_data         = '/home/malrawi/Desktop/My Programs/'
-redirect_std_to_file   = False  # The output 'll be stored in a file if True 
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
 sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
@@ -60,7 +63,7 @@ del phoc_levels
 
 resize_images        = False         # Resize the dataset images to a fixed size
 pad_images           = True         # Pad the input images to a fixed size [576, 226]
-normalize_images     = True
+
 overlay_handwritting_on_STL_img = False
 if overlay_handwritting_on_STL_img:
     change_hand_wrt_color = True 
@@ -71,9 +74,9 @@ if overlay_handwritting_on_STL_img:
 universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
 
 if dataset_name  == 'safe_driver':
-    MAX_IMAGE_WIDTH  = 267 # 640
-    MAX_IMAGE_HEIGHT = 200 # 480
-    H_sfDrive_scale = universal_H
+    MAX_IMAGE_WIDTH  = 400 #  267 # 640
+    MAX_IMAGE_HEIGHT = 300 # 200 # 480
+    H_sfDrive_scale = 300#  universal_H
     
     
 elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+GW+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
@@ -100,9 +103,8 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     MAX_IMAGE_HEIGHT = universal_H 
     w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
     h_new_size_cifar100 = universal_H
-    H_ifn_scale  = universal_H
-    H_iam_scale  = universal_H
-    H_gw_scale = universal_H
+    H_ifn_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
+    H_iam_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
     H_sfDrive_scale = universal_H
     H_TFSPCH_scale = 0 # do not scale speech data
     resize_images = False # override in case resize_images is True
@@ -118,7 +120,8 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
 elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass to the sepectogram function
     MAX_IMAGE_WIDTH  = 600 # should be >=  W_imdb_width    
     MAX_IMAGE_HEIGHT = 100 # universal_H # to get a better max width, one must load/train the gensim model at this stage
-    if word_corpus_4_text_understanding=='Google_news':  MAX_IMAGE_HEIGHT = 300
+    if word_corpus_4_text_understanding=='Google_news' or word_corpus_4_text_understanding=='Custom':  
+        MAX_IMAGE_HEIGHT = 300
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H
       
@@ -129,8 +132,8 @@ elif dataset_name == 'Cifar100':
     h_new_size_cifar100 = 256
 
 elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to the sepectogram function
-    MAX_IMAGE_WIDTH  = 260
-    MAX_IMAGE_HEIGHT = 260
+    MAX_IMAGE_WIDTH  =  260 # 162
+    MAX_IMAGE_HEIGHT = 260 # 100
     H_TFSPCH_scale = 0
 
 elif dataset_name ==  'WG': # 645 x 120 (largest size in GW dataset)
@@ -182,14 +185,19 @@ lr_milestones                = [ 40, 80, 150 ]  # it is better to move this in t
 lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
-dropout_probability          = 0
+
+
+dropout_probability          = 0.25
+
+
+
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
 epochs                       = 60 # 60# 10 # 60
 
 split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
-split_percentage_TFSPCH    = .90 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
+split_percentage_TFSPCH    = 1 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
                                 # If not 1, say 0.90 this means the 90% of the data will be used for training. 
 
 batch_size_test              = 100  # Higher values may trigger memory problems
@@ -212,7 +220,8 @@ gt_path_WG                   = folder_of_data + 'all_data/washingtondb-v1.0/grou
 dataset_path_IAM             = folder_of_data + 'all_data/IAM-V3/iam-images/'    # path to IAM images
 gt_path_IAM                  = folder_of_data + 'all_data/IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
 
-dataset_path_TF_SPEECH = folder_of_data + 'all_data/tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+dataset_path_TF_SPEECH_train = folder_of_data + 'all_data/tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+dataset_path_TF_SPEECH_test = folder_of_data + 'all_data/tf_speech_recognition_v1/test/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
 cifar100_path = folder_of_data + 'all_data//dataCifar100/'
 stl100_path = folder_of_data +'all_data/dataSTL10'   
 safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
@@ -266,8 +275,8 @@ if encoder == 'label': # label used for script identification/separation
     batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
     model_name               = 'resnet18'
     testing_print_frequency  = 3 # prime number, how frequent to test/print during training
-    English_label = np.array([1, 0], 'double')
-    Arabic_label = np.array([0, 1], 'double')
+    English_label = np.array([1, 0], 'float32')
+    Arabic_label = np.array([0, 1], 'float32')
     assert(dataset_name == 'WG+IFN' or  dataset_name == 'IAM+IFN') # or 'IAM+IFN'
 
 
@@ -286,6 +295,7 @@ results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder t
 
 
 
+IFN_based_on_folds_experiment  = False
 
 '''
 # testing based on folder sets, depriciated as no difference between our random split and this
