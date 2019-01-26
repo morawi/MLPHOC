@@ -16,7 +16,7 @@ import numpy as np
 from torchvision import transforms
 from skimage.morphology import thin as skimage_thinner
 import Augmentor
-from PIL import ImageChops, Image, ImageOps, ImageStat
+from PIL import Image # ImageChops,  ImageOps, ImageStat
 import torchvision
 
 #  Method to compute the padding odf the input image to the max image size
@@ -26,7 +26,8 @@ def get_padding(image, output_size):
     w, h = image.size
 
     pad_width = output_max_width - w
-    if pad_width<0 : 
+    if pad_width<0:
+        print(output_max_width, w) 
         print('MAX_IMAGE_WIDTH is smaller than expected, check config_file'); 
         exit(0)
     
@@ -42,7 +43,9 @@ def get_padding(image, output_size):
             pad_right = pad_left - 1
     
     pad_height = output_max_height - h    
-    if pad_height<0 : print('MAX_IMAGE_WIDTH is smaller than expected, see config_file'); exit(0)
+    if pad_height<0 : 
+        print(output_max_height, h) 
+        print('MAX_IMAGE_WIDTH is smaller than expected, see config_file'); exit(0)
     if pad_height < 2:
         pad_top = pad_height
         pad_bottom = 0
