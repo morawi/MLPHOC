@@ -111,7 +111,11 @@ class TfSpeechDataset(Dataset):
             complement_idx: generate the set from the complement of data_idx
         """
         self.cf = cf
-        self.folder_of_data = cf.dataset_path_TF_SPEECH        
+        if train==True:
+            self.folder_of_data = cf.dataset_path_TF_SPEECH_train
+        else:
+            self.folder_of_data = cf.dataset_path_TF_SPEECH_test
+            
         self.train = train  # training set or test set
         self.transform = transform
         self.file_name = []
