@@ -28,11 +28,11 @@ labels = {  'c0' : 'safe driving',
             'c9' : 'talking to passenger'}
 
 # Class labels
-classes = ['safe.driving-19',  # we used . and - as they are defined in the Gw_unigrams
+classes = ['safe.driving-19',  # As HashoingCode, to prevent collision with similar words. we used . and - as they are defined in the Gw_unigrams
             'texting.right-74', 
-            'talking.on.the-phone-right', 
+            'talking-phone-right', # 'talking.on.the-phone-right'
             'texting.left-73', 
-            'talking.on.the.phone-left', 
+            'talking-phone-left', 
             'operating.the-radio', 
             'drinking-481', 
             'reaching.behind', 
