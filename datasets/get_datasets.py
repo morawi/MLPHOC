@@ -82,12 +82,6 @@ def get_transforms(cf):
     # can be used in the transform random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
     
 
-def display_img(img, str_v):
-    to_pil = transforms.ToPILImage() 
-    img1  = to_pil(img) # we can also use test_set[1121][0].numpy()    
-    plt.imshow(np.array(img1).squeeze()); plt.show()
-    print('one ', str_v, ' image: has min-max vals', img.min(), img.max())  
-        
 
 def get_safe_driver(cf, image_transform):
      print('...................Safe Driver dataset...................')
@@ -98,9 +92,10 @@ def get_safe_driver(cf, image_transform):
      return train_set, test_set
      
 def get_imdb(cf, image_transform):
-     print('...................Large Image Movie Dataset...................')
+     print('...Loading................Large Image Movie Dataset (IMDB)...................')
      train_set = IMDB_dataset(cf, mode='train', transform = image_transform['image_transform_imdb']) # should use mode as 'train'
      test_set = IMDB_dataset(cf, mode='test', transform = image_transform['image_transform_imdb']) # should use mode as 'test'
+     print('.....Loading .. IMDB done')
      
      return train_set, test_set
 
@@ -113,16 +108,12 @@ def get_cifar100(cf, image_transform):
 def get_tf_speech(cf, image_transform):
     print('...................Loading TensorFlow Speech Recog dataset...................')
     train_set = TfSpeechDataset(cf, train=True, transform=image_transform['image_transform_spch'])
-    test_set = TfSpeechDataset(cf, train=False, transform=image_transform['image_transform_spch'], 
-                        data_idx =train_set.data_idx, complement_idx = True)
-    
-    cf1 = cf # we are usting the test folder here
-    cf1.dataset_path_TF_SPEECH= cf1.dataset_path_TF_SPEECH.replace('train', 'test') # to read from test folder        
-    cf1.split_percentage_TFSPCH = 1 # as we need to read all the data in the test folder
-    test_set_from_folder = TfSpeechDataset(cf1, train=True, transform=image_transform['image_transform_spch']) # we need to set train=true, so that split does not reduce the data we are using
-    del cf1  
+    test_set = TfSpeechDataset(cf, train=False, transform=image_transform['image_transform_spch'])
+#    test_set = TfSpeechDataset(cf, train=False, transform=image_transform['image_transform_spch'], 
+#                        data_idx =train_set.data_idx, complement_idx = True)        
+#    test_set_from_folder = TfSpeechDataset(cf, train=False, transform=image_transform['image_transform_spch']) # we need to set train=true, so that split does not reduce the data we are using    
     # combining test_set from the split and test_set_from_folder
-    test_set =  torch.utils.data.ConcatDataset( [test_set,  test_set_from_folder] )
+#    test_set =  torch.utils.data.ConcatDataset( [test_set,  test_set_from_folder] )
     
     return train_set, test_set, test_set # as this is 
 
@@ -221,7 +212,8 @@ def get_datasets(cf, image_transform):
                                                     test_set_tfspch, test_set_iam_ifn, test_per_data['test_set_safe_driver']] )
     
     elif cf.dataset_name == 'safe_driver':
-        train_set, test_set, test_set = get_safe_driver(cf, image_transform)
+        train_set, test_set = get_safe_driver(cf, image_transform)        
+        test_per_data['test_set_safe_driver'] = test_set
                 
     elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN':
         train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
@@ -269,18 +261,28 @@ def get_datasets(cf, image_transform):
     else:
         print('Please select correct dataset name, one of dataset_name in config_file_wg.py')
         sys_exit('Incorrect dataset name')
-       
     
-    ''' Diagnostics: displaying images for overlay diagnostics, or see if they are correctly formated '''
-    display_img(train_set[41][0], 'train') # 41, some trivial index 
-    display_img(train_set[len(train_set)//3][0], 'train') # 41, some trivial index 
-    display_img(test_set[len(test_set)//2][0], 'test')    # 1121, some trivial index
-    display_img(test_set[len(test_set)-10][0], 'test')    # 1121, some trivial index
-    print(train_set[41][0].shape)
+    display_images(train_set, test_set)
+       
     
     return train_set, test_set, test_per_data
 
+def display_img(img, str_v):
+    to_pil = transforms.ToPILImage() 
+    img1  = to_pil(img) # we can also use test_set[1121][0].numpy()    
+    plt.axis('off')
+    plt.imshow(np.array(img1).squeeze()); plt.show()
+    print('one ', str_v, ' image: has min-max vals', img.min(), img.max())  
 
+
+def display_images(train_set, test_set):
+    ''' Diagnostics: displaying images for overlay diagnostics, or see if they are correctly formated '''
+    display_img(train_set[len(train_set)//3][0], 'train') # 41, some trivial index     
+    display_img(test_set[len(test_set)-10][0], 'test')    # 1121, some trivial index
+    display_img(train_set[2341][0], 'train') # 41, some trivial index     
+    display_img(test_set[len(test_set)//2][0], 'test')    # 1121, some trivial index    
+    print(train_set[41][0].shape)
+    
 def get_sampled_loader(cf, test_set):
         no_of_samples  = len(test_set)
         sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:cf.no_of_sampled_data]                     
