@@ -4,10 +4,11 @@
 Created on Sat Jul 28 18:11:50 2018
 
 @author: malrawi
-j"""
+
+"""
 
 import os
-os.chdir("..")
+os.chdir("..") # bringing the directory back to MLPHOC
 
 from config.load_config_file import Configuration
 import numpy as np
