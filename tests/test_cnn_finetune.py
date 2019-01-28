@@ -47,7 +47,7 @@ def test_cnn_finetune(cf):
         criterion = nn.MSELoss()
         
 # the optimizer
-    optimizer = optim.SGD( model.parameters(), 
+    optimizer = optim.SGD(model.parameters(), 
                           lr = cf.learning_rate, 
                           momentum = cf.momentum,
                           nesterov = cf.use_nestrov_moment,
@@ -83,7 +83,7 @@ def test_cnn_finetune(cf):
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tAverage loss: {:.7f}'.format(
                     epoch, batch_idx * len(data), len(train_loader.dataset),
                     100. * batch_idx / len(train_loader), total_loss / total_size))
-
+        del data, target
 
     def test(test_loader):               
         
@@ -104,7 +104,7 @@ def test_cnn_finetune(cf):
                 else: 
                     test_loss += loss.item()
                 output = F.sigmoid(output)
-                pred = output.data .round()                  
+                pred = output.data.round()                  
                 pred_all = torch.cat((pred_all, pred), 0) # Accumulate from batches to one variable (##_all)
                 target_all = torch.cat( (target_all, target), 0)
                 word_str_all = word_str_all + word_str     
@@ -125,7 +125,9 @@ def test_cnn_finetune(cf):
     
         result['mAP_QbE'] = mAP_QbE
         result['mAP_QbS'] = mAP_QbS
-        
+                
+        del pred_all, target_all, data
+        result.clear() # there seems to be an issue with the memory, even if not receiving 'result'
         return result # to be used in case we want to try different distances later
     
     
@@ -154,7 +156,7 @@ def test_cnn_finetune(cf):
                 print(word_str_mom, " ", end="")
                 print(word_similarity)
                 
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
+    
     
     # perroms testing for multidata, bu teating each data separately
     def splitted_sets_testing():
@@ -163,9 +165,12 @@ def test_cnn_finetune(cf):
             result = test(per_data_loader[item[0]]) 
         return result
 
+    
     print('Chance level performance \n');  
     test(test_loader)  
-        
+    
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
+    # Training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step();  
         print("lr = ", scheduler.get_lr(), end="") # to be used with MultiStepLR
