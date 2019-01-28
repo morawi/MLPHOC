@@ -8,7 +8,11 @@ Created on Mon Dec 10 16:45:02 2018
 
 '''
 Sentence cleaning and preprocessing
+https://github.com/PetrochukM/PyTorch-NLP/blob/master/torchnlp/word_to_vector/glove.py
 https://hackernoon.com/word2vec-part-1-fe2ec6514d70
+https://pytorchnlp.readthedocs.io/en/latest/source/torchnlp.word_to_vector.html
+
+https://www.kaggle.com/nilanml/imdb-review-deep-model-94-89-accuracy
 
 https://fasttext.cc/docs/en/english-vectors.html
 https://towardsdatascience.com/word-embedding-with-word2vec-and-fasttext-a209c1d3e12c
@@ -58,15 +62,27 @@ print(new_model)
 
 '''
 import torchvision.transforms as transforms
-from torchnlp.datasets import imdb_dataset
-import gensim 
-from nltk.corpus import brown
 from PIL import Image
-from nltk import word_tokenize, pos_tag
 from torch.utils.data import Dataset
+from torchnlp.datasets import imdb_dataset
+import re 
+import os
 import numpy as np
-from gensim.summarization.textcleaner import split_sentences
-import re
+from nltk.corpus import brown
+import gensim
+from functools import reduce
+from torchnlp.word_to_vector import FastText
+from torchnlp.word_to_vector import GloVe
+from torchnlp.word_to_vector import CharNGram
+from string import punctuation
+from collections import Counter
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+
+# from nltk import word_tokenize, pos_tag
+# from gensim.summarization.textcleaner import split_sentences
+
+
 
 #text = word_tokenize("They refuse to permit us to obtain the refuse permit")
 #xx = pos_tag(text)
@@ -74,74 +90,161 @@ import re
 #('to', 'TO'), ('obtain', 'VB'), ('the', 'DT'), ('refuse', 'NN'), ('permit', 'NN')]
 
 
-''' Some data clearning '''
-def clean_the_text(text):     
-    
-    text = re.sub("\>|\<|br|/|\\'s|\:|\x85", '', text) # will also replave it's by it
-    text = re.sub(r'http\S+', '', text)
-    text.replace('\?', ' questionmark')
-    text.replace('\?', ' exclamation_mark')            
-    text.replace("\\", '')
+
+''' Either this text cleaning '''
+def clean_text_1(text):
+    stop_words = set(stopwords.words("english")) 
+    lemmatizer = WordNetLemmatizer()
+    text = re.sub(r'[^\w\s]','',text, re.UNICODE)
+    text = text.lower()
+    text = [lemmatizer.lemmatize(token) for token in text.split(" ")]
+    text = [lemmatizer.lemmatize(token, "v") for token in text]
+    text = [word for word in text if not word in stop_words]
+    text = " ".join(text)
     return text
+
+''' or, this text  clearning '''
+def clean_text_2(text, stop_words):      
+    text=text.lower() 
+    text = re.sub("\>|\<|br|/|\x85|\\\|r'http\S+'|\"|\.|\,|\;|\:|\(|\)", '', text)    
+    text = re.sub("\#", 'number ', text) 
+    repls = ('?', ' questionmark'), ('!', ' exclamation_mark'),
+    ("'re", ' are'), ("it's", 'it is'), ("n't", ' not') ,  (':', ' '), ('#', ' number ')          
+    text  = reduce(lambda a, kv: a.replace(*kv), repls, text)
+    text = text.replace('-', ' ')      
+    text = text.replace("'s", ' ')   
+    text = text.replace("'", ' ')    
+    text = text.split()	# split into tokens by white space    
+    text = [w for w in text if not w in stop_words]         
+    table = str.maketrans('', '', punctuation) # remove punctuation from each token
+    text = [w.translate(table) for w in text]	
+    text = [word for word in text if word.isalpha()] # remove remaining tokens that are not alphabetic	
+    text = [word for word in text if len(word) > 1] # filter out short tokens
+    return text
+        
+    
+def build_w2v_model(cf, reviews):
+      
+    vocab = Counter() # define vocab
+    for review in reviews:
+         vocab.update(review['text'])   # print(vocab.most_common(50)) # print the top words in the vocab        
+    tokens = [k for k, c in vocab.items() if c >= cf.min_occurane] # keep tokens with > 5 occurrence    
+    model = gensim.models.Word2Vec([tokens], min_count=1, size = 300)    
+    return model
+
+def get_word_vec_model(cf, reviews):
+    print('--- Loading', cf.word_corpus_4_text_understanding, " pre-trained Word2Vec model")
+    if  cf.word_corpus_4_text_understanding == 'Google_news' :        
+        word_vec_model = gensim.models.KeyedVectors.load_word2vec_format(cf.folder_of_data + 
+                                                                    '/models/GoogleNews-vectors-negative300.bin', binary=True)      
+        
+    elif cf.word_corpus_4_text_understanding=='Brown':        
+        word_vec_model = gensim.models.Word2Vec(brown.sents()) # using Brown corpus
+    elif cf.word_corpus_4_text_understanding == 'Fasttext':
+        word_vec_model = FastText(language="simple")
+    elif cf.word_corpus_4_text_understanding == 'Glove':
+        word_vec_model = GloVe(name='6B', dim=300) 
+    elif cf.word_corpus_4_text_understanding == 'CharNGram':
+        word_vec_model = CharNGram()
+    elif cf.word_corpus_4_text_understanding == 'Custom':
+        word_vec_model = build_w2v_model(cf, reviews)        
+    else:
+        print('Error: Please select a word vector model')
+    print('--- Loading', cf.word_corpus_4_text_understanding, ' done')
+    
+    return word_vec_model # , custom_model
 
 
 class IMDB_dataset(Dataset):
     
-    gensim_model = None
+    # w2v dimension is 300
+    google_model   = None    
+    fasttext_model = None
+    glove_model    = None
+    custom_model   = None
+    # brown_model = None # w2v dimension is 100 here, not compatiable
+    # CharNGram_model = None # w2v dimension is 100 here, not compatiable
         
     def __init__(self, cf, mode='train', transform = None):
-        # mode: 'train' or 'test'        
-        if mode =='train': # this way, gensim model will be created only once, but shared with all other instances
-            if  cf.word_corpus_4_text_understanding == 'Google_news' :
-                print('--- Load Google\'s pre-trained Word2Vec model')
-                IMDB_dataset.gensim_model = gensim.models.KeyedVectors.load_word2vec_format(cf.folder_of_data + 
-                                                                            '/models/GoogleNews-vectors-negative300.bin', binary=True)      
-            else:
-                print('--- Train Word2Vec model using Brown corpus')
-                IMDB_dataset.gensim_model = gensim.models.Word2Vec(brown.sents()) # using Brown corpus
-            
+        # mode: 'train' or 'test'            
         self.cf = cf
         self.mode = mode        
-        self.transform = transform    
+        self.transform = transform      
         if mode=='train': # For some reason, this has to be done this way..train = True, then, test=True!
             self.data = imdb_dataset(directory='/home/malrawi/Desktop/My Programs/all_data/imdb/', train = True)
+            self.clean_all_text() # the clean text will replace the original one in self.data, it is necessary to do it here, as it the text might be used to build the w2v models        
+            self.load_w2v_models()
+        
         else:
             self.data = imdb_dataset(directory='/home/malrawi/Desktop/My Programs/all_data/imdb/', test=True)
+            self.clean_all_text()                     
+    
+    def load_w2v_models(self):
+        original_path =  os.getcwd()
+        os.chdir(self.cf.folder_of_data + 'all_data/') # this is where the data models are stored
         
-
+        print('loading google w2v')
+        IMDB_dataset.google_model = gensim.models.KeyedVectors.load_word2vec_format(self.cf.folder_of_data + 
+                                                                '/models/GoogleNews-vectors-negative300.bin', binary=True)      
+        print('loading fasttext w2v')
+        IMDB_dataset.fasttext_model = FastText(language="simple")
+        print('loading glove w2v')
+        IMDB_dataset.glove_model = GloVe(name='6B', dim=300)
+        print('building/loading custom w2v')
+        IMDB_dataset.custom_model = build_w2v_model(self.cf, self.data)   
         
-    def get_sample(self, index):
+        os.chdir(original_path) # restore the original path
         
+    def clean_all_text(self):
+        print('.....................Cleaning all IMDB text....................')
+        stop_words = set(stopwords.words('english')) # filter out stop words
+        i=0
+        for review in self.data:
+            self.data[i]['text'] = clean_text_2(review['text'], stop_words)
+            i=i+1      
         
-        img  = np.zeros([len(self.gensim_model['universe']), 
-                         self.cf.W_imdb_width], dtype='float32')       
-        sentiment = self.data[index]['sentiment'] 
-        sentiment = 'negative.135' if  sentiment=='neg' else  'posative.792'  # the hashing number is added to be identified from other keywords in other datasets             
-        text  = clean_the_text(self.data[index]['text'] )
-        sentences = split_sentences(text) # returns a list of sentences
-                          
-            
-        no_of_words=0  
-        for sent_x in sentences:              
-            sent_x = word_tokenize(sent_x)    
-            ''' sentence_struct = pos_tag(sentence_) # breaking it down to its structure '''
-            for word in sent_x:                  
-                word_vectors = IMDB_dataset.gensim_model.wv        
-                if word in word_vectors.vocab:   
-                    wrd2_vector = IMDB_dataset.gensim_model[word]
-                    img[0:len(wrd2_vector), no_of_words] = wrd2_vector
-                    # img[:, no_of_words] = wrd2_vector
-                    no_of_words += 1
-                if no_of_words > (self.cf.W_imdb_width-1): 
-                    break
-            else: # else belongs to the for-loop
-                continue # only executed if the inner loop did NOT break
-            break 
+                  ''' we have to inspect the numerical scale of every w2v, 
+          
+                    and then, normalize them
+          
+                    all to the same thing'''  
+        
+    def text_to_image_2(self, text):        
+        img  = np.zeros([ self.cf.MAX_IMAGE_HEIGHT, self.cf.W_imdb_width], dtype='float32')   
+        
+        w2v_google = np.array(np.column_stack([IMDB_dataset.google_model[w] for w in text if w in IMDB_dataset.google_model.wv]))        
+        if w2v_google.shape[1]<self.cf.W_imdb_width:
+            w2v_fastext = np.array(np.column_stack([IMDB_dataset.fasttext_model[w] for w in text])) # This model has no vocabulary
+            w2v = np.concatenate((w2v_google, w2v_fastext), axis=1)
+            if w2v.shape[1]<self.cf.W_imdb_width:
+                w2v_glove = np.array(np.column_stack([IMDB_dataset.glove_model[w] for w in text])) # This model has no vocabulary        
+                w2v = np.concatenate((w2v, w2v_glove), axis=1)
+                if w2v.shape[1]<self.cf.W_imdb_width:
+                    w2v_custom = 333* np.array(np.column_stack([IMDB_dataset.custom_model[w] for w in text if w in IMDB_dataset.custom_model.wv]))   # normalization, as our custom model has 1.e-3 order values            
+                    w2v = np.concatenate((w2v, w2v_custom), axis=1)
+        else:
+            w2v = w2v_google
+        
+        w_offset = img.shape[1]-w2v.shape[1]         
+        
+        if w_offset < 3: # the w2v image is larger than the intended one, truncate it            
+            img = w2v[:, 0:img.shape[0]]                  
+        else: # else, if it is smaller than offset, we will bring it to the center
+            w_offset = int(w_offset/2)-1            
+            img[:, w_offset:w_offset+ w2v.shape[1]] = w2v               
             
         img = img.reshape(img.shape[0], img.shape[1], 1)                 
-        return img, sentiment
-        
-        
+        return img   
+    
+    
+    def get_sample(self, index):                
+        sentiment = self.data[index]['sentiment'] 
+        sentiment = 'negative.135' if  sentiment=='neg' else  'posative.792'  # the hashing number is added to be identified from other keywords in other datasets                     
+        img = self.text_to_image_2(self.data[index]['text'])
+                  
+        return img, sentiment    
+    
+    
     def __getitem__(self, index):
                
         img, word_str = self.get_sample(index)
@@ -169,7 +272,28 @@ class IMDB_dataset(Dataset):
 
     
     
-    
-
-
-
+## Depriciated    
+#def text_to_image(self, text):
+#        no_of_words=0  
+#        img  = np.zeros([len(self.gensim_model['universe']), 
+#                         self.cf.W_imdb_width], dtype='float32')       
+#        sentences = split_sentences(text) # returns a list of sentences
+#        for sent_x in sentences:              
+#            sent_x = word_tokenize(sent_x)    
+#            ''' sentence_struct = pos_tag(sentence_) # breaking it down to its structure '''
+#            
+#            for word in sent_x:                  
+#                word_vectors = IMDB_dataset.gensim_model.wv    # '''we should take this outside the loop, maybe in self'''    
+#                if word in word_vectors.vocab: # and word not in self.stop_words:   
+#                    wrd2_vector = IMDB_dataset.gensim_model[word]
+#                    img[0:len(wrd2_vector), no_of_words] = wrd2_vector                    
+#                    no_of_words += 1
+#                if no_of_words > 300: # (self.cf.W_imdb_width-1): 
+#                    break
+#            else: # else belongs to the for-loop
+#                continue # only executed if the inner loop did NOT break
+#            break 
+#        img = img.reshape(img.shape[0], img.shape[1], 1)                 
+#        return img
+#
+#
