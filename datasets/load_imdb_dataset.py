@@ -128,7 +128,7 @@ def build_w2v_model(cf, reviews):
     vocab = Counter() # define vocab
     for review in reviews:
          vocab.update(review['text'])   # print(vocab.most_common(50)) # print the top words in the vocab        
-    tokens = [k for k, c in vocab.items() if c >= cf.min_occurane] # keep tokens with > 5 occurrence    
+    tokens = [k for k, c in vocab.items() if c >= cf.imdb_min_occurane] # keep tokens with > 5 occurrence    
     model = gensim.models.Word2Vec([tokens], min_count=1, size = 300)    
     return model
 
@@ -203,28 +203,30 @@ class IMDB_dataset(Dataset):
             self.data[i]['text'] = clean_text_2(review['text'], stop_words)
             i=i+1      
         
-                  ''' we have to inspect the numerical scale of every w2v, 
-          
-                    and then, normalize them
-          
-                    all to the same thing'''  
-        
+    def normalized_w2v(self, vec):
+        min_v = min(vec)
+        vec = (vec-min_v)/(max(vec) - min_v + 0.00000287361) - 1 # the tolerance value 0.00000287361 to prevent zero division if max is 0
+        return vec
+    
     def text_to_image_2(self, text):        
         img  = np.zeros([ self.cf.MAX_IMAGE_HEIGHT, self.cf.W_imdb_width], dtype='float32')   
-        
-        w2v_google = np.array(np.column_stack([IMDB_dataset.google_model[w] for w in text if w in IMDB_dataset.google_model.wv]))        
-        if w2v_google.shape[1]<self.cf.W_imdb_width:
-            w2v_fastext = np.array(np.column_stack([IMDB_dataset.fasttext_model[w] for w in text])) # This model has no vocabulary
-            w2v = np.concatenate((w2v_google, w2v_fastext), axis=1)
-            if w2v.shape[1]<self.cf.W_imdb_width:
-                w2v_glove = np.array(np.column_stack([IMDB_dataset.glove_model[w] for w in text])) # This model has no vocabulary        
-                w2v = np.concatenate((w2v, w2v_glove), axis=1)
+        one_w2v = True # temporarly trying one w2v model
+        if one_w2v:
+            w2v = np.array(np.column_stack([IMDB_dataset.glove_model[w] for w in text])) # This model has no vocabulary        
+        else:            
+            w2v_google = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.google_model[w]) for w in text if w in IMDB_dataset.google_model.wv]))        
+            if w2v_google.shape[1]<self.cf.W_imdb_width:
+                w2v_fastext = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.fasttext_model[w]) for w in text])) # This model has no vocabulary
+                w2v = np.concatenate((w2v_google, w2v_fastext), axis=1)
                 if w2v.shape[1]<self.cf.W_imdb_width:
-                    w2v_custom = 333* np.array(np.column_stack([IMDB_dataset.custom_model[w] for w in text if w in IMDB_dataset.custom_model.wv]))   # normalization, as our custom model has 1.e-3 order values            
-                    w2v = np.concatenate((w2v, w2v_custom), axis=1)
-        else:
-            w2v = w2v_google
-        
+                    w2v_glove = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.glove_model[w]) for w in text])) # This model has no vocabulary        
+                    w2v = np.concatenate((w2v, w2v_glove), axis=1)
+                    if w2v.shape[1]<self.cf.W_imdb_width:
+                        w2v_custom = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.custom_model[w]) for w in text if w in IMDB_dataset.custom_model.wv]))   # normalization, as our custom model has 1.e-3 order values            
+                        w2v = np.concatenate((w2v, w2v_custom), axis=1)
+            else:
+                w2v = w2v_google
+            
         w_offset = img.shape[1]-w2v.shape[1]         
         
         if w_offset < 3: # the w2v image is larger than the intended one, truncate it            
