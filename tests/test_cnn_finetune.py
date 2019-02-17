@@ -160,6 +160,7 @@ def test_cnn_finetune(cf):
     
     # perroms testing for multidata, bu teating each data separately
     def splitted_sets_testing():
+        if len(test_per_data.items())<2 : return 
         for item in test_per_data.items():
             print('Split the merged data: Per-script/data testing  --------', item[0]); 
             result = test(per_data_loader[item[0]]) 
@@ -184,12 +185,12 @@ def test_cnn_finetune(cf):
     test(test_loader) # performance after training is finished
 
     result = splitted_sets_testing()
-        
-    # test_moment_and_word_sim(result)
+    
+   
     
     return result
     
-    
+     # test_moment_and_word_sim(result)
 # '''   depreciated
 # if cf.use_weight_to_balance_data:
 #                weight = weight.to(device)
