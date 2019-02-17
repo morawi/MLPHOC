@@ -3,7 +3,7 @@
 Main @author: malrawi 
 
 Major run function:
-- Select the experiment parameters and desing in config_file_wg.py
+    Load the experiment parameters and desing in config_file_wg.py
 
 '''
 
@@ -22,6 +22,7 @@ configuration = Configuration(config_path='config/config_file_wg.py', test_name=
 cf = configuration.load(print_vals=True)
 random_seeding(seed_value = cf.rnd_seed_value, use_cuda=True)
 result = test_cnn_finetune(cf)  
+del result
 # test_varoius_dist(result, cf) 
 print("Execution time is: ", time.time() - start_timer )
     
