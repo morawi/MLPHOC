@@ -6,6 +6,7 @@ Created on Fri Nov 23 22:40:10 2018
 @author: malrawi
 """
 from datasets.load_driver_dataset import SafeDriverDataset
+from datasets.load_MLT_dataset import MLT_words
 from datasets.load_washington_dataset import WashingtonDataset
 from datasets.load_ifnenit_dataset import IfnEnitDataset
 from datasets.load_WG_IFN_dataset import WG_IFN_Dataset
@@ -82,6 +83,15 @@ def get_transforms(cf):
     # can be used in the transform random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
     
 
+def get_mlt(cf, image_transform):
+    print('...................Loading MLT dataset...................')        
+    
+    ''' randomly split training and testing according to split percentage  '''
+    train_set = MLT_words(cf, train=True, transform=image_transform['image_transform_scn'])
+    test_set = MLT_words(cf, train=False, transform=image_transform['image_transform_scn'], 
+                        data_idx = train_set.data_idx)    
+    return train_set, test_set
+
 
 def get_safe_driver(cf, image_transform):
      print('...................Safe Driver dataset...................')
@@ -124,6 +134,8 @@ def get_gw(cf, image_transform):
                         data_idx = train_set.data_idx, complement_idx = True)
     
     return train_set, test_set
+
+
 
 def get_ifn(cf, image_transform):
     print('...................Loading IFN dataset...................')        
@@ -180,8 +192,11 @@ def get_wg_ifn(cf, image_transform):
 def get_datasets(cf, image_transform):
         
     test_per_data = {}
+    if cf.dataset_name == 'MLT':
+        train_set, test_set = get_mlt(cf, image_transform)        
+        test_per_data['test_set_MLT'] = test_set        
     
-    if cf.dataset_name == 'imdb_movie':
+    elif cf.dataset_name == 'imdb_movie':
         train_set, test_set  = get_imdb(cf, image_transform)
         test_per_data['test_set_imdb'] = test_set     
         
@@ -285,7 +300,7 @@ def display_images(train_set, test_set):
     
 def get_sampled_loader(cf, test_set):
         no_of_samples  = len(test_set)
-        sample_idx = np.random.permutation(np.arange(1, no_of_samples))[:cf.no_of_sampled_data]                     
+        sample_idx = np.random.permutation(np.arange(0, no_of_samples))[:cf.no_of_sampled_data]                     
         if len(sample_idx) ==0:  
             exit('exiting function get_the_sampler(), sample_idx size is 0')    
         my_sampler = torch.utils.data.sampler.SubsetRandomSampler(sample_idx)  
@@ -316,19 +331,3 @@ def get_dataloaders(cf, train_set, test_set, test_per_data):
 
 
 
-
-
-#    if cf.dataset_name =='IAM+IFN':
-#        per_data_type_loader['test_loader_ifn'] = torch.utils.data.DataLoader(test_per_data['test_set_ifn'], batch_size=cf.batch_size_test,
-#                                  shuffle = False, num_workers=cf.num_workers)
-#        per_data_type_loader['test_loader_iam'] = torch.utils.data.DataLoader(test_per_data['test_set_iam'], batch_size=cf.batch_size_test,
-#                                  shuffle = False, num_workers=cf.num_workers)
-#    elif cf.dataset_name =='WG+IFN':
-#        per_data_type_loader['test_loader_ifn'] = torch.utils.data.DataLoader(test_per_data['test_set_ifn'], batch_size=cf.batch_size_test,
-#                                  shuffle = False, num_workers=cf.num_workers)
-#        per_data_type_loader['test_loader_gw'] = torch.utils.data.DataLoader(test_per_data['test_set_gw'], batch_size=cf.batch_size_test,
-#                                  shuffle = False, num_workers=cf.num_workers)
-#    elif cf.dataset_name == 'TFSPCH':
-#        per_data_type_loader['test_loader_TFSPCH'] =  torch.utils.data.DataLoader(test_per_data['test_set_TFSPCH'], 
-#                                batch_size=cf.batch_size_test, shuffle = False, num_workers=cf.num_workers)
-    
