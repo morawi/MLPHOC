@@ -10,10 +10,13 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 
 import time   # used to create a seed for the randomizers
 import numpy as np
+
 print_accuracy = True
-normalize_images     = True
+normalize_images     =  True
+phoc_levels = [2,3,4,5] # [ 2, 3, 4, 5]
+
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
-data_set_id  = 11
+data_set_id  = 13
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
                 'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
@@ -27,20 +30,22 @@ all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'safe_driver', # 10
                 'imdb_movie', # 11
                  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
+                 'MLT', # 13
                 ]
 
 dataset_name    = all_datasets[data_set_id]
 del all_datasets, data_set_id
 
-word_corpus_4_text_understanding = 'Custom' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
+word_corpus_4_text_understanding = 'Google_news' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
 
-min_occurane = 10  # minimum number of words to appear in building the custom W2V model
+imdb_min_occurane = 10  # minimum number of words to appear in building the custom W2V model
 
 folder_of_data         = '/home/malrawi/Desktop/My Programs/'
 encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
-sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
+sampled_testing = False # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
-phoc_levels = [ 2, 3, 4, 5]
+
+
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
 if encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
@@ -73,7 +78,13 @@ if overlay_handwritting_on_STL_img:
 # Dataset max W and H
 universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
 
-if dataset_name  == 'safe_driver':
+
+if dataset_name  == 'MLT':
+    MAX_IMAGE_WIDTH  = 100 #  267 # 640
+    MAX_IMAGE_HEIGHT = 100 # 200 # 480
+    H_MLT_scale = 100
+
+elif dataset_name  == 'safe_driver':
     MAX_IMAGE_WIDTH  = 400 #  267 # 640
     MAX_IMAGE_HEIGHT = 300 # 200 # 480
     H_sfDrive_scale = 300#  universal_H
@@ -126,10 +137,10 @@ elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass t
     H_imdb_scale = 0 # universal_H
       
 elif dataset_name == 'Cifar100':
-    MAX_IMAGE_WIDTH  = 260
-    MAX_IMAGE_HEIGHT = 260
-    w_new_size_cifar100 = 256
-    h_new_size_cifar100 = 256
+    MAX_IMAGE_WIDTH  = 32 # 256
+    MAX_IMAGE_HEIGHT = 32 # 256
+    w_new_size_cifar100 = 32 # 256
+    h_new_size_cifar100 = 32 # 256
 
 elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to the sepectogram function
     MAX_IMAGE_WIDTH  =  260 # 162
@@ -175,7 +186,7 @@ else:
    
 
 # Model parameters
-model_name                   = 'resnet152' # 'resnet152' #'resnet152' #'resnet50' #'resnet152' # 'vgg16_bn'#  'resnet50' # ['resnet', 'PHOCNet', ...]
+model_name                   = 'resnet152' #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
@@ -187,15 +198,15 @@ use_nestrov_moment           = True
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 
 
-dropout_probability          = 0.25
-
-
-
+dropout_probability          = 0.25 #  0.25
+epochs                       = 300 # 60# 10 # 60
 testing_print_frequency      = 11 # prime number, how frequent to test/print during training
+
+
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-epochs                       = 60 # 60# 10 # 60
 
+split_MLT     =.75
 split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
 split_percentage_TFSPCH    = 1 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
                                 # If not 1, say 0.90 this means the 90% of the data will be used for training. 
@@ -204,11 +215,13 @@ batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
 loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
-mAP_dist_metric              = 'cosine' # 'correlation' # 'cosine' # See options below
+
+
+mAP_dist_metric              = 'correlation' # 'cosine' # See options below
 
 rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
 
-batch_size_train             =  10
+batch_size_train             =  2
 
 ''' Folders of data: STL is embedded  '''
 dataset_path_IFN              = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
@@ -225,6 +238,7 @@ dataset_path_TF_SPEECH_test = folder_of_data + 'all_data/tf_speech_recognition_v
 cifar100_path = folder_of_data + 'all_data//dataCifar100/'
 stl100_path = folder_of_data +'all_data/dataSTL10'   
 safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
+dataset_path_MLT = folder_of_data+'all_data/MLT2017/'
         
 
 ''' Language / script dataset to use '''       
@@ -240,6 +254,23 @@ gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
 iam_ifn_char = ''.join(sorted(set(iam_char + ifn_char))) 
 wg_ifn_char = ''.join(sorted( set(ifn_char + gw_char) )) 
 
+MLT_lang = 'Arabic' #'English', 'Arabic', 'Arabic+English'
+if MLT_lang=='Arabic':
+    MLT_language = ['Arabic']
+    extra_MLT = "‘٬٫%$]€>:+/#!()@·°[ؤ=٠×،ـ١٦٧٨٩٤٥٢٣ڥ出ڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    mlt_char = ''.join(sorted( set(ifn_char + extra_MLT) ))
+
+elif MLT_lang=='English':
+    MLT_language = ['English']
+    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ出“ِ '"    
+    mlt_char = ''.join(sorted( set(iam_char + extra_MLT) ))
+
+elif MLT_lang == 'Arabic+English':  
+    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥ出ڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    MLT_language = ['Englsih', 'Arabic']
+    mlt_char = ''.join(sorted( set(iam_ifn_char + extra_MLT) ))
+
+    
 
 if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH':
     phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
@@ -247,7 +278,7 @@ if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
     phoc_unigrams = wg_ifn_char       
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     phoc_unigrams = iam_ifn_char    
 
 elif dataset_name =='IFN':
@@ -260,14 +291,15 @@ elif dataset_name == 'IAM':
     phoc_unigrams = iam_char
     
 elif dataset_name == 'IAM+IFN':                 
-    phoc_unigrams = iam_ifn_char  
+    phoc_unigrams = iam_ifn_char
+elif dataset_name=='MLT':
+    phoc_unigrams = mlt_char
+    
 
 else: 
     exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
             
-del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char
-
-
+del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char, mlt_char
 
 
 if encoder == 'label': # label used for script identification/separation
