@@ -9,6 +9,8 @@ Created on Sat Nov 24 14:17:15 2018
 import torchvision
 from torch.utils.data import Dataset
 import numpy as np
+from PIL import Image
+from PIL import ImageEnhance 
 
 def load_cifar100_dataset(cf, mode):
     if mode == 'train':
@@ -60,9 +62,13 @@ class Cifar100Dataset(Dataset):
         
     def __getitem__(self, idx):
         img = self.dataset[idx][0]
-        img = img.resize( (self.cf.w_new_size_cifar100, self.cf.h_new_size_cifar100)) # zooming in is magic for cifar100
+        if self.cf.w_new_size_cifar100>32:
+            img = img.resize( (self.cf.w_new_size_cifar100, self.cf.h_new_size_cifar100)) # zooming in is magic for cifar100
+       
+        # img = ImageEnhance.Color(img).enhance(.8)  # https://pillow.readthedocs.io/en/3.0.x/reference/ImageEnhance.html
         if self.transform:
             img = self.transform(img)
+        
         class_id = self.dataset[idx][1]
         word_str = self.classes[ class_id ]           
         target = self.cf.PHOC(word_str, self.cf)
@@ -72,5 +78,5 @@ class Cifar100Dataset(Dataset):
 
             
             
-            
+# img = Image.eval(img, lambda px: (px**1.1)%255)
            
