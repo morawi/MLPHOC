@@ -37,12 +37,9 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     for index, char in enumerate(word):
         char_occ = occupancy(index, n)
         if char not in char_indices:
-            if  cf.keep_non_alphabet_of_GW_in_analysis==False and cf.dataset_name=='WG':
-                continue
-            else:    
-                print('The unigram ', char, ' is unknown')
+            print('The unigram ', char, ' is unknown')
+            sys.exit(0)
                # logger.fatal('The unigram \'%s\' is unknown', char)
-                sys.exit(0)
 
         char_index = char_indices[char]
         for level in cf.unigram_levels:
