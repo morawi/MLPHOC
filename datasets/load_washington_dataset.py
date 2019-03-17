@@ -14,6 +14,7 @@ import warnings
 import numpy as np
 from PIL import Image, ImageOps, ImageChops
 from torch.utils.data import Dataset
+import torch
 #  from scripts.Word2PHOC import build_phoc as PHOC
 
 # from scripts.data_transformations import process_wg_data
@@ -128,10 +129,9 @@ class WashingtonDataset(Dataset):
         self.weights = 1
         self.cf = cf
         
-        aux_word_str, aux_word_id = load_wg_data(cf)               
         
-        len_data = len(aux_word_id)
-        
+        aux_word_str, aux_word_id = load_wg_data(cf)                       
+        len_data = len(aux_word_id)        
         
         if len(data_idx) == 1:  # this is safe as the lowest is one, when nothing is passed
             np.random.seed(cf.rnd_seed_value)
@@ -148,6 +148,12 @@ class WashingtonDataset(Dataset):
         
         self.data_idx = data_idx
         self.weights = np.ones( len(data_idx), dtype = 'uint8' )
+        self.PHOC_vector = torch.empty(len(data_idx), len(self.cf.PHOC('dump', self.cf)) , dtype=torch.float)
+        for i in range(len(data_idx)):            
+            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(self.word_str[i], self.cf))
+            
+    
+        
     
     def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
         N = len(self.word_str)
@@ -159,7 +165,7 @@ class WashingtonDataset(Dataset):
 #        self.weights = weights # weights to be used to balance the data, used later as input to the loss function
         
     def num_classes(self):
-        if self.cf.encoder=='label':
+        if self.cf.encoder=='script_identification':
             return len(self.cf.English_label)
         else:
             return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
@@ -167,8 +173,8 @@ class WashingtonDataset(Dataset):
     def __len__(self):
         return len(self.word_id)
 
-    def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, self.word_id[idx] + '.png')
+    def __getitem__(self, index):
+        img_name = os.path.join(self.root_dir, self.word_id[index] + '.png')
         data = Image.open(img_name)
         if not(self.cf.H_gw_scale ==0): # resizing just the height            
             new_w = int(data.size[0]*self.cf.H_gw_scale/data.size[1])
@@ -181,15 +187,18 @@ class WashingtonDataset(Dataset):
         
         data = data.convert('1')      
         
-        word_str = self.word_str[idx]        
-        if self.cf.encoder=='label':
-            target = self.cf.English_label  # 0: label for English script
+        word_str = self.word_str[index]        
+        if self.cf.task_type=='script_identification':
+            target = self.cf.PHOC('English'.lower()+ 
+                                  self.cf.language_hash_code['English'], self.cf) # language_name + hashcode
         else:
-            target = self.cf.PHOC(word_str, self.cf)
+            #target = self.cf.PHOC(word_str, self.cf)
+             target = self.PHOC_vector[index]
+            
         if self.transform:
             data = self.transform(data)
         
-        return data, target, word_str, self.weights[idx]
+        return data, target, word_str, self.weights[index]
     
     
  

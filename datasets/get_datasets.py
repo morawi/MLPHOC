@@ -5,6 +5,7 @@ Created on Fri Nov 23 22:40:10 2018
 
 @author: malrawi
 """
+from datasets.load_instagramHL_dataset import Instagram_images
 from datasets.load_driver_dataset import SafeDriverDataset
 from datasets.load_MLT_dataset import MLT_words
 from datasets.load_washington_dataset import WashingtonDataset
@@ -16,13 +17,13 @@ from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
 from datasets.load_cifar100_dataset import Cifar100Dataset
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 from datasets.load_imdb_dataset import IMDB_dataset
-from datasets.load_iam_train_valid_dataset import iam_train_valid_combined_dataset
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage
 from sys import exit as sys_exit
 import matplotlib.pyplot as plt
 import numpy as np
 import torchvision.transforms as transforms
 import torch
+
 
 
 ''' The reason for having more than two transforms is that handwring images come with one channel'''
@@ -89,7 +90,8 @@ def get_mlt(cf, image_transform):
     ''' randomly split training and testing according to split percentage  '''
     train_set = MLT_words(cf, train=True, transform=image_transform['image_transform_scn'])
     test_set = MLT_words(cf, train=False, transform=image_transform['image_transform_scn'], 
-                        data_idx = train_set.data_idx)    
+                        data_idx = train_set.data_idx)      
+        
     return train_set, test_set
 
 
@@ -152,8 +154,13 @@ def get_ifn(cf, image_transform):
     return train_set, test_set
 
 def get_iam(cf, image_transform):
-    print('...................Loading IAM dataset...................')         
-    train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform['image_transform_hdr']) # this merges train and validate into one
+    print('...................Loading IAM dataset...................') 
+    validate_set = IAM_words(cf, mode='validate', transform = image_transform['image_transform_hdr'])        
+    train_set = IAM_words(cf, mode='train', transform = image_transform['image_transform_hdr'])    
+    print('Concatnating validate and train sets')
+    train_set = torch.utils.data.ConcatDataset( [train_set, validate_set])
+    del validate_set
+    # train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform['image_transform_hdr']) # this merges train and validate into one
     test_set = IAM_words(cf, mode='test', transform = image_transform['image_transform_hdr']) 
     return train_set, test_set
 
@@ -193,9 +200,17 @@ def get_datasets(cf, image_transform):
         
     test_per_data = {}
     if cf.dataset_name == 'MLT':
-        train_set, test_set = get_mlt(cf, image_transform)        
+        train_set, test_set = get_mlt(cf, image_transform)           
         test_per_data['test_set_MLT'] = test_set        
-    
+        if 'Instagram_test' in cf.MLT_lang:            
+            train_set_gw, test_set_gw = get_gw(cf, image_transform)    
+            test_set_iam = IAM_words(cf, mode='test', transform = image_transform['image_transform_hdr']) 
+            test_per_data['test_Instagram']  = Instagram_images(cf, image_transform['image_transform_scn'])
+            test_per_data['test_set_gw'] = test_set_gw
+            test_per_data['test_set_iam'] = test_set_iam
+            train_set = torch.utils.data.ConcatDataset( [train_set, train_set_gw,] )
+            test_set = torch.utils.data.ConcatDataset( [test_set_gw] ) # only GW will be used for the overall QbS QbE as the target is instagram
+                                  
     elif cf.dataset_name == 'imdb_movie':
         train_set, test_set  = get_imdb(cf, image_transform)
         test_per_data['test_set_imdb'] = test_set     
@@ -294,7 +309,7 @@ def display_images(train_set, test_set):
     ''' Diagnostics: displaying images for overlay diagnostics, or see if they are correctly formated '''
     display_img(train_set[len(train_set)//3][0], 'train') # 41, some trivial index     
     display_img(test_set[len(test_set)-10][0], 'test')    # 1121, some trivial index
-    display_img(train_set[2341][0], 'train') # 41, some trivial index     
+    display_img(train_set[len(train_set)//4][0], 'train') # 41, some trivial index     
     display_img(test_set[len(test_set)//2][0], 'test')    # 1121, some trivial index    
     print(train_set[41][0].shape)
     

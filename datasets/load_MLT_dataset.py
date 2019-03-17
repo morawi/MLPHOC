@@ -25,7 +25,9 @@ class MLT_words(Dataset):
         self.transform = transform   
         self.img_name = []
         self.language = []
-        self.word = []        
+        self.word = []          
+        # self.phoc_unigrams = self.collect_phoc_unigrams(phoc_languages = cf.MLT_languages)
+        # self.phoc_levels = self.get_phoc_levels(phoc_languages = cf.MLT_languages)
         self.get_MLT_file_label()        
         self.no_word_per_language = Counter(self.language)
         len_data = len(self.img_name)
@@ -40,9 +42,63 @@ class MLT_words(Dataset):
         self.img_name = [self.img_name[i] for i in self.data_idx]
         self.language = [self.language [i] for i in self.data_idx]
         self.word = [self.word[i] for i in self.data_idx]
+         
         
         self.weights =  0 # depriciated for the time being; np.ones( len(self.file_label) , dtype = 'uint8' )               
-    def get_MLT_file_label(self):                         
+    
+    def get_phoc_levels(self, phoc_languages=['English','Arabic']):
+        phocs = [ 
+                  [2,3,4,5,6], 
+                  [6,2,3,4,5],
+                  [5,6,2,3,4],
+                  [4,5,6,2,3],
+                  [3,4,5,6,2],
+                  [5,3,4,2,6],
+                  [6,5,4,3,2],
+                  [2,6,5,4,3], 
+                  [3,2,6,5,4], 
+                  [4,3,2,6,5]                      
+                  ]
+        phoc_levels = {}; 
+        for ln in phoc_languages:
+            #if ln in ['English', 'French',  'German', 'Italian']:
+            if ln=='English' or ln=='French' or ln=='German' or ln=='Italian' : 
+                phoc_levels['Latin']= phocs[0]
+                phoc_languages.remove(ln)
+        i=1     
+        for ln in phoc_languages:
+            phoc_levels[ln] =  phocs[i]
+            i +=1
+            
+    
+    def collect_phoc_unigrams(self, phoc_languages=['English','Arabic']):
+        phoc_unigrams = {}
+        phoc_unigrams['Latin']=''
+        for ln in phoc_languages:
+            phoc_unigrams[ln] = ''
+        
+            
+        gt_tr = 'gt.txt'
+        print('Collecting symbols from MLT dataset ........')
+        with open(self.cf.dataset_path_MLT + gt_tr, 'r') as f_tr:
+            data_tr = f_tr.readlines()
+            for data_item in data_tr:  
+                data_item = data_item.split(',') 
+                if len(data_item) ==3: # some records have no language or error, like idx 2064; each field has exactly three enries, image_name, language, string code
+                    im_nm, ln, ws  = data_item                    
+                    if ln in phoc_languages: #if ln=='English' or ln=='Arabic': # pick only two languages, English and Arabic
+                        ws = ws[:-1].lower() # taking out the new line symbol '\n'
+                        if len(ws)<3: continue # removing small words or single characters
+                        if ln=='English' or ln=='French' or ln=='German' or ln=='Italian' :                            
+                            ln = 'Latin'                            
+                        phoc_unigrams[ln] = ''.join(sorted( set(phoc_unigrams[ln] + ws) )) 
+                        
+        return phoc_unigrams                 
+                                                     
+
+        
+    def get_MLT_file_label(self):    
+        Latin_langs = ['English', 'French','German','Italian']               
         gt_tr = 'gt.txt'
         print('Wrong char annotations will be printed out below........')
         with open(self.cf.dataset_path_MLT + gt_tr, 'r') as f_tr:
@@ -51,11 +107,12 @@ class MLT_words(Dataset):
                 data_item = data_item.split(',') 
                 if len(data_item) ==3: # some records have no language or error, like 2064
                     im_nm, ln, ws  = data_item                    
-                    if ln in self.cf.MLT_language: #if ln=='English' or ln=='Arabic': # pick only two languages, English and Arabic
-                        ws = ws[:-1] # taking out the new line symbol '\n'
+                    if ln in self.cf.MLT_languages: #if ln=='English' or ln=='Arabic': # pick only two languages, English and Arabic
+                        ws = ws[:-1].lower() # taking out the new line symbol '\n'
                         if len(ws)<3: continue # removing small words or single characters
-                        if ln=='English': ws = ws.lower()                                                           
-                        if not annotation_exists(ws, self.cf): continue                    
+                        if not annotation_exists(ws, self.cf): continue  
+                        if ln in Latin_langs and self.cf.MLT_latin_script_vs_others == True:
+                            ln=='Latin'
                         self.img_name.append(im_nm)
                         self.language.append(ln)
                         self.word.append(ws)
@@ -69,7 +126,17 @@ class MLT_words(Dataset):
             if new_w>self.cf.MAX_IMAGE_WIDTH: 
                 new_w = self.cf.MAX_IMAGE_WIDTH
             img = img.resize( (new_w, self.cf.H_MLT_scale), Image.ANTIALIAS)               
-        target = self.cf.PHOC(word_str, cf = self.cf)    
+        
+        
+        
+        # target = self.cf.PHOC(word_str, cf = self.cf)    
+        if self.cf.task_type=='script_identification':            
+            target = self.cf.PHOC(self.language[index].lower()+ 
+                                  self.cf.language_hash_code[self.language[index]], self.cf) # language_name + hashcode
+        else:            
+            target = self.cf.PHOC(word_str, cf = self.cf)       
+        
+        
         if img.mode !='RGB':
             img = img.convert('RGB')
                     
@@ -82,15 +149,11 @@ class MLT_words(Dataset):
         return len(self.word)
      
     def num_classes(self):
-        if self.cf.encoder=='label':
-            return len(self.cf.English_label)
+        if self.cf.task_type=='script_identification':
+            x= self.cf.PHOC(self.language[0].lower()+ 
+                                  self.hash_code[self.language[0]], self.cf) # 
+            return len(x)
         else:
             return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
 
 
-#
-#configuration = Configuration(config_path='config/config_file_wg.py', test_name='') # test_name: Optional name of the sub folder where to store the results
-#cf = configuration.load(print_vals=True)
-#train_set = MLT_words(cf, train = True)
-#train_set[1]
-#test_set = MLT_words(cf, train = False)
