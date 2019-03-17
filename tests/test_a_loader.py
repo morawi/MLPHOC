@@ -14,6 +14,7 @@ from config.load_config_file import Configuration
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc as matplot_rc
+import torch
 
 from datasets.get_datasets import get_datasets,  get_dataloaders, get_transforms
 
@@ -63,13 +64,38 @@ def test_thinning(data_set):
 
 
 
+
 configuration = Configuration(config_path='config/config_file_wg.py', test_name='')
 cf = configuration.load()
 image_transform = get_transforms(cf)
 train_set, test_set, test_per_data = get_datasets(cf, image_transform)
-train_loader, test_loader, per_data_loader = get_dataloaders(cf, train_set, test_set, test_per_data)       
-            
+train_loader, test_loader, per_data_loader = get_dataloaders(cf, train_set, test_set, test_per_data)
 
+# id  = int( torch.randint(500, (1,1)).numpy()[0][0]); 
+# x = test_per_data['test_Instagram'][id][0]
+
+#if type(x) == torch.Tensor: 
+#    plt.imshow(x[1,:])
+#    plt.show()
+
+
+
+# train_loader, test_loader, per_data_loader = get_dataloaders(cf, train_set, test_set, test_per_data)       
+           
+#train_set.collect_phoc_unigrams(['Bangla'])
+
+
+## build the model
+#model = make_model(
+#    cf.model_name,
+#    pretrained = cf.pretrained,
+#    num_classes = 10, #train_set.num_classes(),
+#    input_size = cf.input_size, 
+#    dropout_p = cf.dropout_probability,
+#)
+#
+## changing dropout value 
+#model.dropout.p = .3
 
 
 

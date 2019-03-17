@@ -2,6 +2,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jul  5 18:18:18 2018
+@malrawi
+
+# from nltk.corpus import stopwords
+# https://www.wordfrequency.info/comparison.asp
+
 
 @author: malrawi
 """
@@ -14,9 +19,16 @@ from collections import Counter
 from nltk.corpus import wordnet
 import random
 from sklearn import preprocessing
-# from nltk.corpus import stopwords
+from utils.torch_cosine import cosine_similarity_n_space
+#from textblob import TextBlob
+# from collections import defaultdict
+import langid
+from scipy.spatial import distance
 
-# https://www.wordfrequency.info/comparison.asp
+
+
+
+
 
 def remove_non_words(word_str):
     
@@ -91,57 +103,13 @@ def remove_single_words(word_str):
     word_str =  s[s.duplicated(keep=False)].tolist()  #   Removing all single word(s):   
     return word_str, loc
 
-def remove_stop_words(word_str) :
-    # for stop_words list: https://gist.github.com/sebleier/554280 
-    '''Toggle this on and replace the list below if there is an update for stop
-    words in NLTK, also toggle on the above from nltk.corpus import stopwords'''
-    # stop_words = stopwords.words('english') 
-    
-    stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
-                  'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 
-                  'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
-                  "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 
-                  'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which',
-                  'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
-                  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
-                  'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
-                  'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
-                  'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
-                  'through', 'during', 'before', 'after', 'above', 'below', 'to', 
-                  'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under',
-                  'again', 'further', 'then', 'once', 'here', 'there', 'when', 
-                  'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 
-                  'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 
-                  'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 
-                  'can', 'will', 'just', 'don', "don't", 'should', "should've", 
-                  'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 
-                  "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', 
-                  "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', 
-                  "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 
-                  'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
-                  'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
-                  'won', "won't", 'wouldn', "wouldn't"]
- 
-                        
-    word_str= list(word_str)
-#    loc = []
-#    for word in word_str:  # iterating on a copy since removing will mess things up        
-#        if word in stop_words:
-#            loc.append( word_str.index(word) )
-#            word_str.remove(word)
- 
-    loc = [i for i, x in enumerate(word_str) if x not in stop_words]
-    word_str = [word_str[i] for i in loc]
-#     word_str = [x for x in word_str if x not in stop_words]
-    
-    return tuple(word_str), loc
 
 
 def find_mAP_QbE(result, cf):
 # For QbE, we have to remove each single occurence words, 
     # and the corresponding items in pred    
     pred = result['pred']       # test_phocs       
-    pred = binarize_the_output(pred, cf.binarizing_thresh)      
+    # pred = binarize_the_output(pred, cf.binarizing_thresh)      
     word_str = result['word_str']
 
     if cf.dataset_name=='IAM' or cf.dataset_name=='IAM+IFN':
@@ -163,7 +131,7 @@ def find_mAP_QbS(result, cf):
     # For QbS, we have to use single (transcriptions) target phoc     
     # get unique phoc from target, target is the query 
     pred = result['pred']       # test_phocs 
-    pred = binarize_the_output(pred, cf.binarizing_thresh)         
+    # pred = binarize_the_output(pred, cf.binarizing_thresh)         
     word_str = result['word_str']      
             
     le = preprocessing.LabelEncoder()
@@ -184,6 +152,77 @@ def find_mAP_QbS(result, cf):
                          target_labels, pred_labels, cf.mAP_dist_metric)
    
     return mAP_QbS
+
+def phoc_confusion_matrix(result, cf):
+    pred = result['pred']       # test_phocs 
+    # pred = binarize_the_output(pred, cf.binarizing_thresh)         
+    labels = result['word_str']      
+    target = result['target']    
+    
+    xx = multi_hot_confusoin_matrix(target, pred, labels, cf.mAP_dist_metric)
+    return xx
+    
+
+def multi_hot_confusoin_matrix(target, pred, gt_labels, metric):
+    '''
+https://stackoverflow.com/questions/39142778/python-how-to-determine-the-language       
+    Args:
+         metric types : str. The distance function can be ‘braycurtis’,  ‘canberra’, ‘chebyshev’, 
+         ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, 
+         ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, 
+         ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘wminkowski’, ‘yule’.
+        
+    '''
+    # some argument error checking
+    if target.shape[1] != pred.shape[1]:
+        raise ValueError('Shape mismatch')
+    if target.shape[0] != len(gt_labels):
+        raise ValueError('The number of query feature vectors and query labels does not match')
+    if pred.shape[0] != len(gt_labels):
+        raise ValueError('The number of test feature vectors and test labels does not match')
+    
+    # compute the nearest neighbors
+   #   dist_mat = distance.cdist(target, pred, metric= "euclidean")
+    dist_mat = cosine_similarity_n_space(target, pred, dist_batch_size=10000)
+    dist_indices = np.argmin(dist_mat, axis= 0)
+    # del dist_mat # to free memory
+  
+    predicted_labels=[]
+    for i in dist_indices:  
+        predicted_labels.append(gt_labels[i])   
+    
+    cnt = Counter()
+    cnt_incor = Counter()
+           
+    
+    j = 0; 
+    for i in dist_indices:  
+        predicted_labels.append(gt_labels[i])   
+        gt_mapped = langid.classify(gt_labels[i])[0]        
+        if predicted_labels[j] == gt_labels[j]: 
+            print('equal', gt_mapped)
+            cnt[gt_mapped] += 1
+        else:
+            cnt_incor[gt_mapped] +=1
+        j += 1
+    # print(dist_mat)
+    # print(dist_indices)
+    print('correctly identified labels:', cnt)
+    print('in-correctly identified labels:', cnt_incor)
+         
+#    # cnt = defaultdict(int)
+#    cnt = Counter()
+#    predicted_labels = []       
+#    
+#    j = 0; 
+#    for i in max_dist_indices:  
+#        predicted_labels.append(labels[i])
+#        detected_language = langid.classify(labels[i])[0]        
+#        print(1*(labels[i] == labels[j]), end=' ')
+#        cnt[detected_language ] += 1*(predicted_labels[j] == labels[j])
+#        j += 1
+        
+    return cnt
 
 
 '''  Args in- list of words/strings 
@@ -338,3 +377,47 @@ def ListOfWords_to_ListOfWords_statistic(list1, list2):
 
 
 
+def remove_stop_words(word_str) :
+    # for stop_words list: https://gist.github.com/sebleier/554280 
+    '''Toggle this on and replace the list below if there is an update for stop
+    words in NLTK, also toggle on the above from nltk.corpus import stopwords'''
+    # stop_words = stopwords.words('english') 
+    
+    stop_words = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 
+                  'you', "you're", "you've", "you'll", "you'd", 'your', 'yours', 
+                  'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 
+                  "she's", 'her', 'hers', 'herself', 'it', "it's", 'its', 'itself', 
+                  'they', 'them', 'their', 'theirs', 'themselves', 'what', 'which',
+                  'who', 'whom', 'this', 'that', "that'll", 'these', 'those', 'am', 
+                  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 
+                  'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the', 
+                  'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 
+                  'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 
+                  'through', 'during', 'before', 'after', 'above', 'below', 'to', 
+                  'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under',
+                  'again', 'further', 'then', 'once', 'here', 'there', 'when', 
+                  'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 
+                  'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 
+                  'only', 'own', 'same', 'so', 'than', 'too', 'very', 's', 't', 
+                  'can', 'will', 'just', 'don', "don't", 'should', "should've", 
+                  'now', 'd', 'll', 'm', 'o', 're', 've', 'y', 'ain', 'aren', 
+                  "aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', 
+                  "doesn't", 'hadn', "hadn't", 'hasn', "hasn't", 'haven', 
+                  "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 
+                  'mustn', "mustn't", 'needn', "needn't", 'shan', "shan't", 
+                  'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 
+                  'won', "won't", 'wouldn', "wouldn't"]
+ 
+                        
+    word_str= list(word_str)
+#    loc = []
+#    for word in word_str:  # iterating on a copy since removing will mess things up        
+#        if word in stop_words:
+#            loc.append( word_str.index(word) )
+#            word_str.remove(word)
+ 
+    loc = [i for i, x in enumerate(word_str) if x not in stop_words]
+    word_str = [word_str[i] for i in loc]
+#     word_str = [x for x in word_str if x not in stop_words]
+    
+    return tuple(word_str), loc
