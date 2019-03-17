@@ -10,7 +10,8 @@ import numpy as np
 # from scripts.Word2PHOC import build_phoc as PHOC
 from PIL import Image
 from utils.some_functions import remove_non_words
-
+import torch
+from tqdm import tqdm
 
 # from torchvision import transforms
 # import Augmentor
@@ -71,6 +72,15 @@ class IAM_words(Dataset):
         self.file_label = get_iam_file_label(self.cf, self.mode)        
         self.transform = transform        
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
+        self.PHOC_vector = torch.empty(len(self.file_label), len(self.cf.PHOC('dump', self.cf)) , dtype=torch.float)
+        print('\n Storing PHOCs for ', mode  ); # print(end='')
+        pbar = tqdm(total=len(self.file_label));  
+        for i in range(len(self.file_label)):
+            word = self.file_label[i]  
+            word_str = word[1].lower() 
+            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(word_str, self.cf))
+            pbar.update(1)        
+        pbar.close();   del pbar 
                
         
     def __getitem__(self, index):
@@ -83,10 +93,12 @@ class IAM_words(Dataset):
                 new_w = self.cf.MAX_IMAGE_WIDTH
             img = img.resize( (new_w, self.cf.H_iam_scale), Image.ANTIALIAS)
         
-        if self.cf.encoder=='label':
-            target = self.cf.English_label # 1: lable for Arabic script
+        if self.cf.task_type=='script_identification':
+            # target = self.cf.English_label # 1: lable for Arabic script
+            target = self.cf.PHOC('English'.lower()+ 
+                                  self.cf.language_hash_code['English'], self.cf) # language_name + hashcode
         else:            
-            target = self.cf.PHOC(word_str, cf = self.cf)
+            target = self.PHOC_vector[index]
                     
         if self.transform:
             img = self.transform(img)    
@@ -97,8 +109,9 @@ class IAM_words(Dataset):
         return len(self.file_label)
      
     def num_classes(self):
-        if self.cf.encoder=='label':
-            return len(self.cf.English_label)
+        if self.cf.task_type=='script_identification':
+            # return len(self.cf.English_label)
+            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
         else:
             return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
 
