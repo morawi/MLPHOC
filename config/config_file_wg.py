@@ -9,20 +9,21 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 '''
 
 import time   # used to create a seed for the randomizers
-import numpy as np
-
+folder_of_data         = '/home/malrawi/Desktop/My Programs/'
 print_accuracy = True
 normalize_images     =  True
 phoc_levels = [2,3,4,5] # [ 2, 3, 4, 5]
+encoder   = 'phonetic_vec' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
+task_type = 'word_spotting'  # 'script_identification' #  'word_spotting' # 'script_identification' 
 
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
-data_set_id  = 13
+data_set_id  = 7#  13
 all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'Cifar100+TFSPCH+GW+IFN',   # 1
                 'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
                 'WG+IFN' ,  # 3 
                 'IAM+IFN', # 4
-                'WG', # 5
+                'WG', # 5                
                 'IFN', # 6 
                 'IAM', # 7
                 'Cifar100', # 8
@@ -30,31 +31,52 @@ all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
                 'safe_driver', # 10
                 'imdb_movie', # 11
                  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
-                 'MLT', # 13
+                 'MLT', # 13   
+                 'Cub2011', #14                 
                 ]
 
 dataset_name    = all_datasets[data_set_id]
 del all_datasets, data_set_id
 
-word_corpus_4_text_understanding = 'Google_news' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
 
-imdb_min_occurane = 10  # minimum number of words to appear in building the custom W2V model
+overlay_handwritting_on_STL_img = False
+if overlay_handwritting_on_STL_img == True:
+    change_hand_wrt_color = True    
+    overlay_handwritting_on_STL_img = True
 
-folder_of_data         = '/home/malrawi/Desktop/My Programs/'
-encoder         = 'phoc' # ['label', 'rawhoc', 'phoc', 'pro_hoc']  label is used for script recognition only    
+
+if 'imdb' in dataset_name: 
+    word_corpus_4_text_understanding = 'Google_news' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
+    imdb_min_occurane = 10  # minimum number of words to appear in building the custom W2V model
+
+
 sampled_testing = False # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
 
-
 phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
-if encoder =='phoc':
+
+if encoder =='phonetic_vec':    
+    from scripts.Word2Phonetic import Word2Phonetic 
+    Word2PhoneticObject = Word2Phonetic()
+    PHOC = Word2PhoneticObject.getvec
+    loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    
+elif encoder =='chars2vec':    
+    from scripts.Word2CharsVec import Chars2Vec 
+    Chars2VecObject = Chars2Vec()
+    PHOC = Chars2VecObject.getvec
+    loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    
+elif encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
-    unigram_levels               = phoc_levels  # # PHOC levels                                            
+    unigram_levels   = phoc_levels  # # PHOC levels 
+    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
 
 elif encoder == 'rawhoc' :
     from scripts.Word2RAWHOC import build_rawhoc as PHOC
     rawhoc_repeates = 2
     max_word_len = 24
+    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
     
 elif encoder == 'pro_hoc': 
     from scripts.Word2RAWHOC import build_pro_hoc as PHOC
@@ -62,27 +84,37 @@ elif encoder == 'pro_hoc':
     unigram_levels               = phoc_levels  # # PHOC levels   
     rawhoc_repeates = 2
     max_word_len = 24   
+    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+elif encoder == 'rohoc':
+    no_word_rotations = 5 
+    from scripts.Word2RotatedHOC import rotated_hoc as PHOC  
+    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+    unigram_levels   = [10] # this will, more or less, be useful in decoding 20-letter words   
+
 else: 
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')      
 del phoc_levels                                
 
-resize_images        = False         # Resize the dataset images to a fixed size
+
+
+resize_images        = True        # Resize the dataset images to a fixed size
 pad_images           = True         # Pad the input images to a fixed size [576, 226]
 
-overlay_handwritting_on_STL_img = False
-if overlay_handwritting_on_STL_img:
-    change_hand_wrt_color = True 
-    normalize_images = True # have not used it in the analysis, yet
-  
 
+  
 # Dataset max W and H
 universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
 
+H_Instagram_scale= 200
+
 
 if dataset_name  == 'MLT':
-    MAX_IMAGE_WIDTH  = 100 #  267 # 640
-    MAX_IMAGE_HEIGHT = 100 # 200 # 480
-    H_MLT_scale = 100
+    H_MLT_scale = 128# 200
+    MAX_IMAGE_WIDTH  = 256# 600 #  267 # 640
+    MAX_IMAGE_HEIGHT = H_MLT_scale # 300 # 200 # 480
+    H_Instagram_scale = H_MLT_scale
+    H_gw_scale = H_MLT_scale    # to be used wiht MLT instagram if needed
+    H_iam_scale = H_MLT_scale
 
 elif dataset_name  == 'safe_driver':
     MAX_IMAGE_WIDTH  = 400 #  267 # 640
@@ -126,8 +158,6 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
 
-
-
 elif dataset_name ==  'imdb_movie': # W x H; depends on the parameters we pass to the sepectogram function
     MAX_IMAGE_WIDTH  = 600 # should be >=  W_imdb_width    
     MAX_IMAGE_HEIGHT = 100 # universal_H # to get a better max width, one must load/train the gensim model at this stage
@@ -147,10 +177,14 @@ elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to th
     MAX_IMAGE_HEIGHT = 260 # 100
     H_TFSPCH_scale = 0
 
+
+
 elif dataset_name ==  'WG': # 645 x 120 (largest size in GW dataset)
-    MAX_IMAGE_WIDTH  = 645
-    MAX_IMAGE_HEIGHT = 120
-    H_gw_scale = 0
+    MAX_IMAGE_WIDTH  = 256 # 645
+    MAX_IMAGE_HEIGHT = 128 # 120
+    H_gw_scale = MAX_IMAGE_HEIGHT
+
+
 
 elif dataset_name == 'IFN': # 1069 x 226
     MAX_IMAGE_WIDTH  = 1069 # (set_a: h226, w1035); (set_b: h214, w1069); (set_c: w211, h1028); (set_d: h195, w1041);  (set_e: h-197, w-977)
@@ -158,9 +192,9 @@ elif dataset_name == 'IFN': # 1069 x 226
     H_ifn_scale      = universal_H  # to skip scaling the height, use 0
             
 elif dataset_name == 'IAM': # 1087 x 241 (largest size in IAM datasaet)
-    MAX_IMAGE_WIDTH  = 1087     
-    MAX_IMAGE_HEIGHT = universal_H              
-    H_iam_scale      = universal_H
+    MAX_IMAGE_WIDTH  = 1087    
+    MAX_IMAGE_HEIGHT = 241 # universal_H              
+    H_iam_scale      = MAX_IMAGE_HEIGHT # universal_H
     ''' In IAM max image height is 241 n02-049-03-02 (182, 241) test set   Max Image Width is 1087 c06-103-00-01 (1087, 199) train set '''
     
     
@@ -179,14 +213,13 @@ elif dataset_name == 'IAM+IFN': # 241 x 1087
       
 
 if resize_images:
-    input_size       =  (120, 600) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+    input_size       = (32, 128) # (128, 256) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
 else: 
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
-
-   
+  
 
 # Model parameters
-model_name                   = 'resnet152' #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+model_name                   = 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
@@ -197,29 +230,24 @@ lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 
-
-dropout_probability          = 0.25 #  0.25
-epochs                       = 300 # 60# 10 # 60
-testing_print_frequency      = 11 # prime number, how frequent to test/print during training
+dropout_probability          = 0.05 # 0.25 #  0.25
 
 
+epochs                       =  300 # 60# 10 # 60
+testing_print_frequency      =  11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
-
 split_MLT     =.75
 split_percentage           = .75  # 80% will be used to build the PHOC_net, and 20% will be used for tesging it, randomly selected 
 split_percentage_TFSPCH    = 1 # we can use a different percentage for speech data, has not effect on testing now, as there is a test set on a separate folder 
                                 # If not 1, say 0.90 this means the 90% of the data will be used for training. 
-
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-loss                         = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', 'CrossEntropyLoss']
 
-
-mAP_dist_metric              = 'correlation' # 'cosine' # See options below
-
+mAP_dist_metric              = 'cosine' #'correlation' # 'cosine' # See options below
 rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
+
 
 batch_size_train             =  2
 
@@ -239,7 +267,7 @@ cifar100_path = folder_of_data + 'all_data//dataCifar100/'
 stl100_path = folder_of_data +'all_data/dataSTL10'   
 safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
 dataset_path_MLT = folder_of_data+'all_data/MLT2017/'
-        
+dataset_path_InstagramHL=folder_of_data + 'all_data/InstagramHL/'
 
 ''' Language / script dataset to use '''       
 iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', 
@@ -250,29 +278,72 @@ iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.',
             'w', 'x', 'y', 'z'] # upper case removed
 iam_char = ''.join(map(str, iam_char))
 ifn_char = "0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-gw_char =  ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
+gw_char = ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
 iam_ifn_char = ''.join(sorted(set(iam_char + ifn_char))) 
 wg_ifn_char = ''.join(sorted( set(ifn_char + gw_char) )) 
 
-MLT_lang = 'Arabic' #'English', 'Arabic', 'Arabic+English'
-if MLT_lang=='Arabic':
-    MLT_language = ['Arabic']
+language_hash_code = {'Arabic': '1234', 'Bangla': 'govu9',  'English': '9872',  'French': 'zxyw3',
+                  'German': '5609',  'Italian': 'pqkso'}  # this is only used for script identification, the purpose of the hashcode is to introduce variance in the PHOC representation
+MLT_lang = 'Latin+Arabic+Bangla' # 'Latin' #  'Eng+Ara+Bang'# 'Latin+Arabic+Bangla' # 'Bangla' # 'Latin+Arabic' # 'Bangla' # 'Latin' #'Eng+Ara+Bang' # 'Bangla' #'English', 'Arabic', 'Bangla', 'Arabic+English'
+MLT_latin_script_vs_others = False
+
+if MLT_lang=='MLT_English+Instagram_test':
+    MLT_languages = ['English']
+    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ“ِ '"    
+    mlt_char = ''.join(sorted( set(iam_char + extra_MLT) ))
+    mlt_char = ''.join(sorted( set(gw_char + mlt_char) ))
+    testing_print_frequency      = 11
+
+elif MLT_lang=='Arabic':
+    MLT_languages = ['Arabic']
     extra_MLT = "‘٬٫%$]€>:+/#!()@·°[ؤ=٠×،ـ١٦٧٨٩٤٥٢٣ڥ出ڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
     mlt_char = ''.join(sorted( set(ifn_char + extra_MLT) ))
 
 elif MLT_lang=='English':
-    MLT_language = ['English']
-    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ出“ِ '"    
+    MLT_languages = ['English']
+    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ“ِ '"    
     mlt_char = ''.join(sorted( set(iam_char + extra_MLT) ))
 
 elif MLT_lang == 'Arabic+English':  
-    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥ出ڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    MLT_language = ['Englsih', 'Arabic']
+    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    MLT_languages = ['English', 'Arabic']
     mlt_char = ''.join(sorted( set(iam_ifn_char + extra_MLT) ))
+elif MLT_lang=='Bangla':
+    mlt_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
+    MLT_languages = ['Bangla']
+elif MLT_lang == 'Eng+Ara+Bang':
+    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
+    bangla_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
+    extra_MLT = ''.join(sorted( set(bangla_char + extra_MLT) ))
+    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz'
+    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
+  
+    MLT_languages = ['English', 'Arabic', 'Bangla']
+
+elif MLT_lang == 'Latin':
+    mlt_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
+    MLT_languages = ['English', 'French','German','Italian']
+
+elif MLT_lang == 'Latin+Arabic':
+    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
+    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
+    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
+    MLT_languages = ['English', 'French','German','Italian', 'Arabic']
+elif MLT_lang == 'Latin+Arabic+Bangla':
+    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
+    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
+    bangla_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
+    extra_MLT = ''.join(sorted( set(bangla_char + extra_MLT) ))
+    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
+    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
+    MLT_languages = ['English', 'French','German','Italian', 'Arabic', 'Bangla']
+    MLT_latin_script_vs_others = True
 
     
-
-if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH':
+    
+if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH': 
     phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
 
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
@@ -293,8 +364,7 @@ elif dataset_name == 'IAM':
 elif dataset_name == 'IAM+IFN':                 
     phoc_unigrams = iam_ifn_char
 elif dataset_name=='MLT':
-    phoc_unigrams = mlt_char
-    
+    phoc_unigrams = mlt_char    
 
 else: 
     exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
@@ -302,22 +372,20 @@ else:
 del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char, mlt_char
 
 
-if encoder == 'label': # label used for script identification/separation
-    loss == 'CrossEntropyLoss'
-    batch_size_train         = 10  # Prev works used 10 .....  a value of 2 gives better results
+if task_type == 'script_identification': # label used for script identification/separation
+    encoder = 'phoc'
+    batch_size_train        = 2 #  = 10  # Prev works used 10 .....  a value of 2 gives better results
     model_name               = 'resnet18'
-    testing_print_frequency  = 3 # prime number, how frequent to test/print during training
-    English_label = np.array([1, 0], 'float32')
-    Arabic_label = np.array([0, 1], 'float32')
-    assert(dataset_name == 'WG+IFN' or  dataset_name == 'IAM+IFN') # or 'IAM+IFN'
+    testing_print_frequency  = 2 # 3 # prime number, how frequent to test/print during training
+        
+    unigram_levels = [2,4]  # we can rduce it here, probably no effect of using large levels
+    
+    batch_size_test   = 50  # Higher values may trigger memory problems
+ 
 
-
-
-''' I need to remove these keep flags.....later !!'''
-use_weight_to_balance_data      = False
 use_distortion_augmentor        = False
 
-
+''' I need to remove these keep_flags.....later !!'''
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
 keep_non_alphabet_of_GW_in_loaded_data    = True 
 

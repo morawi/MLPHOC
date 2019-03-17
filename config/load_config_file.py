@@ -29,10 +29,10 @@ class Configuration(object):
         xx = getmembers(cf)
         for i in range(len(xx)): 
             print (xx[i])
-        if cf.encoder == 'label': # 'label only works when we have two scripts, dataset= IAM+IFN or WG+IFN'
+        if cf.encoder == 'script_identification': # 'label only works when we have two scripts, dataset= IAM+IFN or WG+IFN'
             print('Script identification experiment')
         else:
-            print('------- the_hoc length is: ', len(cf.PHOC('', cf)) )
+            print('------- the_hoc length is: ', len(cf.PHOC(cf.phoc_unigrams[1:3], cf)) ) # cf.phoc_unigrams[1:3] just passing some chars/unigrams to get the PHOC size
         if cf.overlay_handwritting_on_STL_img:
             print('------ Scene Handwritting Experiment ----------')
             
