@@ -110,8 +110,9 @@ class IfnEnitDataset(Dataset):
 #        self.weights = weights # weights to be used to balance the data, as input to the loss
 
     def num_classes(self):
-        if self.cf.encoder=='label':
-            return len(self.cf.Arabic_label)
+        if self.cf.task_type=='script_identification':
+        #    return len(self.cf.Arabic_label)
+            return len(self.cf.PHOC('بجدهو', self.cf)) # pasing 'dump' word to get the length
         else:
             # return len(self.phoc_word[0])
             return len(self.cf.PHOC('بجدهو', self.cf)) # pasing 'dump' word to get the length
@@ -147,8 +148,11 @@ class IfnEnitDataset(Dataset):
         word_str = self.word_str[idx]
         if self.transform:
             data = self.transform(data)
-        if self.cf.encoder=='label':
-            target = self.cf.Arabic_label # 1: lable for Arabic script
+        
+        
+        if self.cf.task_type=='script_identification':
+            # target = self.cf.Arabic_label #  lable for Arabic script
+            target = self.cf.PHOC('عربى9231', self.cf) # Arabic + hashcode
         else:
             # target = self.phoc_word[idx]
             target = self.cf.PHOC(word_str, self.cf)
@@ -158,11 +162,3 @@ class IfnEnitDataset(Dataset):
    
    
 #  data = data.point(lambda p: 1 if p < 127  else 0 ) # threshold and invert            
-'''
-data = np.array(data.getdata(),
-        np.uint8).reshape(data.size[1], data.size[0], 1)        
-# maxG = data.max() # correcting the values of folder e, they do not match the other folders
-data = ( (maxG[1] - data)/(maxG[1] - maxG[0]) ).astype('uint8') # this will result in float64
-tsfm = transforms.ToPILImage()
-data = tsfm(data)            
-'''             
