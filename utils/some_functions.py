@@ -30,28 +30,28 @@ from scipy.spatial import distance
 
 
 
-def remove_non_words(word_str):
-    
-    non_words =["'", '.' '-',  ' ', '"', ',' , 
-                '/', '!', '#', '&',  '(', ')', 
-                '*', '+', ':', ';', '?', '_']    
-    # I am also removing single char appearance, as these are not words and 
-    # they might not contribute to learning
-    single_char_appearance = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
-            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
-            'w', 'x', 'y', 'z', 
-            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 
-            'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 
-            'W', 'X', 'Y', 'Z'
-            ]
-        
-    non_words = non_words + single_char_appearance
-        
-    loc = [i for i, x in enumerate(word_str) if x[1] not in non_words]
-    word_str = [word_str[i] for i in loc]
-    return word_str
-    
+#def remove_non_words(word_str):
+#    
+#    non_words =["'", '.' '-',  ' ', '"', ',' , 
+#                '/', '!', '#', '&',  '(', ')', 
+#                '*', '+', ':', ';', '?', '_']    
+#    # I am also removing single char appearance, as these are not words and 
+#    # they might not contribute to learning
+#    single_char_appearance = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+#            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
+#            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
+#            'w', 'x', 'y', 'z', 
+#            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 
+#            'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 
+#            'W', 'X', 'Y', 'Z'
+#            ]
+#        
+#    non_words = non_words + single_char_appearance
+#        
+#    loc = [i for i, x in enumerate(word_str) if x[i] not in non_words]
+#    word_str = [word_str[i] for i in loc]
+#    return word_str
+#    
 
 
 def random_seeding(seed_value, use_cuda):
