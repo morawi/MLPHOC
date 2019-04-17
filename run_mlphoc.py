@@ -11,7 +11,6 @@ Major run function:
 from __future__ import division
 import time
 import logging
-
 from config.load_config_file import Configuration
 from tests.test_cnn_finetune import test_cnn_finetune
 from utils.some_functions import random_seeding # test_varoius_thresholds, word_str_moment, word_similarity_metric, test_varoius_dist, 
