@@ -78,7 +78,7 @@ from string import punctuation
 from collections import Counter
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
-
+import torch
 # from nltk import word_tokenize, pos_tag
 # from gensim.summarization.textcleaner import split_sentences
 
@@ -214,7 +214,8 @@ class IMDB_dataset(Dataset):
         if one_w2v:
             w2v = np.array(np.column_stack([IMDB_dataset.glove_model[w] for w in text])) # This model has no vocabulary        
         else:            
-            w2v_google = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.google_model[w]) for w in text if w in IMDB_dataset.google_model.wv]))        
+            w2v_google = np.array(np.column_stack(
+                    [self.normalized_w2v(IMDB_dataset.google_model[w]) for w in text if w in IMDB_dataset.google_model.wv]))        
             if w2v_google.shape[1]<self.cf.W_imdb_width:
                 w2v_fastext = np.array(np.column_stack([self.normalized_w2v(IMDB_dataset.fasttext_model[w]) for w in text])) # This model has no vocabulary
                 w2v = np.concatenate((w2v_google, w2v_fastext), axis=1)
@@ -248,9 +249,8 @@ class IMDB_dataset(Dataset):
     
     
     def __getitem__(self, index):
-               
-        img, word_str = self.get_sample(index)
-        target = self.cf.PHOC(word_str, cf = self.cf)   
+        index = int(index)       
+        img, word_str = self.get_sample(index)        
         ToPIL = transforms.ToPILImage()   
         img = ToPIL(img)
         
@@ -262,6 +262,8 @@ class IMDB_dataset(Dataset):
                 
         if self.transform:
             img = self.transform(img)    
+        
+        target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf)   )
         
         return img, target, word_str, 0
 

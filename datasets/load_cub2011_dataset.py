@@ -11,6 +11,8 @@ from torchvision.datasets.folder import default_loader
 from torchvision.datasets.utils import download_url
 from torch.utils.data import Dataset
 import re
+from PIL import Image
+import torch
 
 
 
@@ -20,12 +22,13 @@ class Cub2011(Dataset):
     filename = 'CUB_200_2011.tgz'
     tgz_md5 = '97eceeb196236b17998738112f37df78'
 
-    def __init__(self, root, train=True, transform=None, loader=default_loader, download=True):
+    def __init__(self, cf, root, train=True, transform=None, loader=default_loader, download=True):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.loader = default_loader
         self.train = train
         self.images = None
+        self.cf = cf
 
         if download:
             self._download()
@@ -84,16 +87,24 @@ class Cub2011(Dataset):
         path = os.path.join(self.root, self.base_folder, sample.filepath)
         target = sample.target - 1  # Targets start at 1 by default, so shift to 0        
         label_str = re.search('\.(.+?)\/', sample.filepath)[0][1:-1]
-        img = self.loader(path)
-
+        label_str = label_str.lower(); label_str = label_str.replace('_','')        
+        target = torch.from_numpy( self.cf.PHOC(label_str, self.cf) )        
+        img = self.loader(path)                       
+        if not(self.cf.H_cub2011_scale ==0): # resizing just the height            
+            new_w = int(img.size[0]*self.cf.H_cub2011_scale/img.size[1])
+            if new_w>self.cf.MAX_IMAGE_WIDTH: 
+                new_w = self.cf.MAX_IMAGE_WIDTH
+            img = img.resize( (new_w, self.cf.H_cub2011_scale), Image.ANTIALIAS)
+       
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, label_str, target
+        return img, target, label_str, 0
 
 
-train_set = Cub2011(root='/home/malrawi/Desktop/My Programs/all_data/', train=True)
-aa = train_set[111][0]
-
-test_set = Cub2011(root='/home/malrawi/Desktop/My Programs/all_data/', train=False)
-aa = test_set[111][0]
+#
+#train_set = Cub2011(0, root='/home/malrawi/Desktop/My Programs/all_data/', train=True)
+#aa = train_set[111][0]
+#
+#test_set = Cub2011(0, root='/home/malrawi/Desktop/My Programs/all_data/', train=False)
+#aa = test_set[111][0]

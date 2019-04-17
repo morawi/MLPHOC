@@ -37,6 +37,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 from scipy import signal
 from scipy.io import wavfile
+import torch
 
 
 # matplotlib inline
@@ -173,7 +174,8 @@ class TfSpeechDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         
-        target = self.cf.PHOC(word_str, self.cf)
+        target = torch.from_numpy(  self.cf.PHOC(word_str, self.cf) )
+        
 
         return data, target, word_str, self.weights[idx]
     

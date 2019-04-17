@@ -9,8 +9,11 @@ Created on Sat Nov 24 14:17:15 2018
 import torchvision
 from torch.utils.data import Dataset
 import numpy as np
+import torch
+
 from PIL import Image
 from PIL import ImageEnhance 
+
 
 def load_cifar100_dataset(cf, mode):
     if mode == 'train':
@@ -71,7 +74,8 @@ class Cifar100Dataset(Dataset):
         
         class_id = self.dataset[idx][1]
         word_str = self.classes[ class_id ]           
-        target = self.cf.PHOC(word_str, self.cf)
+        target = torch.from_numpy( self.cf.PHOC(word_str, self.cf) )
+        
         return img, target, word_str, self.weights[idx]
        
            

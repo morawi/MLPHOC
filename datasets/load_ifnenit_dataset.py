@@ -15,7 +15,10 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from utils import globals
-import torchvision.transforms as transforms
+# import torchvision.transforms as transforms
+import torch
+from tqdm import tqdm
+import time
 
 # from scripts.data_transformations import process_ifnedit_data
 
@@ -98,6 +101,17 @@ class IfnEnitDataset(Dataset):
             self.word_str.append(aux_word_str[idx])
         
         self.data_idx = data_idx
+        self.PHOC_vector = torch.empty(len(data_idx), len(self.cf.PHOC('ريري', self.cf)) , dtype=torch.float)        
+        time.sleep(1)
+        print('\n Storing PHOCs for IFN ', 'train' if train==True else 'test' ); # print(end='')
+        time.sleep(1)
+        pbar = tqdm(total=len(data_idx)); 
+        time.sleep(1)
+        for i in range(len(data_idx)):    
+            pbar.update(1)                
+            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(self.word_str[i], self.cf))
+        pbar.close();   del pbar     
+        
         self.weights = np.ones( len(data_idx), dtype = 'uint8' )
     
     def add_weights_of_words(self): # weights to balance the loss, if the data is unbalanced   
@@ -147,15 +161,14 @@ class IfnEnitDataset(Dataset):
         
         word_str = self.word_str[idx]
         if self.transform:
-            data = self.transform(data)
-        
+            data = self.transform(data)        
         
         if self.cf.task_type=='script_identification':
             # target = self.cf.Arabic_label #  lable for Arabic script
             target = self.cf.PHOC('عربى9231', self.cf) # Arabic + hashcode
         else:
             # target = self.phoc_word[idx]
-            target = self.cf.PHOC(word_str, self.cf)
+            target =  self.PHOC_vector[idx]
 
         return data, target, word_str, self.weights[idx]
     

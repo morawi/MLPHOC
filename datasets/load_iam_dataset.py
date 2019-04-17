@@ -9,9 +9,10 @@ from torch.utils.data import Dataset
 import numpy as np
 # from scripts.Word2PHOC import build_phoc as PHOC
 from PIL import Image
-from utils.some_functions import remove_non_words
 import torch
 from tqdm import tqdm
+import time
+import re
 
 # from torchvision import transforms
 # import Augmentor
@@ -43,9 +44,14 @@ def get_iam_file_label(cf, mode):
                 data_te = f_te.readlines()
                 file_label = [i[:-1].split(' ') for i in data_te]
                 
-        file_label = remove_non_words(file_label)
-        
-        return file_label
+        # entries of file_lable are: ['c04-160-06-05,171', 'viewers'], ['c04-160-06-06,171', 'complained'], ['c04-160-06-07,171', 'to']]
+        x_file = []
+        for item in file_label:
+            word = item[1]            
+            if len(word)>2 or re.search('[a-zA-Z]', word) != None:  #  removing less than size 2 words,      has_alphabets = re.search('[a-zA-Z]', word_string) # if at leas has one alphabet
+                x_file.append(item)
+            
+        return x_file
 
 
     
@@ -73,8 +79,10 @@ class IAM_words(Dataset):
         self.transform = transform        
         self.weights = np.ones( len(self.file_label) , dtype = 'uint8' )
         self.PHOC_vector = torch.empty(len(self.file_label), len(self.cf.PHOC('dump', self.cf)) , dtype=torch.float)
-        print('\n Storing PHOCs for ', mode  ); # print(end='')
+        print('\n Storing PHOCs for ', mode  ); # print(end='')  
+        time.sleep(1)
         pbar = tqdm(total=len(self.file_label));  
+        time.sleep(1)
         for i in range(len(self.file_label)):
             word = self.file_label[i]  
             word_str = word[1].lower() 

@@ -12,6 +12,7 @@ import glob
 import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
+import torch
 
 ''' Kaggle Safe Driver dataset'''
 
@@ -105,5 +106,5 @@ class SafeDriverDataset(Dataset):
         if self.transform is not None:
             image = self.transform(image)
         word_str = classes[label]
-        target = self.cf.PHOC(word_str, self.cf)
+        target = torch.from_numpy(self.cf.PHOC(word_str, self.cf))
         return image, target, word_str, 0 # I am returning zero weights, as they are not useful
