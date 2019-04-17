@@ -9,9 +9,7 @@ using: https://github.com/IntuitionEngineeringTeam/chars2vec
 https://hackernoon.com/chars2vec-character-based-language-model-for-handling-real-world-texts-with-spelling-errors-and-a3e4053a147d
 """
 
-
 import chars2vec
-import numpy as np
 
 # import time
 
@@ -27,34 +25,26 @@ class Chars2Vec():
     this is useful to generated a sparce space of similar words; for example,
     silent and silence
     '''
-    def __init__(self, language_model = 'eng_50', augment_rot_word = False): # phoc_vectors  have a size n_test_samplesXn_ensmbles
+    def __init__(self, language_model = 'eng_50', ): # phoc_vectors  have a size n_test_samplesXn_ensmbles
         self.c2v_model = chars2vec.load_model(language_model)  
-        self.augment_rot_word= augment_rot_word
+        
     
     def __getitem__(self, word):        
         return self.getvec(word, 0)
-    
-    def rotate_string(self, strg, n):
-        return strg[n:] + strg[:n]
-
+        
         
     def getvec(self, word, cf):    # cf has to be passed to cope with other functions' forms, like Word2PHOC
         
-        scale_factor = 2
+        ch2vec_scale_factor = 4       
+        word_embedding = self.c2v_model.vectorize_words([word]).squeeze()  # since the function accepts a list of wrods as input                           
         
-        word_embedding = self.c2v_model.vectorize_words([word]).squeeze()  # since the function accepts a list of wrods as input          
-        
-        if self.augment_rot_word:
-            word_rotated  = self.rotate_string(word, len(word)//2)
-            word_embedding = np.append(word_embedding,  self.c2v_model.vectorize_words([word_rotated]).squeeze() )
-            
-        word_embedding = .5 + word_embedding /scale_factor # normalizing to posistive scale, dividing by 4 to keep it in the linear range of Sigmoid
+        word_embedding = .5 + word_embedding /ch2vec_scale_factor # normalizing to posistive scale, dividing by 4 to keep it in the linear range of Sigmoid
         return word_embedding  # scaling to keep the range within the output o the activagtion function
         
     
-#x = Chars2Vec(augment_rot_word=True)
+#x = Chars2Vec()
 #z= x['hello']
-#
+##
 
 
 ##start_timer = time.time(); 
