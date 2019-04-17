@@ -14,7 +14,7 @@ from utils.some_functions import word_str_moment, phoc_confusion_matrix, word_si
 from datasets.get_datasets import get_datasets,  get_dataloaders, get_transforms
 from sklearn.metrics import accuracy_score
 from utils.pwdistance import accuracy_score as my_accuracy_score
-from utils.prediction import predict_labels
+from utils.prediction import predict_labels # can be used when targets no available
 
 
 def test_cnn_finetune(cf):
@@ -91,8 +91,8 @@ def test_cnn_finetune(cf):
                 output = model(data)
                 loss = criterion(output.float(), target.float())
                 total_loss += loss.item()
-                total_size += data.size(0)
-                output = F.sigmoid(output) 
+                total_size += data.size(0)                
+                output = F.sigmoid(output)
                 pred = output.data  
                 pred_all = torch.cat((pred_all, pred), 0) # Accumulate from batches to one variable (##_all)
                 target_all = torch.cat( (target_all, target), 0)
@@ -100,14 +100,15 @@ def test_cnn_finetune(cf):
 
         
         result = {'word_str':word_str_all, 'pred': pred_all, 'target': target_all}
-        if cf.encoder=='phoc': 
-            pred_all = pred_all.round() 
-            # result['correct'] = accuracy_score(target_all, pred_all, normalize=False)  # round() is needed here to convert the pred to binary     
+        if cf.encoder=='phoc' or cf.encoder=='varphoc': 
+            
+            print('Sklearn accuracy: ' , accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy().round(), normalize=True) ) # sklearn accu, round() is needed here to convert the pred to binary     
             result['correct'], _, _,_ = my_accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy(), 
                   labels_true = word_str_all, normalize=False,  diagnostics=False)            
            # predicted_labels = predict_labels(target_all.cpu().numpy(), pred_all.cpu().numpy(), word_str_all)
             
         elif cf.encoder=='chars2vec' or cf.encoder=='phonetic_vec':             
+
             result['correct'], _, _,_ = my_accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy(), 
                   labels_true = word_str_all, normalize=False,  diagnostics=True)
                   

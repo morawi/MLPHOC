@@ -14,7 +14,8 @@ from config.load_config_file import Configuration
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc as matplot_rc
-import torch
+
+import torchvision.transforms as transforms
 
 from datasets.get_datasets import get_datasets,  get_dataloaders, get_transforms
 
@@ -70,6 +71,16 @@ cf = configuration.load()
 image_transform = get_transforms(cf)
 train_set, test_set, test_per_data = get_datasets(cf, image_transform)
 train_loader, test_loader, per_data_loader = get_dataloaders(cf, train_set, test_set, test_per_data)
+
+# train_set[208][2]
+
+#print('saving images...')
+#for i, item in enumerate(train_set):
+#    x = transforms.ToPILImage(mode='RGB')(train_set[i][0])
+#    x.save('/home/malrawi/Desktop/B/'+ str(i) +'.jpg')
+#    if i>2500: break
+#
+    
 
 # id  = int( torch.randint(500, (1,1)).numpy()[0][0]); 
 # x = test_per_data['test_Instagram'][id][0]
