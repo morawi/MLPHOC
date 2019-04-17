@@ -11,32 +11,38 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 import time   # used to create a seed for the randomizers
 folder_of_data         = '/home/malrawi/Desktop/My Programs/'
 print_accuracy = True
-normalize_images     =  True
-phoc_levels = [2,3,4,5] # [ 2, 3, 4, 5]
-encoder   = 'phonetic_vec' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
+normalize_images     =  False
+phoc_levels = [2,3,4,5,6,7,8] # [ 2, 3, 4, 5]
+encoder   = 'varphoc' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
 task_type = 'word_spotting'  # 'script_identification' #  'word_spotting' # 'script_identification' 
 
+resize_images        = True        # Resize the dataset images to a fixed size
+pad_images           = False         # Pad the input images to a fixed size [576, 226]
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
-data_set_id  = 7#  13
-all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
-                'Cifar100+TFSPCH+GW+IFN',   # 1
-                'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
-                'WG+IFN' ,  # 3 
-                'IAM+IFN', # 4
-                'WG', # 5                
-                'IFN', # 6 
-                'IAM', # 7
-                'Cifar100', # 8
-                'TFSPCH', # 9
-                'safe_driver', # 10
-                'imdb_movie', # 11
-                 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
-                 'MLT', # 13   
-                 'Cub2011', #14                 
-                ]
 
-dataset_name    = all_datasets[data_set_id]
-del all_datasets, data_set_id
+def get_dataset_name(data_set_id  = 0):    
+    all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
+                    'Cifar100+TFSPCH+GW+IFN',   # 1
+                    'Cifar100+TFSPCH+IAM+IFN+safe-driver', # 2
+                    'WG+IFN' ,  # 3 
+                    'IAM+IFN', # 4
+                    'WG', # 5                
+                    'IFN', # 6 
+                    'IAM', # 7
+                    'Cifar100', # 8
+                    'TFSPCH', # 9
+                    'safe_driver', # 10
+                    'imdb_movie', # 11
+                     'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
+                     'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011', # 13                 
+                     'MLT', # 14   
+                     'cub2011', #15                    
+                    ]
+    
+    dataset_name    = all_datasets[data_set_id]
+    return dataset_name
+
+dataset_name = get_dataset_name(5)
 
 
 overlay_handwritting_on_STL_img = False
@@ -50,22 +56,27 @@ if 'imdb' in dataset_name:
     imdb_min_occurane = 10  # minimum number of words to appear in building the custom W2V model
 
 
-sampled_testing = False # to be used if the testing set is larger than 30K, due to limited RAM memory
+sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
 
-phoc_tolerance = 0 # if above 0,  it will perturbate the phoc/rawhoc by tolerance 0=< phoc_tolerance <<1
 
 if encoder =='phonetic_vec':    
     from scripts.Word2Phonetic import Word2Phonetic 
     Word2PhoneticObject = Word2Phonetic()
     PHOC = Word2PhoneticObject.getvec
     loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+           
     
 elif encoder =='chars2vec':    
     from scripts.Word2CharsVec import Chars2Vec 
     Chars2VecObject = Chars2Vec()
     PHOC = Chars2VecObject.getvec
-    loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    loss =  'BCEWithLogitsLoss'# 'BCELoss'# 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    
+elif encoder =='varphoc':
+    from scripts.Word2VarPhoc import var_phoc as PHOC
+    unigram_levels   = phoc_levels  # # PHOC levels 
+    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]    
     
 elif encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
@@ -96,17 +107,11 @@ else:
 del phoc_levels                                
 
 
-
-resize_images        = True        # Resize the dataset images to a fixed size
-pad_images           = True         # Pad the input images to a fixed size [576, 226]
-
-
   
 # Dataset max W and H
 universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
 
 H_Instagram_scale= 200
-
 
 if dataset_name  == 'MLT':
     H_MLT_scale = 128# 200
@@ -115,6 +120,12 @@ if dataset_name  == 'MLT':
     H_Instagram_scale = H_MLT_scale
     H_gw_scale = H_MLT_scale    # to be used wiht MLT instagram if needed
     H_iam_scale = H_MLT_scale
+
+elif dataset_name  == 'cub2011':
+    MAX_IMAGE_WIDTH  = 400 #  267 # 640
+    MAX_IMAGE_HEIGHT = 300 # 200 # 480
+    H_cub2011_scale = universal_H  # use 0 for no scale
+    
 
 elif dataset_name  == 'safe_driver':
     MAX_IMAGE_WIDTH  = 400 #  267 # 640
@@ -137,13 +148,36 @@ elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPC
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
+    MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
+    MAX_IMAGE_HEIGHT = universal_H 
     if word_corpus_4_text_understanding=='Google_news':  
         MAX_IMAGE_HEIGHT = 300
         universal_H = 300
-   
+    
+    resize_images = True # override in case resize_images is True    
+    
+    w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
+    h_new_size_cifar100 = universal_H
+    H_ifn_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
+    H_iam_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
+    H_sfDrive_scale = universal_H
+    H_TFSPCH_scale = 0 # do not scale speech data    
+    W_imdb_width  = 600
+    H_imdb_scale = 0 # universal_H   
+    H_cub2011_scale = universal_H  # use 0 for no scale
+    
+    ''' Better to set resize_images to False in this case
+    IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
+    Cifar100 will have w_new_size, TSFPCH will be the same  '''
+    
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
     MAX_IMAGE_HEIGHT = universal_H 
+    if word_corpus_4_text_understanding=='Google_news':  
+        MAX_IMAGE_HEIGHT = 300
+        universal_H = 300
+       
     w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
     h_new_size_cifar100 = universal_H
     H_ifn_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
@@ -178,12 +212,10 @@ elif dataset_name ==  'TFSPCH': # W x H; depends on the parameters we pass to th
     H_TFSPCH_scale = 0
 
 
-
 elif dataset_name ==  'WG': # 645 x 120 (largest size in GW dataset)
-    MAX_IMAGE_WIDTH  = 256 # 645
-    MAX_IMAGE_HEIGHT = 128 # 120
-    H_gw_scale = MAX_IMAGE_HEIGHT
-
+    MAX_IMAGE_WIDTH  =  645
+    MAX_IMAGE_HEIGHT = 120
+    H_gw_scale = 0 #  MAX_IMAGE_HEIGHT
 
 
 elif dataset_name == 'IFN': # 1069 x 226
@@ -192,9 +224,9 @@ elif dataset_name == 'IFN': # 1069 x 226
     H_ifn_scale      = universal_H  # to skip scaling the height, use 0
             
 elif dataset_name == 'IAM': # 1087 x 241 (largest size in IAM datasaet)
-    MAX_IMAGE_WIDTH  = 1087    
-    MAX_IMAGE_HEIGHT = 241 # universal_H              
-    H_iam_scale      = MAX_IMAGE_HEIGHT # universal_H
+    MAX_IMAGE_WIDTH  = 1087 # 256 # 1087    
+    MAX_IMAGE_HEIGHT = 241 # 241 # universal_H              
+    H_iam_scale      = 0#  MAX_IMAGE_HEIGHT # universal_H
     ''' In IAM max image height is 241 n02-049-03-02 (182, 241) test set   Max Image Width is 1087 c06-103-00-01 (1087, 199) train set '''
     
     
@@ -202,8 +234,8 @@ elif dataset_name == 'IAM': # 1087 x 241 (largest size in IAM datasaet)
 elif dataset_name == 'WG+IFN':  # max is 226x1069    
     MAX_IMAGE_WIDTH  = 1069 # 
     MAX_IMAGE_HEIGHT = universal_H    # maybe this should be 120, as GW and IFN are 120 after h_ifn_scale 
-    H_ifn_scale      = universal_H # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
-    H_gw_scale = 0
+    H_ifn_scale      = universal_H #0# universal_H # to skip scaling the height, use 0, else use WG_IMAGE_HEIGHT = 120
+    H_gw_scale = universal_H # 0
     
 elif dataset_name == 'IAM+IFN': # 241 x 1087
     MAX_IMAGE_WIDTH  = 1087 
@@ -213,18 +245,21 @@ elif dataset_name == 'IAM+IFN': # 241 x 1087
       
 
 if resize_images:
-    input_size       = (32, 128) # (128, 256) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
+    input_size       =  (128, 256) # [60, 150]   # Input size of the dataset images [HeightxWidth], images will be re-scaled to this size
 else: 
     input_size = ( MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH )
   
 
 # Model parameters
 model_name                   = 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+learning_rate                = 0.1 # 10e-4 # 0.1
+
+
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
-learning_rate                = 0.1 #10e-4
+
 lr_milestones                = [ 40, 80, 150 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
@@ -244,11 +279,8 @@ split_percentage_TFSPCH    = 1 # we can use a different percentage for speech da
 batch_size_test              = 100  # Higher values may trigger memory problems
 shuffle                      = True # shuffle the training set
 num_workers                  = 4
-
 mAP_dist_metric              = 'cosine' #'correlation' # 'cosine' # See options below
-rnd_seed_value               = int(time.time()) # 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
-
-
+rnd_seed_value  =  int(time.time()) # 1552938612 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
 batch_size_train             =  2
 
 ''' Folders of data: STL is embedded  '''
@@ -343,13 +375,13 @@ elif MLT_lang == 'Latin+Arabic+Bangla':
 
     
     
-if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH': 
+if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH' or dataset_name == 'cub2011': 
     phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
 
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
     phoc_unigrams = wg_ifn_char       
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
     phoc_unigrams = iam_ifn_char    
 
 elif dataset_name =='IFN':
@@ -392,10 +424,9 @@ keep_non_alphabet_of_GW_in_loaded_data    = True
 # Save results
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
-
-
-
 IFN_based_on_folds_experiment  = False
+
+
 
 '''
 # testing based on folder sets, depriciated as no difference between our random split and this

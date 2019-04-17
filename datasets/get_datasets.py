@@ -17,6 +17,7 @@ from datasets.load_tf_speech_recognition_dataset import TfSpeechDataset
 from datasets.load_cifar100_dataset import Cifar100Dataset
 from datasets.load_IFN_from_folders import IFN_XVAL_Dataset
 from datasets.load_imdb_dataset import IMDB_dataset
+from datasets.load_cub2011_dataset import Cub2011
 from scripts.data_transformations import PadImage, ImageThinning, NoneTransform, OverlayImage
 from sys import exit as sys_exit
 import matplotlib.pyplot as plt
@@ -83,6 +84,14 @@ def get_transforms(cf):
     # random_sheer = transforms.RandomApply([sheer_tsfm], p=0.7) # will only be used if cf.use_distortion_augmentor is True
     # can be used in the transform random_sheer if cf.use_distortion_augmentor else NoneTransform(),                       
     
+
+def get_cub2011(cf, image_transform):
+    
+    train_set = Cub2011(cf, root='/home/malrawi/Desktop/My Programs/all_data/', train=True, 
+                        transform=image_transform['image_transform_scn'])
+    test_set = Cub2011(cf, root='/home/malrawi/Desktop/My Programs/all_data/', train=False,
+                       transform=image_transform['image_transform_scn'])
+    return train_set, test_set
 
 def get_mlt(cf, image_transform):
     print('...................Loading MLT dataset...................')        
@@ -153,53 +162,72 @@ def get_ifn(cf, image_transform):
         test_set = IfnEnitDataset(cf, train=False, transform = image_transform['image_transform_hdr'])
     return train_set, test_set
 
+def get_wg_ifn(cf, image_transform):
+    print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
+    train_set_gw, test_set_gw = get_gw(cf, image_transform)
+    train_set_ifn, test_set_ifn = get_ifn(cf, image_transform)  
+    train_set = torch.utils.data.ConcatDataset( [train_set_gw, train_set_ifn])
+    test_set = torch.utils.data.ConcatDataset( [test_set_gw, test_set_ifn])
+    return train_set, test_set, test_set_gw, test_set_ifn
+
+
+
 def get_iam(cf, image_transform):
     print('...................Loading IAM dataset...................') 
     validate_set = IAM_words(cf, mode='validate', transform = image_transform['image_transform_hdr'])        
     train_set = IAM_words(cf, mode='train', transform = image_transform['image_transform_hdr'])    
-    print('Concatnating validate and train sets')
+    print('\n Concatnating IAM validate and train sets')
     train_set = torch.utils.data.ConcatDataset( [train_set, validate_set])
     del validate_set
     # train_set = iam_train_valid_combined_dataset(cf, train=True, transform = image_transform['image_transform_hdr']) # this merges train and validate into one
     test_set = IAM_words(cf, mode='test', transform = image_transform['image_transform_hdr']) 
     return train_set, test_set
 
-def get_iam_ifn(cf, image_transform):
-    print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')        
-        
-    train_set = IAM_IFN_Dataset(cf, train=True, mode = 'train', transform = image_transform['image_transform_hdr']) # mode is one of train, test, or validate
-    test_set = IAM_IFN_Dataset(cf, train=False, mode = 'test', transform = image_transform['image_transform_hdr'],  # loading iam valid set for testing
-                              data_idx_IFN = train_set.data_idx_IFN, 
-                                    complement_idx = True)
-    
-    # to do a separte testing, for each script
-    test_per_data_ifn = IfnEnitDataset(cf, train=False, transform=image_transform['image_transform_hdr'], 
-                            data_idx = train_set.data_idx_IFN, complement_idx = True) 
-    test_per_data_iam = IAM_words(cf, mode='test', transform = image_transform['image_transform_hdr'])   
-    
-    return train_set, test_set, test_per_data_iam, test_per_data_ifn
 
-def get_wg_ifn(cf, image_transform):
-    print('...................IFN & WG datasets ---- The multi-lingual PHOCNET')        
-    # Main loaders
-    train_set = WG_IFN_Dataset(cf, train=True, transform = image_transform['image_transform_hdr'])
-    test_set = WG_IFN_Dataset(cf, train=False, transform = image_transform['image_transform_hdr'], 
-                              data_idx_WG = train_set.data_idx_WG, 
-                              data_idx_IFN = train_set.data_idx_IFN, 
-                                    complement_idx = True)
-    # pto do a separte testing, for each script
-    test_per_data_ifn = IfnEnitDataset(cf, train=False, transform=image_transform['image_transform_hdr'], 
-                            data_idx = train_set.data_idx_IFN, complement_idx = True)
-    test_per_data_wg = WashingtonDataset(cf, train=False, transform=image_transform['image_transform_hdr'], 
-                        data_idx =train_set.data_idx_WG, complement_idx = True)
+
+
+def get_iam_ifn(cf, image_transform):
+    print('................... IAM & IFN datasets ---- The multi-lingual PHOCNET')    
+
+    train_set_ifn, test_set_ifn = get_ifn(cf, image_transform)    
+    train_set_iam, test_set_iam = get_iam(cf, image_transform)  
+    train_set = torch.utils.data.ConcatDataset( [train_set_iam, train_set_ifn])
+    test_set = torch.utils.data.ConcatDataset( [test_set_iam, test_set_ifn])
     
-    return train_set, test_set,test_per_data_wg, test_per_data_ifn
+    return train_set, test_set, test_set_iam, test_set_ifn
+
+
 
 
 def get_datasets(cf, image_transform):
         
     test_per_data = {}
-    if cf.dataset_name == 'MLT':
+    
+    if cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
+        train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
+        train_set_tfspch, test_set_tfspch, test_per_data['test_set_TFSPCH'] = get_tf_speech(cf, image_transform)
+        train_set_iam_ifn, test_set_iam_ifn, test_per_data['test_set_iam'], test_per_data['test_set_ifn'] = get_iam_ifn(cf, image_transform)
+        train_set_sf_drive, test_per_data['test_set_safe_driver'] = get_safe_driver(cf, image_transform)
+        
+        train_set_imdb, test_per_data['test_set_imdb']  = get_imdb(cf, image_transform)
+        train_set_cub2011, test_per_data['cub2011'] = get_cub2011(cf, image_transform)         
+        
+        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, train_set_imdb,
+                                                     train_set_tfspch, train_set_iam_ifn, 
+                                                     train_set_sf_drive, train_set_cub2011] )
+        test_set = torch.utils.data.ConcatDataset( [test_per_data['test_set_cifar100'], 
+                                                    test_per_data['test_set_imdb'],
+                                                    test_set_tfspch, 
+                                                    test_set_iam_ifn, 
+                                                    test_per_data['test_set_safe_driver'],
+                                                    test_per_data['cub2011']] )
+    
+        del train_set_cifar100, train_set_tfspch, test_set_tfspch, 
+        train_set_iam_ifn, test_set_iam_ifn, train_set_sf_drive, 
+        train_set_imdb, train_set_cub2011
+        
+    
+    elif cf.dataset_name == 'MLT':
         train_set, test_set = get_mlt(cf, image_transform)           
         test_per_data['test_set_MLT'] = test_set        
         if 'Instagram_test' in cf.MLT_lang:            
@@ -228,6 +256,7 @@ def get_datasets(cf, image_transform):
                                                      train_set_tfspch, train_set_iam_ifn, train_set_sf_drive] )
         test_set = torch.utils.data.ConcatDataset( [test_per_data['test_set_cifar100'], test_per_data['test_set_imdb'],
                                                     test_set_tfspch, test_set_iam_ifn, test_per_data['test_set_safe_driver']] )
+     # Delete all but keep train_set, test_set, test_per_data
 
     
     elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
@@ -287,6 +316,10 @@ def get_datasets(cf, image_transform):
         
     elif cf.dataset_name =='IAM+IFN': 
         train_set, test_set, test_per_data['test_set_iam'], test_per_data['test_set_ifn'] = get_iam_ifn(cf, image_transform)
+    
+    elif cf.dataset_name == 'cub2011':
+        train_set, test_set = get_cub2011(cf, image_transform)    
+        test_per_data['test_set_cub2011'] = test_set 
         
     else:
         print('Please select correct dataset name, one of dataset_name in config_file_wg.py')
