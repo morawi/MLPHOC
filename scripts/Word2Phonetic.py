@@ -43,7 +43,7 @@ class Word2Phonetic():
         self.len_output = max_word_len*int(language_model.replace('eng_',''))
     
     def getvec(self, word, cf):  
-        scale_factor = 8 
+        scale_factor = 2  
         word_embedding = np.empty(0, dtype = 'float32')        
         for char in word:
            word_embedding = np.append(word_embedding, self.get_phonetic(char, scale_factor) )
@@ -53,7 +53,7 @@ class Word2Phonetic():
             zoom_factor = self.len_output / len(word_embedding)
             if zoom_factor>1:            
                 word_embedding = interpolation.zoom(word_embedding, zoom_factor)
-
+        
         return word_embedding
        
         
@@ -66,12 +66,13 @@ class Word2Phonetic():
                 
         if char.isalnum():
             char_2word = dictionary[char]
-            char_embedding = self.c2v_model.vectorize_words([char_2word]).squeeze()  # since the function accepts a list of wrods as input                              
+            char_embedding = self.c2v_model.vectorize_words([char_2word]).squeeze()  # since the function accepts a list of wrods as input                                
             char_embedding = 0.5 + char_embedding /scale_factor # normalizing to posistive scale, dividing by 4 to keep it in the linear range of Sigmoid
+        
         else: 
             char_embedding = np.empty(0, dtype = 'float32')             
 #            char_embedding = self.get_padding(self.len_vec)             
-        
+                
         return char_embedding
                
 #       
