@@ -172,7 +172,7 @@ def test_cnn_finetune(cf):
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
     # Training
     for epoch in range(1, cf.epochs + 1):
-        scheduler.step();  
+        scheduler.step()  
         print("lr = ", scheduler.get_lr(), end="") # to be used with MultiStepLR
         train(epoch)           
         if not(epoch % cf.testing_print_frequency):
