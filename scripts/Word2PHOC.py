@@ -1,6 +1,8 @@
 import numpy as np
 import logging
 import sys
+# from DJB2_hash import djb2_hash
+
 
 """ adapted from @author: ssudholt, 
  https://github.com/ssudholt/phocnet/blob/master/src/phocnet/attributes/phoc.py
@@ -8,7 +10,15 @@ import sys
  - Mohammed Al-Rawi
  """
 
-def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
+def djb2_hash(s):                                                                                                                                
+    hash = 5381
+    for x in s:
+        hash = (( hash << 5) + hash) + ord(x)
+    return hex( hash  & 0xFFFFFFFF )
+   
+
+
+def build_phoc(word, cf, mode='hand-writing'): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
     '''  Calculates Pyramidal Histogram of Characters (PHOC) descriptor (see Almazan 2014).
     Args:
         words (str): word to calculate descriptor for
@@ -19,6 +29,8 @@ def build_phoc(word, cf): # alphabet = 'multiple', unigram_levels = [2,3,4,5]):
         the PHOCs for the given words    '''
 
     logger = logging.getLogger('PHOCGenerator')
+    if cf.use_hashing:
+       word = word + djb2_hash(word+mode)
     # phoc_unigrams (str): string of all unigrams to use in the PHOC
 
     # prepare output matrix

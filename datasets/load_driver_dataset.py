@@ -29,16 +29,16 @@ labels = {  'c0' : 'safe driving',
             'c9' : 'talking to passenger'}
 
 # Class labels
-classes = ['safe.driving-19',  # As HashoingCode, to prevent collision with similar words. we used . and - as they are defined in the Gw_unigrams
-            'texting.right-74', 
-            'talking-phone-right', # 'talking.on.the-phone-right'
-            'texting.left-73', 
-            'talking-phone-left', 
-            'operating.the-radio', 
-            'drinking-481', 
+classes = ['safe.driving',  # As HashoingCode, to prevent collision with similar words. we used . and - as they are defined in the Gw_unigrams
+            'texting.right', 
+            'talking.phone.right', # 'talking.on.the-phone-right'
+            'texting.left', 
+            'talking.phone.left', 
+            'operating.the.radio', 
+            'drinking', 
             'reaching.behind', 
-            'hair.and-makeup', 
-            'talking.to-passenger']
+            'hair.and.makeup', 
+            'talking.to.passenger']
 
 
 class SafeDriverDataset(Dataset):
@@ -90,7 +90,7 @@ class SafeDriverDataset(Dataset):
         return len(self.img_names)
     
     def num_classes(self):          
-        return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+        return len(self.cf.PHOC('dump', self.cf, mode='vision')) # pasing 'dump' word to get the length
     
     def __getitem__(self, index):
         img_name = self.img_names[index]

@@ -149,7 +149,7 @@ class TfSpeechDataset(Dataset):
     
 
     def num_classes(self):          
-       return len(self.cf.PHOC('abcd', self.cf)) # pasing 'dump' word to get the length
+       return len(self.cf.PHOC('abcd', self.cf )) # pasing 'dump' word to get the length
         
     ''' doubt doubt doubt '''    
     def __len__(self):
@@ -174,7 +174,7 @@ class TfSpeechDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         
-        target = torch.from_numpy(  self.cf.PHOC(word_str, self.cf) )
+        target = torch.from_numpy(  self.cf.PHOC(word_str, self.cf, mode='speech') )
         
 
         return data, target, word_str, self.weights[idx]

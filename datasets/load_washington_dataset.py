@@ -163,7 +163,8 @@ class WashingtonDataset(Dataset):
         time.sleep(1)
         for i in range(len(data_idx)):    
             pbar.update(1)                
-            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(self.word_str[i], self.cf))
+            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(self.word_str[i], self.cf,
+                           mode='hand-writing'))
         pbar.close();   del pbar     
             
     
@@ -182,7 +183,7 @@ class WashingtonDataset(Dataset):
         if self.cf.encoder=='script_identification':
             return len(self.cf.English_label)
         else:
-            return len(self.cf.PHOC('dump', self.cf)) # pasing 'dump' word to get the length
+            return len(self.cf.PHOC('dump', self.cf, mode= 'hand-writing')) # pasing 'dump' word to get the length
     
     def __len__(self):
         return len(self.word_id)

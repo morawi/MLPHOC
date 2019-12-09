@@ -242,7 +242,7 @@ class IMDB_dataset(Dataset):
     
     def get_sample(self, index):                
         sentiment = self.data[index]['sentiment'] 
-        sentiment = 'negative.135' if  sentiment=='neg' else  'posative.792'  # the hashing number is added to be identified from other keywords in other datasets                     
+        sentiment = 'negative' if  sentiment=='neg' else  'posative'  # the hashing number is added to be identified from other keywords in other datasets                     
         img = self.text_to_image_2(self.data[index]['text'])
                   
         return img, sentiment    
@@ -263,7 +263,7 @@ class IMDB_dataset(Dataset):
         if self.transform:
             img = self.transform(img)    
         
-        target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf)   )
+        target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode = 'text-sentiment')   )
         
         return img, target, word_str, 0
 

@@ -134,7 +134,7 @@ class MLT_words(Dataset):
             target = self.cf.PHOC(self.language[index].lower()+ 
                                   self.cf.language_hash_code[self.language[index]], self.cf) # language_name + hashcode
         else:            
-            target = self.cf.PHOC(word_str, cf = self.cf)       
+            target = self.cf.PHOC(word_str, cf = self.cf, mode= 'printed-writing')       
         
         
         if img.mode !='RGB':

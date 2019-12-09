@@ -26,14 +26,6 @@ del result
 print("Execution time is: ", time.time() - start_timer )
     
 
-  
-# test_varoius_thresholds(result, cf)  
- 
-# word_str_mom = word_str_moment(result['word_str'])
-# word_similarity = word_similarity_metric(result['word_str'])
-#print('testing set word vect Moment is: ', word_str_mom)
-#print('testing set word_similarity : ', word_similarity)
-
     
 ''' Depreciated, has no effect 
 if cf.IFN_based_on_folds_experiment==True and cf.dataset_name=='IFN':

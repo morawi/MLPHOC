@@ -7,7 +7,6 @@ Created on Thu Jul  7 12:08:22 2018
 
 from torch.utils.data import Dataset
 import numpy as np
-# from scripts.Word2PHOC import build_phoc as PHOC
 from PIL import Image
 import torch
 from tqdm import tqdm
@@ -104,7 +103,8 @@ class IAM_words(Dataset):
         if self.cf.task_type=='script_identification':
             # target = self.cf.English_label # 1: lable for Arabic script
             target = self.cf.PHOC('English'.lower()+ 
-                                  self.cf.language_hash_code['English'], self.cf) # language_name + hashcode
+                                  self.cf.language_hash_code['English'], self.cf, 
+                                  mode = 'hand-writing') # language_name + hashcode
         else:            
             target = self.PHOC_vector[index]
                     

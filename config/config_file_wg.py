@@ -45,7 +45,7 @@ def get_dataset_name(data_set_id  = 0):
     dataset_name    = all_datasets[data_set_id]
     return dataset_name
 
-dataset_name = get_dataset_name(14)
+dataset_name = get_dataset_name(13)
 
 
 overlay_handwritting_on_STL_img = False

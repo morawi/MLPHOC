@@ -25,23 +25,23 @@ def load_cifar100_dataset(cf, mode):
             
     # I added numbers in case some names appear in handwriting or text detection datasets    
     classes = (
-       'apple123', 'aquarium-fish45', 'baby456', 'bear890', 'beaver149', 'bed891', 'bee432', 
-       'beetle675', 'bicycle213', 'bottle576', 'bowl912', 'boy135', 'bridge843', 'bus582', 
-        'butterfly370', 'camel431', 'can942', 'castle638', 'caterpillar61', 'cattle936', 
-        'chair231', 'chimpanzee954', 'clock953', 'cloud206', 'cockroach037', 'couch126', 
-        'crab947', 'crocodile732', 'cup1426', 'dinosaur093', 'dolphin098', 'elephant765', 
-        'flatfish432', 'forest109', 'fox876', 'girl5439',  'hamster543', 'house210', 
-        'kangaroo912', 'keyboard834', 'lamp756', 'lawn-mower049', 'leopard867', 
-        'lion086', 'lizard531', 'lobster975', 'man420', 'maple-tree135', 'motorcycle246', 
-        'mountain791', 'mouse124', 'mushroom245', 'oak-tree568', 'orange932', 'orchid710', 
-        'otter364', 'palm-tree752', 'pear0491', 'pickup-truck305', 'pine-tree486', 'plain993', 'plate749', 
-        'poppy350', 'porcupine372', 'possum736', 'rabbit274', 'raccoon912', 'ray836', 
-        'road632', 'rocket048', 'rose320', 'sea1478', 'seal9634', 'shark9634', 'shrew5306', 
-        'skunk13057', 'skyscraper91', 'snail90865', 'snake08231', 'spider37629',
-        'squirrel873', 'streetcar3261', 'sunflower716', 'sweet-pepper549', 'table74821',
-        'tank10467', 'telephone9372', 'television710', 'tiger76302', 'tractor9365',
-        'train3201', 'trout7392', 'tulip14820', 'turtle6354', 'wardrobe2745',
-        'whale7392', 'willow-tree193', 'wolf64532', 'woman67320', 'worm7392'
+       'apple', 'aquarium-fish', 'baby', 'bear', 'beaver', 'bed', 'bee', 
+       'beetle', 'bicycle', 'bottle', 'bowl', 'boy', 'bridge', 'bus', 
+        'butterfly', 'camel', 'can', 'castle', 'caterpillar', 'cattle', 
+        'chair', 'chimpanzee', 'clock', 'cloud', 'cockroach', 'couch', 
+        'crab', 'crocodile', 'cup', 'dinosaur', 'dolphin', 'elephant', 
+        'flatfish', 'forest', 'fox', 'girl',  'hamster', 'house', 
+        'kangaroo', 'keyboard', 'lamp', 'lawn-mower', 'leopard', 
+        'lion', 'lizard', 'lobster', 'man', 'maple-tree', 'motorcycle', 
+        'mountain', 'mouse', 'mushroom', 'oak-tree', 'orange', 'orchid', 
+        'otter', 'palm-tree', 'pear', 'pickup-truck', 'pine-tree', 'plain', 'plate', 
+        'poppy', 'porcupine', 'possum', 'rabbit', 'raccoon', 'ray', 
+        'road', 'rocket', 'rose', 'sea', 'seal', 'shark', 'shrew', 
+        'skunk', 'skyscraper', 'snail', 'snake', 'spider',
+        'squirrel', 'streetcar', 'sunflower', 'sweet-pepper', 'table',
+        'tank', 'telephone', 'television', 'tiger', 'tractor',
+        'train', 'trout', 'tulip', 'turtle', 'wardrobe',
+        'whale', 'willow-tree', 'wolf', 'woman', 'worm'
         )
     
     return data_set, classes
@@ -74,7 +74,7 @@ class Cifar100Dataset(Dataset):
         
         class_id = self.dataset[idx][1]
         word_str = self.classes[ class_id ]           
-        target = torch.from_numpy( self.cf.PHOC(word_str, self.cf) )
+        target = torch.from_numpy( self.cf.PHOC(word_str, self.cf, mode='vision') )
         
         return img, target, word_str, self.weights[idx]
        

@@ -21,12 +21,8 @@ def var_phoc(word, cf):
     m =  len(word) # n = word_phoc_level
     word_phoc_size = len(cf.phoc_unigrams)*(m*(m+1)/2-1) 
     phoc[int(word_phoc_size):] = 0   
-#    if m>5:   # I don't think this would help
-#        n=m-5
-#        word_phoc_start = len(cf.phoc_unigrams)*(n*(n+1)/2-1)            
-#        phoc[0:int(word_phoc_start)-1] = 0  
-#        
-    
+
+            
     return phoc
 
 

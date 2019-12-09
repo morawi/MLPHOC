@@ -88,7 +88,7 @@ class Cub2011(Dataset):
         target = sample.target - 1  # Targets start at 1 by default, so shift to 0        
         label_str = re.search('\.(.+?)\/', sample.filepath)[0][1:-1]
         label_str = label_str.lower(); label_str = label_str.replace('_','')        
-        target = torch.from_numpy( self.cf.PHOC(label_str, self.cf) )        
+        target = torch.from_numpy( self.cf.PHOC(label_str, self.cf, mode='vision') )        
         img = self.loader(path)                       
         if not(self.cf.H_cub2011_scale ==0): # resizing just the height            
             new_w = int(img.size[0]*self.cf.H_cub2011_scale/img.size[1])
