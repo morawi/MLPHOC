@@ -11,6 +11,8 @@
 (This can be easily replaced with torch models)
 
 [Augmentor](https://pypi.org/project/Augmentor/)
+
+[Langid](https://pypi.org/project/langid/)
  
 
 
