@@ -9,13 +9,14 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 '''
 
 import time   # used to create a seed for the randomizers
-folder_of_data         = '/home/malrawi/Desktop/My Programs/'
+folder_of_data         = '/home/malrawi/MyPrograms-old/' #'/home/malrawi/Desktop/My Programs/'
+
+use_hashing = True
 print_accuracy = True
 normalize_images     =  False
-phoc_levels = [2,3,4,5,6,7,8] # [ 2, 3, 4, 5]
-encoder   = 'varphoc' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
+phoc_levels = [ 2, 3, 4, 5, 6, 8]  # [2,3,4,5,6,7,8] be used with varphoc
+encoder   = 'phoc' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
 task_type = 'word_spotting'  # 'script_identification' #  'word_spotting' # 'script_identification' 
-
 resize_images        = True        # Resize the dataset images to a fixed size
 pad_images           = False         # Pad the input images to a fixed size [576, 226]
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
@@ -35,14 +36,16 @@ def get_dataset_name(data_set_id  = 0):
                     'imdb_movie', # 11
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb', # 12
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011', # 13                 
-                     'MLT', # 14   
-                     'cub2011', #15                    
+                     'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT', #14
+                     'MLT', # 15   
+                     'cub2011', #16     
+                     
                     ]
     
     dataset_name    = all_datasets[data_set_id]
     return dataset_name
 
-dataset_name = get_dataset_name(5)
+dataset_name = get_dataset_name(14)
 
 
 overlay_handwritting_on_STL_img = False
@@ -148,7 +151,9 @@ elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPC
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
     Cifar100 will have w_new_size, TSFPCH will be the same  '''
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
+   dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT':
+                
     MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
     MAX_IMAGE_HEIGHT = universal_H 
     if word_corpus_4_text_understanding=='Google_news':  
@@ -166,6 +171,7 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
     H_cub2011_scale = universal_H  # use 0 for no scale
+    H_MLT_scale = universal_H
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -251,7 +257,7 @@ else:
   
 
 # Model parameters
-model_name                   = 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+model_name                   = 'resnet18'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
 learning_rate                = 0.1 # 10e-4 # 0.1
 
 
@@ -281,7 +287,7 @@ shuffle                      = True # shuffle the training set
 num_workers                  = 4
 mAP_dist_metric              = 'cosine' #'correlation' # 'cosine' # See options below
 rnd_seed_value  =  int(time.time()) # 1552938612 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
-batch_size_train             =  2
+batch_size_train             =  16
 
 ''' Folders of data: STL is embedded  '''
 dataset_path_IFN              = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
@@ -381,9 +387,15 @@ if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
     phoc_unigrams = wg_ifn_char       
 
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011':
-    phoc_unigrams = iam_ifn_char    
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' \
+   or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' \
+   or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' \
+   or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' :         
+   phoc_unigrams = iam_ifn_char    
 
+elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT' :
+    phoc_unigrams = ''.join(sorted( set(mlt_char + iam_ifn_char) ))    
+   
 elif dataset_name =='IFN':
     phoc_unigrams = ifn_char    
 
