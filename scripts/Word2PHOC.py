@@ -14,7 +14,7 @@ def djb2_hash(s):
     hash = 5381
     for x in s:
         hash = (( hash << 5) + hash) + ord(x)
-    return hex( hash  & 0xFFFFFFFF )
+    return hex( hash  & 0xFFFFFFFF )[2:]
    
 
 
@@ -31,6 +31,8 @@ def build_phoc(word, cf, mode='hand-writing'): # alphabet = 'multiple', unigram_
     logger = logging.getLogger('PHOCGenerator')
     if cf.use_hashing:
        word = word + djb2_hash(word+mode)
+       
+       
     # phoc_unigrams (str): string of all unigrams to use in the PHOC
 
     # prepare output matrix
