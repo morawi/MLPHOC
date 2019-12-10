@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Dec  9 17:49:30 2019
+
+@author: malrawi
+"""
+
 ''' 
 Main @author: malrawi 
 
@@ -9,9 +17,10 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 '''
 
 import time   # used to create a seed for the randomizers
+from config.get_mlt_char import get_char_set
 folder_of_data         = '/home/malrawi/MyPrograms-old/' #'/home/malrawi/Desktop/My Programs/'
 
-use_hashing = True
+use_hashing = False
 print_accuracy = True
 normalize_images     =  False
 phoc_levels = [ 2, 3, 4, 5, 6, 8]  # [2,3,4,5,6,7,8] be used with varphoc
@@ -38,21 +47,19 @@ def get_dataset_name(data_set_id  = 0):
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011', # 13                 
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT', #14
                      'MLT', # 15   
-                     'cub2011', #16     
-                     
+                     'cub2011', #16                        
                     ]
     
     dataset_name    = all_datasets[data_set_id]
     return dataset_name
 
-dataset_name = get_dataset_name(13)
+dataset_name = get_dataset_name(5)
 
 
 overlay_handwritting_on_STL_img = False
 if overlay_handwritting_on_STL_img == True:
     change_hand_wrt_color = True    
     overlay_handwritting_on_STL_img = True
-
 
 if 'imdb' in dataset_name: 
     word_corpus_4_text_understanding = 'Google_news' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
@@ -109,7 +116,6 @@ else:
     print('wrong encoder name: one of; phoc, rawhoc, pro_hoc')      
 del phoc_levels                                
 
-
   
 # Dataset max W and H
 universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
@@ -159,9 +165,6 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
     if word_corpus_4_text_understanding=='Google_news':  
         MAX_IMAGE_HEIGHT = 300
         universal_H = 300
-    
-    resize_images = True # override in case resize_images is True    
-    
     w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
     h_new_size_cifar100 = universal_H
     H_ifn_scale  = 120 # images will be scaled down to match MAX_IMAGE_WIDTH, if the new width is larger than MAX_IMAGE_WIDTH
@@ -171,7 +174,8 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
     H_cub2011_scale = universal_H  # use 0 for no scale
-    H_MLT_scale = universal_H
+    H_MLT_scale = 0
+    resize_images = True # override in case resize_images is True    
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -193,6 +197,7 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
     resize_images = False # override in case resize_images is True
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
+    resize_images = True # override in case resize_images is True    
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -259,8 +264,6 @@ else:
 # Model parameters
 model_name                   = 'resnet18'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
 learning_rate                = 0.1 # 10e-4 # 0.1
-
-
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
@@ -307,115 +310,47 @@ safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
 dataset_path_MLT = folder_of_data+'all_data/MLT2017/'
 dataset_path_InstagramHL=folder_of_data + 'all_data/InstagramHL/'
 
-''' Language / script dataset to use '''       
-iam_char = [' ', '!', '"', '#', '&', "'", '(', ')', '*', '+', ',', '-', '.', 
-            '/', ':', ';', '?', '_',  
-            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 
-            'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 
-            'w', 'x', 'y', 'z'] # upper case removed
-iam_char = ''.join(map(str, iam_char))
-ifn_char = "0123456789أءابجدهوزطحيكلمنسعفصقرشتثخذضظغةى.ئإآ\'ّ''"
-gw_char = ".0123456789abcdefghijklmnopqrstuvwxyz,-;':()£|"
-iam_ifn_char = ''.join(sorted(set(iam_char + ifn_char))) 
-wg_ifn_char = ''.join(sorted( set(ifn_char + gw_char) )) 
-
 language_hash_code = {'Arabic': '1234', 'Bangla': 'govu9',  'English': '9872',  'French': 'zxyw3',
                   'German': '5609',  'Italian': 'pqkso'}  # this is only used for script identification, the purpose of the hashcode is to introduce variance in the PHOC representation
+
+
 MLT_lang = 'Latin+Arabic+Bangla' # 'Latin' #  'Eng+Ara+Bang'# 'Latin+Arabic+Bangla' # 'Bangla' # 'Latin+Arabic' # 'Bangla' # 'Latin' #'Eng+Ara+Bang' # 'Bangla' #'English', 'Arabic', 'Bangla', 'Arabic+English'
-MLT_latin_script_vs_others = False
-
-if MLT_lang=='MLT_English+Instagram_test':
-    MLT_languages = ['English']
-    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ“ِ '"    
-    mlt_char = ''.join(sorted( set(iam_char + extra_MLT) ))
-    mlt_char = ''.join(sorted( set(gw_char + mlt_char) ))
-    testing_print_frequency      = 11
-
-elif MLT_lang=='Arabic':
-    MLT_languages = ['Arabic']
-    extra_MLT = "‘٬٫%$]€>:+/#!()@·°[ؤ=٠×،ـ١٦٧٨٩٤٥٢٣ڥ出ڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    mlt_char = ''.join(sorted( set(ifn_char + extra_MLT) ))
-
-elif MLT_lang=='English':
-    MLT_languages = ['English']
-    extra_MLT = "‘°\٬%$]€>@·[ؤ=٠×—،~ـ“ِ '"    
-    mlt_char = ''.join(sorted( set(iam_char + extra_MLT) ))
-
-elif MLT_lang == 'Arabic+English':  
-    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    MLT_languages = ['English', 'Arabic']
-    mlt_char = ''.join(sorted( set(iam_ifn_char + extra_MLT) ))
-elif MLT_lang=='Bangla':
-    mlt_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
-    MLT_languages = ['Bangla']
-elif MLT_lang == 'Eng+Ara+Bang':
-    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
-    bangla_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
-    extra_MLT = ''.join(sorted( set(bangla_char + extra_MLT) ))
-    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz'
-    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
-  
-    MLT_languages = ['English', 'Arabic', 'Bangla']
-
-elif MLT_lang == 'Latin':
-    mlt_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
-    MLT_languages = ['English', 'French','German','Italian']
-
-elif MLT_lang == 'Latin+Arabic':
-    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
-    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
-    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
-    MLT_languages = ['English', 'French','German','Italian', 'Arabic']
-elif MLT_lang == 'Latin+Arabic+Bangla':
-    extra_MLT = "‘٬٫%$]€>@·°[ؤ=٠×،—ـ١٦٧٨٩٤٥٢٣ڥڤ'ٌ' ”“ِ 'ً'ڭڨ ُ َ~— ْ"
-    extra_MLT = ''.join(sorted( set(ifn_char + extra_MLT) ))
-    bangla_char = ' !"%\'()*-./0123456789:?achilmnprstuy`~।ঁংঃঅআইঈউএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ়ািীুূৃেৈোৌ্ৎড়য়০১২৩৪৫৬৭৮৯\u200c'
-    extra_MLT = ''.join(sorted( set(bangla_char + extra_MLT) ))
-    latin_char = '!"#$%&\'()*+-./0123456789:;<=>?€β@[\\]—¥_`abcdefghijklmnopqrstuvwxyz~°²·×ßàáâãäçèéêëìîòóôöøùúûüÿōœšʒ'
-    mlt_char = ''.join(sorted( set(extra_MLT + latin_char) ))
-    MLT_languages = ['English', 'French','German','Italian', 'Arabic', 'Bangla']
-    MLT_latin_script_vs_others = True
+char_set, MLT_languages,  MLT_latin_script_vs_others = get_char_set(MLT_lang)
 
     
-    
+get_char_set
 if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH' or dataset_name == 'cub2011': 
-    phoc_unigrams = gw_char      # this depends on the alphabets used to name the classes, gw is English so that's fine 
+    phoc_unigrams = char_set['gw_char']      # this depends on the alphabets used to name the classes, gw is English so that's fine 
 
 elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
-    phoc_unigrams = wg_ifn_char       
+    phoc_unigrams = char_set['wg_ifn_char']
 
 elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' \
    or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' \
    or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' \
    or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' :         
-   phoc_unigrams = iam_ifn_char    
+   phoc_unigrams = char_set['iam_ifn_char']
 
 elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT' :
-    phoc_unigrams = ''.join(sorted( set(mlt_char + iam_ifn_char) ))    
+    phoc_unigrams = ''.join(sorted( set(char_set['mlt_char'] + char_set['iam_ifn_char']) ))    
    
 elif dataset_name =='IFN':
-    phoc_unigrams = ifn_char    
+    phoc_unigrams = char_set['ifn_char']
 
 elif dataset_name == 'WG+IFN':    
-    phoc_unigrams = wg_ifn_char       
+    phoc_unigrams = char_set['wg_ifn_char']
 
 elif dataset_name == 'IAM':    
-    phoc_unigrams = iam_char
+    phoc_unigrams = char_set['iam_char']
     
 elif dataset_name == 'IAM+IFN':                 
-    phoc_unigrams = iam_ifn_char
+    phoc_unigrams = char_set['iam_ifn_char']
 elif dataset_name=='MLT':
-    phoc_unigrams = mlt_char    
+    phoc_unigrams = char_set['mlt_char']
 
 else: 
     exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
             
-del iam_char, ifn_char, gw_char, iam_ifn_char, wg_ifn_char, mlt_char
-
-
 if task_type == 'script_identification': # label used for script identification/separation
     encoder = 'phoc'
     batch_size_train        = 2 #  = 10  # Prev works used 10 .....  a value of 2 gives better results
@@ -426,7 +361,6 @@ if task_type == 'script_identification': # label used for script identification/
     
     batch_size_test   = 50  # Higher values may trigger memory problems
  
-
 use_distortion_augmentor        = False
 
 ''' I need to remove these keep_flags.....later !!'''
