@@ -205,7 +205,7 @@ class WashingtonDataset(Dataset):
         word_str = self.word_str[index]        
         if self.cf.task_type=='script_identification':
             target = self.cf.PHOC('English'.lower()+ 
-                                  self.cf.language_hash_code['English'], self.cf) # language_name + hashcode
+                                  self.cf.language_hash_code['English'].lower(), self.cf) # language_name + hashcode
         else:
             #target = self.cf.PHOC(word_str, self.cf)
              target = self.PHOC_vector[index]

@@ -8,7 +8,38 @@ Created on Tue Dec 10 13:03:24 2019
 
 ''' Language / script dataset to use '''       
 
+def get_phoc_unigrams(char_set, dataset_name):
+   if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH' or dataset_name == 'cub2011': 
+    phoc_unigrams = char_set['gw_char']      # this depends on the alphabets used to name the classes, gw is English so that's fine 
 
+   elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
+       phoc_unigrams = char_set['wg_ifn_char']
+   
+   elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' \
+      or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' \
+      or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' \
+      or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' :         
+      phoc_unigrams = char_set['iam_ifn_char']
+   
+   elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT' :
+       phoc_unigrams = ''.join(sorted( set(char_set['mlt_char'] + char_set['iam_ifn_char']) ))    
+      
+   elif dataset_name =='IFN':
+       phoc_unigrams = char_set['ifn_char']
+   
+   elif dataset_name == 'WG+IFN':    
+       phoc_unigrams = char_set['wg_ifn_char']
+   
+   elif dataset_name == 'IAM':    
+       phoc_unigrams = char_set['iam_char']
+       
+   elif dataset_name == 'IAM+IFN':                 
+       phoc_unigrams = char_set['iam_ifn_char']
+   elif dataset_name=='MLT':
+       phoc_unigrams = char_set['mlt_char']   
+   else: 
+       exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
+   return phoc_unigrams
 
 
 def get_char_set(MLT_lang=''):  

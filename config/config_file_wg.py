@@ -17,10 +17,10 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 '''
 
 import time   # used to create a seed for the randomizers
-from config.get_mlt_char import get_char_set
+from config.get_mlt_char import get_char_set, get_phoc_unigrams
 folder_of_data         = '/home/malrawi/MyPrograms-old/' #'/home/malrawi/Desktop/My Programs/'
 
-use_hashing = False
+use_hashing = True
 print_accuracy = True
 normalize_images     =  False
 phoc_levels = [ 2, 3, 4, 5, 6, 8]  # [2,3,4,5,6,7,8] be used with varphoc
@@ -73,43 +73,38 @@ if sampled_testing: no_of_sampled_data = 25000
 if encoder =='phonetic_vec':    
     from scripts.Word2Phonetic import Word2Phonetic 
     Word2PhoneticObject = Word2Phonetic()
-    PHOC = Word2PhoneticObject.getvec
-    loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    PHOC = Word2PhoneticObject.getvec    
            
     
 elif encoder =='chars2vec':    
     from scripts.Word2CharsVec import Chars2Vec 
     Chars2VecObject = Chars2Vec()
-    PHOC = Chars2VecObject.getvec
-    loss =  'BCEWithLogitsLoss'# 'BCELoss'# 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
+    PHOC = Chars2VecObject.getvec    
     
 elif encoder =='varphoc':
     from scripts.Word2VarPhoc import var_phoc as PHOC
     unigram_levels   = phoc_levels  # # PHOC levels 
-    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]    
+
     
 elif encoder =='phoc':
     from scripts.Word2PHOC import build_phoc as PHOC
     unigram_levels   = phoc_levels  # # PHOC levels 
-    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+    
 
 elif encoder == 'rawhoc' :
     from scripts.Word2RAWHOC import build_rawhoc as PHOC
     rawhoc_repeates = 2
-    max_word_len = 24
-    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+    max_word_len = 24    
     
 elif encoder == 'pro_hoc': 
     from scripts.Word2RAWHOC import build_pro_hoc as PHOC
     PHOC('') # trivial call to get rid of a warnning
     unigram_levels               = phoc_levels  # # PHOC levels   
     rawhoc_repeates = 2
-    max_word_len = 24   
-    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+    max_word_len = 24       
 elif encoder == 'rohoc':
     no_word_rotations = 5 
-    from scripts.Word2RotatedHOC import rotated_hoc as PHOC  
-    loss = 'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'MSELoss', ]                                           
+    from scripts.Word2RotatedHOC import rotated_hoc as PHOC      
     unigram_levels   = [10] # this will, more or less, be useful in decoding 20-letter words   
 
 else: 
@@ -118,9 +113,7 @@ del phoc_levels
 
   
 # Dataset max W and H
-universal_H = 200  # 120 used in CVPR paper, H=Heigh. 
-
-H_Instagram_scale= 200
+universal_H = 200  # 120 used in CVPR paper, H=Heigh 
 
 if dataset_name  == 'MLT':
     H_MLT_scale = 128# 200
@@ -139,10 +132,11 @@ elif dataset_name  == 'cub2011':
 elif dataset_name  == 'safe_driver':
     MAX_IMAGE_WIDTH  = 400 #  267 # 640
     MAX_IMAGE_HEIGHT = 300 # 200 # 480
-    H_sfDrive_scale = 300#  universal_H
+    H_sfDrive_scale = 300#  universal_H    
     
-    
-elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or dataset_name == 'Cifar100+TFSPCH+GW+IFN' or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
+elif dataset_name =='Cifar100+TFSPCH+IAM+IFN' or \
+    dataset_name == 'Cifar100+TFSPCH+GW+IFN' or \
+    dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver':
     MAX_IMAGE_WIDTH  = 600 # Adding H-GW_scale to GW load file 
     MAX_IMAGE_HEIGHT = universal_H 
     w_new_size_cifar100 = universal_H # these are used to up-scale Cifar100 dataset 
@@ -175,7 +169,8 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
     H_imdb_scale = 0 # universal_H   
     H_cub2011_scale = universal_H  # use 0 for no scale
     H_MLT_scale = 0
-    resize_images = True # override in case resize_images is True    
+    resize_images = False # override in case resize_images is True    
+    pad_images   = True         # Pad the input images to a fixed size [576, 226]
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -262,21 +257,18 @@ else:
   
 
 # Model parameters
-model_name                   = 'resnet18'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+model_name                   = 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
 learning_rate                = 0.1 # 10e-4 # 0.1
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
-
 lr_milestones                = [ 40, 80, 150 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
-
 dropout_probability          = 0.05 # 0.25 #  0.25
-
-
 epochs                       =  300 # 60# 10 # 60
 testing_print_frequency      =  11 # prime number, how frequent to test/print during training
 batch_log                    = 2000  # how often to report/print the training loss
@@ -290,7 +282,17 @@ shuffle                      = True # shuffle the training set
 num_workers                  = 4
 mAP_dist_metric              = 'cosine' #'correlation' # 'cosine' # See options below
 rnd_seed_value  =  int(time.time()) # 1552938612 1533323200 #int(time.time()) #  #0 # int(time.time())  #  0 # time.time() should be used later
-batch_size_train             =  16
+use_distortion_augmentor        = False
+save_results           = False                            # Save Log file
+results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
+IFN_based_on_folds_experiment  = False
+batch_size_train             =  2
+
+''' I need to remove these keep_flags.....later !!'''
+keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
+keep_non_alphabet_of_GW_in_loaded_data    = True 
+
+
 
 ''' Folders of data: STL is embedded  '''
 dataset_path_IFN              = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
@@ -316,40 +318,8 @@ language_hash_code = {'Arabic': '1234', 'Bangla': 'govu9',  'English': '9872',  
 
 MLT_lang = 'Latin+Arabic+Bangla' # 'Latin' #  'Eng+Ara+Bang'# 'Latin+Arabic+Bangla' # 'Bangla' # 'Latin+Arabic' # 'Bangla' # 'Latin' #'Eng+Ara+Bang' # 'Bangla' #'English', 'Arabic', 'Bangla', 'Arabic+English'
 char_set, MLT_languages,  MLT_latin_script_vs_others = get_char_set(MLT_lang)
+phoc_unigrams = get_phoc_unigrams(char_set, dataset_name)    
 
-    
-get_char_set
-if dataset_name == 'safe_driver' or dataset_name == 'Cifar100' or dataset_name =='imdb_movie' or dataset_name == 'WG' or dataset_name == 'TFSPCH' or dataset_name == 'cub2011': 
-    phoc_unigrams = char_set['gw_char']      # this depends on the alphabets used to name the classes, gw is English so that's fine 
-
-elif dataset_name=='Cifar100+TFSPCH+GW+IFN':
-    phoc_unigrams = char_set['wg_ifn_char']
-
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN' \
-   or dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver' \
-   or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb' \
-   or dataset_name ==  'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' :         
-   phoc_unigrams = char_set['iam_ifn_char']
-
-elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT' :
-    phoc_unigrams = ''.join(sorted( set(char_set['mlt_char'] + char_set['iam_ifn_char']) ))    
-   
-elif dataset_name =='IFN':
-    phoc_unigrams = char_set['ifn_char']
-
-elif dataset_name == 'WG+IFN':    
-    phoc_unigrams = char_set['wg_ifn_char']
-
-elif dataset_name == 'IAM':    
-    phoc_unigrams = char_set['iam_char']
-    
-elif dataset_name == 'IAM+IFN':                 
-    phoc_unigrams = char_set['iam_ifn_char']
-elif dataset_name=='MLT':
-    phoc_unigrams = char_set['mlt_char']
-
-else: 
-    exit("Datasets to use: 'WG', 'IFN', 'IAM', 'WG+IAM', 'IAM+IFN', 'imdb_movie', 'TFSPCH' ")
             
 if task_type == 'script_identification': # label used for script identification/separation
     encoder = 'phoc'
@@ -361,42 +331,7 @@ if task_type == 'script_identification': # label used for script identification/
     
     batch_size_test   = 50  # Higher values may trigger memory problems
  
-use_distortion_augmentor        = False
 
-''' I need to remove these keep_flags.....later !!'''
-keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
-keep_non_alphabet_of_GW_in_loaded_data    = True 
-
-# Save results
-save_results           = False                            # Save Log file
-results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
-IFN_based_on_folds_experiment  = False
-
-
-
-'''
-# testing based on folder sets, depriciated as no difference between our random split and this
-
-IFN_test = 'set_a'
-IFN_all_data_grouped_in_one_folder = True
-IFN_based_on_folds_experiment  = False
-if IFN_all_data_grouped_in_one_folder:
-    IFN_based_on_folds_experiment  = False
-    del IFN_test 
-    # all the data in one folder
-    dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
-    gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
-else:
-    
-    dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test +'/bmp/' # path to IFN images
-    gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
-    # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
-
-if IFN_based_on_folds_experiment==True and dataset_name=='IFN':     
-    split_percentage         = 1
-    folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
-
-'''
 
 
 '''
@@ -424,5 +359,32 @@ list of mAP_dist_metric:
     https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
     
 '''
+
+
+
+'''
+# testing based on folder sets, depriciated as no difference between our random split and this
+
+IFN_test = 'set_a'
+IFN_all_data_grouped_in_one_folder = True
+IFN_based_on_folds_experiment  = False
+if IFN_all_data_grouped_in_one_folder:
+    IFN_based_on_folds_experiment  = False
+    del IFN_test 
+    # all the data in one folder
+    dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+    gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+else:
+    
+    dataset_path_IFN             = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test +'/bmp/' # path to IFN images
+    gt_path_IFN                  = folder_of_data + 'ifnenit_v2.0p1e/data/'+ IFN_test + '/tru/' # path to IFN ground_truth
+    # For IFN, there are other folers/sets, b, c, d, e ;  sets are stored in {a, b, c, d ,e}
+
+if IFN_based_on_folds_experiment==True and dataset_name=='IFN':     
+    split_percentage         = 1
+    folders_to_use = 'abcde'   # 'eabcd' or 'abcd' in the publihsed papers, only abcd are used, donno why!?
+
+'''
+
 
 

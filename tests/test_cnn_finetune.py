@@ -102,7 +102,7 @@ def test_cnn_finetune(cf):
         result = {'word_str':word_str_all, 'pred': pred_all, 'target': target_all}
         if cf.encoder=='phoc' or cf.encoder=='varphoc': 
             
-            print('Sklearn accuracy: ' , accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy().round(), normalize=True) ) # sklearn accu, round() is needed here to convert the pred to binary     
+            print('Exact bin accuracy using Sklearn: ' , accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy().round(), normalize=True) ) # sklearn accu, round() is needed here to convert the pred to binary     
             result['correct'], _, _,_ = my_accuracy_score(target_all.cpu().numpy(), pred_all.cpu().numpy(), 
                   labels_true = word_str_all, normalize=False,  diagnostics=False)            
            # predicted_labels = predict_labels(target_all.cpu().numpy(), pred_all.cpu().numpy(), word_str_all)
@@ -121,7 +121,7 @@ def test_cnn_finetune(cf):
             
         if cf.print_accuracy == True:
             print( 'QbS ',  result['mAP_QbS'], " QbE ",  result['mAP_QbE'], " ")    
-            print('\n Test set:\t Average loss: {:.4f}, Accuracy: {}/{} ({:.1f}%)'.format(
+            print('\n Test set:\t Average loss: {:.4f}, Distance based accuracy: {}/{} ({:.1f}%)'.format(
             total_loss/total_size,  result['correct'], pred_all.size()[0], 100. * result['correct'] / pred_all.size()[0]))
         
         del pred_all, target_all, data
