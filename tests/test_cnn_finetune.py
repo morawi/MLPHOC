@@ -57,6 +57,11 @@ def test_cnn_finetune(cf):
                           )    
     print('--- Total no. of params in model ', count_model_parameters(model), '-------')
     
+    optimizer = torch.optim.Adam(model.parameters(), 
+                                 weight_decay = cf.weight_decay,
+                                lr= cf.learning_rate, 
+                                betas=(0.5, 0.999))
+    
     def train(epoch):
         total_loss = 0; total_size = 0
         model.train()
@@ -170,6 +175,7 @@ def test_cnn_finetune(cf):
     test(test_loader)  
     
     scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, cf.lr_milestones , gamma= cf.lr_gamma) 
+    
     # Training
     for epoch in range(1, cf.epochs + 1):
         scheduler.step()  
