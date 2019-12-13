@@ -119,5 +119,7 @@ def get_char_set(MLT_lang=''):
    char_set['iam_ifn_char'] = iam_ifn_char
    char_set['wg_ifn_char']= wg_ifn_char
    char_set['gw_char'] = gw_char
+   char_set['mlt_char'] = mlt_char
+   
    
    return char_set, MLT_languages,  MLT_latin_script_vs_others
