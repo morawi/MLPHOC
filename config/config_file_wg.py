@@ -23,12 +23,14 @@ folder_of_data         = '/home/malrawi/MyPrograms-old/' #'/home/malrawi/Desktop
 use_hashing = True
 print_accuracy = True
 normalize_images     =  False
-phoc_levels = [ 2, 3, 4, 5, 6, 8]  # [2,3,4,5,6,7,8] be used with varphoc
-encoder   = 'phoc' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
-task_type = 'word_spotting'  # 'script_identification' #  'word_spotting' # 'script_identification' 
 resize_images        = True        # Resize the dataset images to a fixed size
 pad_images           = False         # Pad the input images to a fixed size [576, 226]
 redirect_std_to_file   = False  # The output 'll be stored in a file if True 
+
+phoc_levels = [ 2, 3, 4, 5, 6, 8]  # [2,3,4,5,6,7,8] be used with varphoc
+encoder   = 'phoc' # 'phonetic_vec'#   'phoc' # 'chars2vec' 'rohoc' #   ['rohoc', 'rawhoc', 'phoc', 'pro_hoc']  
+task_type = 'word_spotting'  # 'script_identification' #  'word_spotting' # 'script_identification' 
+
 
 def get_dataset_name(data_set_id  = 0):    
     all_datasets = ['Cifar100+TFSPCH+IAM+IFN',  # 0
@@ -47,13 +49,13 @@ def get_dataset_name(data_set_id  = 0):
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011', # 13                 
                      'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011+MLT', #14
                      'MLT', # 15   
-                     'cub2011', #16                        
+                     'cub2011', #14                        
                     ]
     
     dataset_name    = all_datasets[data_set_id]
     return dataset_name
 
-dataset_name = get_dataset_name(5)
+dataset_name = get_dataset_name(14)
 
 
 overlay_handwritting_on_STL_img = False
@@ -64,7 +66,6 @@ if overlay_handwritting_on_STL_img == True:
 if 'imdb' in dataset_name: 
     word_corpus_4_text_understanding = 'Google_news' #'Custom', 'CharNGram' (char2vec) # 'Fasttext' # 'Google_news' # else, will use 'Brown' 'Fasttext', 'Glove'
     imdb_min_occurane = 10  # minimum number of words to appear in building the custom W2V model
-
 
 sampled_testing = True # to be used if the testing set is larger than 30K, due to limited RAM memory
 if sampled_testing: no_of_sampled_data = 25000 
@@ -113,7 +114,7 @@ del phoc_levels
 
   
 # Dataset max W and H
-universal_H = 200  # 120 used in CVPR paper, H=Heigh 
+universal_H = 200  #  H=Heigh 
 
 if dataset_name  == 'MLT':
     H_MLT_scale = 128# 200
@@ -168,9 +169,9 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
     H_cub2011_scale = universal_H  # use 0 for no scale
-    H_MLT_scale = 0
-    resize_images = False # override in case resize_images is True    
-    pad_images   = True         # Pad the input images to a fixed size [576, 226]
+    H_MLT_scale = 120 # universal_H
+    resize_images = True#  False # override in case resize_images is True    
+    pad_images   = False         # Pad the input images to a fixed size [576, 226]
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -316,7 +317,7 @@ language_hash_code = {'Arabic': '1234', 'Bangla': 'govu9',  'English': '9872',  
                   'German': '5609',  'Italian': 'pqkso'}  # this is only used for script identification, the purpose of the hashcode is to introduce variance in the PHOC representation
 
 
-MLT_lang = 'Latin+Arabic+Bangla' # 'Latin' #  'Eng+Ara+Bang'# 'Latin+Arabic+Bangla' # 'Bangla' # 'Latin+Arabic' # 'Bangla' # 'Latin' #'Eng+Ara+Bang' # 'Bangla' #'English', 'Arabic', 'Bangla', 'Arabic+English'
+MLT_lang = 'Latin+Arabic+Bangla' # 'Latin' #  'Eng+Ara+Bang'# 'Latin+Arabic+Bangla' # 'Bangla' # 'Latin+Arabic' # 'Bangla' # 'Latin' #'Eng+Ara+Bang' # 'Bangla' #'English', 'Arabic', 'Bangla', 'Arabic+English', 'MLT_English+Instagram_test'
 char_set, MLT_languages,  MLT_latin_script_vs_others = get_char_set(MLT_lang)
 phoc_unigrams = get_phoc_unigrams(char_set, dataset_name)    
 

@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from collections import Counter
+import torch
 
 def annotation_exists(word, cf):        
     char_indices = {d: i for i, d in enumerate(cf.phoc_unigrams)}    
@@ -94,8 +95,7 @@ class MLT_words(Dataset):
                         phoc_unigrams[ln] = ''.join(sorted( set(phoc_unigrams[ln] + ws) )) 
                         
         return phoc_unigrams                 
-                                                     
-
+        
         
     def get_MLT_file_label(self):    
         Latin_langs = ['English', 'French','German','Italian']               
@@ -121,26 +121,23 @@ class MLT_words(Dataset):
     def __getitem__(self, index):            
         img = Image.open(self.cf.dataset_path_MLT + 'MLT_images/' + self.img_name[index])        
         word_str = self.word[index]
-        if not(self.cf.H_MLT_scale ==0): # resizing just the height             
+        if not(self.cf.H_MLT_scale == 0): # resizing just the height             
             new_w = int(img.size[0]*self.cf.H_MLT_scale/img.size[1])
             if new_w>self.cf.MAX_IMAGE_WIDTH: 
                 new_w = self.cf.MAX_IMAGE_WIDTH
             img = img.resize( (new_w, self.cf.H_MLT_scale), Image.ANTIALIAS)               
         
-        
-        
         # target = self.cf.PHOC(word_str, cf = self.cf)    
         if self.cf.task_type=='script_identification':            
-            target = self.cf.PHOC(self.language[index].lower()+ 
-                                  self.cf.language_hash_code[self.language[index]], self.cf) # language_name + hashcode
+            target = torch.from_numpy(self.cf.PHOC(self.language[index].lower()+ 
+                                  self.cf.language_hash_code[self.language[index]], self.cf) ) # language_name + hashcode
         else:            
-            target = self.cf.PHOC(word_str, cf = self.cf, mode= 'printed-writing')       
-        
-        
+            target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode= 'printed-writing')   )
+                
         if img.mode !='RGB':
             img = img.convert('RGB')
                     
-        if self.transform:
+        if self.transform:            
             img = self.transform(img)    
         
         return img, target, word_str, self.weights

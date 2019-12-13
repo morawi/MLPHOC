@@ -74,7 +74,7 @@ class Cifar100Dataset(Dataset):
         
         class_id = self.dataset[idx][1]
         word_str = self.classes[ class_id ]           
-        target = torch.from_numpy( self.cf.PHOC(word_str, self.cf, mode='vision') )
+        target = torch.from_numpy( self.cf.PHOC(word_str, self.cf, mode='cifar100') )
         
         return img, target, word_str, self.weights[idx]
        

@@ -13,8 +13,8 @@ import sys
 def djb2_hash(s):                                                                                                                                
     hash = 5381
     for x in s:
-        hash = (( hash << 5) + hash) + ord(x)
-    return hex( hash  & 0xFFFFFFFF )[2:]
+        hash = (( hash << 5) + hash) + ord(x)    
+    return str( hash  % 1299827)  # 1299827 is a prime number, another lareger prime is 377095346497
    
 
 
@@ -30,7 +30,8 @@ def build_phoc(word, cf, mode='hand-writing'): # alphabet = 'multiple', unigram_
 
     logger = logging.getLogger('PHOCGenerator')
     if cf.use_hashing:
-       word = word + djb2_hash(word+mode)
+       # word = word + djb2_hash(word+mode)
+       word = word + mode  # gives the better results
        
        
     # phoc_unigrams (str): string of all unigrams to use in the PHOC

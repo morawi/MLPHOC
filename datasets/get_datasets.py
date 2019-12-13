@@ -44,15 +44,8 @@ def get_transforms(cf):
             transforms.ToTensor(),            
             transforms.Lambda(lambda x: x.repeat(3, 1, 1))  if not(RGB_img)  else NoneTransform(), # this is becuase the overlay, and Cifar100 produces an RGB image            
             transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
-            ])
-    
-    image_transform['image_transform_scn'] = transforms.Compose([            
-            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
-            transforms.ToTensor(),
-            transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
-            ])
-    
+            ])    
+        
     image_transform['image_transform_spch'] = transforms.Compose([            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
@@ -61,21 +54,23 @@ def get_transforms(cf):
             transforms.Normalize( ((0.0),) * 3, (8, 8, 8) ) if cf.normalize_images else NoneTransform(),                                   
             # mu might need to be replaced, as 0.25 is not a correct mean!
             ])
-    
-    image_transform['safe_driver']  = transforms.Compose([            
-            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
-            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
-            transforms.ToTensor(),
-            transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
-            ])  
-     
+   
     image_transform['image_transform_imdb'] = transforms.Compose([            
             PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
             transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x.repeat(3, 1, 1)),            
             transforms.Normalize( ((0.0),) * 3, ((.5),) * 3 ) if cf.normalize_images else NoneTransform(),                                   
+            ])    
+
+    image_transform['image_transform_scn'] = transforms.Compose([            
+            PadImage((cf.MAX_IMAGE_WIDTH, cf.MAX_IMAGE_HEIGHT)) if cf.pad_images else NoneTransform(),            
+            transforms.Resize(cf.input_size) if cf.resize_images else NoneTransform(),            
+            transforms.ToTensor(),
+            transforms.Normalize( mu, std ) if cf.normalize_images else NoneTransform(),                                   
             ])
+
+     
     
     
     
@@ -106,9 +101,9 @@ def get_mlt(cf, image_transform):
 
 def get_safe_driver(cf, image_transform):
      print('...................Safe Driver dataset...................')
-     train_set = SafeDriverDataset(cf, transform = image_transform['safe_driver'])
+     train_set = SafeDriverDataset(cf, transform = image_transform['image_transform_scn'])
      test_set = SafeDriverDataset(cf, train=False, data_idx = train_set.data_idx, 
-                                  transform = image_transform['safe_driver'])
+                                  transform = image_transform['image_transform_scn'])
      
      return train_set, test_set
      
@@ -212,9 +207,12 @@ def get_datasets(cf, image_transform):
         train_set_imdb, test_per_data['test_set_imdb']  = get_imdb(cf, image_transform)
         train_set_cub2011, test_per_data['cub2011'] = get_cub2011(cf, image_transform)         
         
-        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, train_set_imdb,
-                                                     train_set_tfspch, train_set_iam_ifn, 
-                                                     train_set_sf_drive, train_set_cub2011] )
+        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, 
+                                                     train_set_imdb,
+                                                     train_set_tfspch, 
+                                                     train_set_iam_ifn, 
+                                                     train_set_sf_drive, 
+                                                     train_set_cub2011] )
         test_set = torch.utils.data.ConcatDataset( [test_per_data['test_set_cifar100'], 
                                                     test_per_data['test_set_imdb'],
                                                     test_set_tfspch, 
@@ -238,8 +236,10 @@ def get_datasets(cf, image_transform):
         train_set_cub2011, test_per_data['cub2011'] = get_cub2011(cf, image_transform)  
         train_set_MLT, test_per_data['test_set_MLT'] = get_mlt(cf, image_transform)  
         
-        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, train_set_imdb,
-                                                     train_set_tfspch, train_set_iam_ifn, 
+        train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, 
+                                                     train_set_imdb,
+                                                     train_set_tfspch, 
+                                                     train_set_iam_ifn, 
                                                      train_set_sf_drive, 
                                                      train_set_cub2011, 
                                                      train_set_MLT] )
@@ -258,19 +258,18 @@ def get_datasets(cf, image_transform):
     
     elif cf.dataset_name == 'MLT':
         train_set, test_set = get_mlt(cf, image_transform)           
-        test_per_data['test_set_MLT'] = test_set        
+        test_per_data['test_set_MLT'] = test_set   
+        
         if 'Instagram_test' in cf.MLT_lang:            
             train_set_gw, test_set_gw = get_gw(cf, image_transform)    
             test_set_iam = IAM_words(cf, mode='test', transform = image_transform['image_transform_hdr']) 
             test_per_data['test_Instagram']  = Instagram_images(cf, image_transform['image_transform_scn'])
             test_per_data['test_set_gw'] = test_set_gw
             test_per_data['test_set_iam'] = test_set_iam
-            train_set = torch.utils.data.ConcatDataset( [train_set, train_set_gw,] )
+            train_set = torch.utils.data.ConcatDataset( [train_set, train_set_gw] )
             test_set = torch.utils.data.ConcatDataset( [test_set_gw] ) # only GW will be used for the overall QbS QbE as the target is instagram
                                   
-    elif cf.dataset_name == 'imdb_movie':
-        train_set, test_set  = get_imdb(cf, image_transform)
-        test_per_data['test_set_imdb'] = test_set     
+    
         
     elif cf.dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb':
         train_set_cifar100, test_per_data['test_set_cifar100'] = get_cifar100(cf, image_transform)      
@@ -349,6 +348,10 @@ def get_datasets(cf, image_transform):
     elif cf.dataset_name == 'cub2011':
         train_set, test_set = get_cub2011(cf, image_transform)    
         test_per_data['test_set_cub2011'] = test_set 
+        
+    elif cf.dataset_name == 'imdb_movie':
+        train_set, test_set  = get_imdb(cf, image_transform)
+        test_per_data['test_set_imdb'] = test_set     
         
     else:
         print('Please select correct dataset name, one of dataset_name in config_file_wg.py')
