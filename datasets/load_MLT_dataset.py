@@ -132,7 +132,7 @@ class MLT_words(Dataset):
             target = torch.from_numpy(self.cf.PHOC(self.language[index].lower()+ 
                                   self.cf.language_hash_code[self.language[index]], self.cf) ) # language_name + hashcode
         else:            
-            target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode= 'printed-writing')   )
+            target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode= 'prntmlt')   )
                 
         if img.mode !='RGB':
             img = img.convert('RGB')

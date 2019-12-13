@@ -174,7 +174,7 @@ class TfSpeechDataset(Dataset):
         if self.transform:
             data = self.transform(data)
         
-        target = torch.from_numpy(  self.cf.PHOC(word_str, self.cf, mode='speech') )
+        target = torch.from_numpy(  self.cf.PHOC(word_str, self.cf, mode='spchtsf') )
         
 
         return data, target, word_str, self.weights[idx]

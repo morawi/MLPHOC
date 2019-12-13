@@ -263,7 +263,7 @@ class IMDB_dataset(Dataset):
         if self.transform:
             img = self.transform(img)    
         
-        target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode = 'text-sentiment')   )
+        target = torch.from_numpy( self.cf.PHOC(word_str, cf = self.cf, mode = 'teximdb')   )
         
         return img, target, word_str, 0
 

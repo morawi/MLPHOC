@@ -85,7 +85,7 @@ class IAM_words(Dataset):
         for i in range(len(self.file_label)):
             word = self.file_label[i]  
             word_str = word[1].lower() 
-            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(word_str, self.cf))
+            self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(word_str, self.cf,  mode = 'hndiam'))
             pbar.update(1)        
         pbar.close();   del pbar 
                
@@ -104,7 +104,7 @@ class IAM_words(Dataset):
             # target = self.cf.English_label # 1: lable for Arabic script
             target = self.cf.PHOC('English'.lower()+ 
                                   self.cf.language_hash_code['English'], self.cf, 
-                                  mode = 'hand-writing') # language_name + hashcode
+                                  mode = 'hndiam') # language_name + hashcode
         else:            
             target = self.PHOC_vector[index]
                     

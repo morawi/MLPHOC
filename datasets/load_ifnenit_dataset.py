@@ -110,7 +110,7 @@ class IfnEnitDataset(Dataset):
         for i in range(len(data_idx)):    
             pbar.update(1)                
             self.PHOC_vector[i] = torch.from_numpy(self.cf.PHOC(self.word_str[i], self.cf, 
-                            mode = 'hand-writing'))
+                            mode = 'hadifn'))
         pbar.close();   del pbar     
         
         self.weights = np.ones( len(data_idx), dtype = 'uint8' )
