@@ -169,9 +169,9 @@ elif dataset_name == 'Cifar100+TFSPCH+IAM+IFN+safe-driver+imdb+cub2011' or \
     W_imdb_width  = 600
     H_imdb_scale = 0 # universal_H   
     H_cub2011_scale = universal_H  # use 0 for no scale
-    H_MLT_scale = 120 # universal_H
+    H_MLT_scale = 0 # universal_H
     resize_images = True#  False # override in case resize_images is True    
-    pad_images   = False         # Pad the input images to a fixed size [576, 226]
+    
     
     ''' Better to set resize_images to False in this case
     IFN and IAM will be rescaled to this MAX_IMAGE_WIDTH if their width is larget than MAX_IMAGE_WIDTH, 
@@ -258,20 +258,22 @@ else:
   
 
 # Model parameters
-model_name                   = 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+batch_size_train             =  16
+model_name                   = 'mobilenet_v2' # 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+testing_print_frequency      =  11 # prime number, how frequent to test/print during training
 loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
-learning_rate                = 0.1 # 10e-4 # 0.1
+learning_rate                = 0.01 # 10e-4 # 0.1
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
 weight_decay                 = 1*10e-14
-lr_milestones                = [ 40, 80, 150 ]  # it is better to move this in the config
+lr_milestones                = [ 10, 20, 100 ]  # it is better to move this in the config
 lr_gamma                     = 0.1 # learning rate decay calue
 use_nestrov_moment           = True 
 damp_moment                  = 0 # Nestrove will toggle off dampening moment
 dropout_probability          = 0.05 # 0.25 #  0.25
 epochs                       =  300 # 60# 10 # 60
-testing_print_frequency      =  11 # prime number, how frequent to test/print during training
+
 batch_log                    = 2000  # how often to report/print the training loss
 binarizing_thresh            = 0.5 # threshold to be used to binarize the net sigmoid output, 
 split_MLT     =.75
@@ -287,7 +289,7 @@ use_distortion_augmentor        = False
 save_results           = False                            # Save Log file
 results_path           = 'datasets/washingtondb-v1.0/results'  # Output folder to save the results of the test
 IFN_based_on_folds_experiment  = False
-batch_size_train             =  2
+
 
 ''' I need to remove these keep_flags.....later !!'''
 keep_non_alphabet_of_GW_in_analysis       = True  # if True, it will be used in the analysis, else, it will be skipped from the phoc, even if has been loaded  
