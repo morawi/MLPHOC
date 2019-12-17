@@ -171,17 +171,18 @@ class IMDB_dataset(Dataset):
         self.mode = mode        
         self.transform = transform      
         if mode=='train': # For some reason, this has to be done this way..train = True, then, test=True!
-            self.data = imdb_dataset(directory='/home/malrawi/Desktop/My Programs/all_data/imdb/', train = True)
+            self.data = imdb_dataset(directory=cf.folder_of_data+'/imdb/', train = True)
             self.clean_all_text() # the clean text will replace the original one in self.data, it is necessary to do it here, as it the text might be used to build the w2v models        
             self.load_w2v_models()
         
         else:
-            self.data = imdb_dataset(directory='/home/malrawi/Desktop/My Programs/all_data/imdb/', test=True)
+            self.data = imdb_dataset(directory= cf.folder_of_data+'/imdb/', test=True)
             self.clean_all_text()                     
     
     def load_w2v_models(self):
         original_path =  os.getcwd()
-        os.chdir(self.cf.folder_of_data + 'all_data/') # this is where the data models are stored
+        # os.chdir(self.cf.folder_of_data + 'all_data/') # this is where the data models are stored
+        os.chdir(self.cf.folder_of_data) # this is where the data models are stored
         
         print('loading google w2v')
         IMDB_dataset.google_model = gensim.models.KeyedVectors.load_word2vec_format(self.cf.folder_of_data + 
@@ -242,7 +243,7 @@ class IMDB_dataset(Dataset):
     
     def get_sample(self, index):                
         sentiment = self.data[index]['sentiment'] 
-        sentiment = 'negative' if  sentiment=='neg' else  'posative'  # the hashing number is added to be identified from other keywords in other datasets                     
+        sentiment = 'negative' if  sentiment=='neg' else  'pos'  # the hashing number is added to be identified from other keywords in other datasets                     
         img = self.text_to_image_2(self.data[index]['text'])
                   
         return img, sentiment    
