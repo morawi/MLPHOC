@@ -258,11 +258,11 @@ else:
   
 
 # Model parameters
-batch_size_train             =  16
-model_name                   = 'mobilenet_v2' # 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
+batch_size_train             =  2
+model_name                   = 'resnet152' # 'mobilenet_v2' # 'resnet152'# 'resnet18' #      #  #'resnet50' #'resnet152' # 'vgg16_bn'#  
 testing_print_frequency      =  11 # prime number, how frequent to test/print during training
 loss =  'BCEWithLogitsLoss' # ['BCEWithLogitsLoss', 'CrossEntropyLoss', 'MSELoss', ]
-learning_rate                = 0.01 # 10e-4 # 0.1
+learning_rate                = 0.001 # 10e-4 # 0.1
 thinning_threshold              = 1# .35 #  1   no thinning  # This value should be decided upon investigating                          # the histogram of text to background, see the function hist_of_text_to_background_ratio in test_a_loader.py # use 1 to indicate no thinning, could only be used with IAM, as part of the transform
 pretrained                   = True # When true, ImageNet weigths will be loaded to the DCNN
 momentum                     = 0.9
