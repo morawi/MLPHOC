@@ -18,7 +18,7 @@ https://pytorch.org/docs/stable/_modules/torch/nn/modules/distance.html
 
 import time   # used to create a seed for the randomizers
 from config.get_mlt_char import get_char_set, get_phoc_unigrams
-folder_of_data         = '/home/malrawi/MyPrograms-old/' #'/home/malrawi/Desktop/My Programs/'
+folder_of_data         = '/home/malrawi/MyPrograms-old/all_data/' #'/home/malrawi/Desktop/My Programs/'
 
 use_hashing = True
 print_accuracy = True
@@ -298,22 +298,22 @@ keep_non_alphabet_of_GW_in_loaded_data    = True
 
 
 ''' Folders of data: STL is embedded  '''
-dataset_path_IFN              = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
-gt_path_IFN                   = folder_of_data + 'all_data/ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
+dataset_path_IFN              = folder_of_data + 'ifnenit_v2.0p1e/all_folders/bmp/' # path to IFN images
+gt_path_IFN                   = folder_of_data + 'ifnenit_v2.0p1e/all_folders/tru/' # path to IFN ground_truth
     
-dataset_path_WG              = folder_of_data + 'all_data/washingtondb-v1.0/data/word_images_normalized'    # path to WG images
-gt_path_WG                   = folder_of_data + 'all_data/washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
+dataset_path_WG              = folder_of_data + 'washingtondb-v1.0/data/word_images_normalized'    # path to WG images
+gt_path_WG                   = folder_of_data + 'washingtondb-v1.0/ground_truth/word_labels.txt'   # path to WG ground_truth
 
-dataset_path_IAM             = folder_of_data + 'all_data/IAM-V3/iam-images/'    # path to IAM images
-gt_path_IAM                  = folder_of_data + 'all_data/IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
+dataset_path_IAM             = folder_of_data + 'IAM-V3/iam-images/'    # path to IAM images
+gt_path_IAM                  = folder_of_data + 'IAM-V3/iam-ground-truth/'   # path to IAM ground_truth
 
-dataset_path_TF_SPEECH_train = folder_of_data + 'all_data/tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
-dataset_path_TF_SPEECH_test = folder_of_data + 'all_data/tf_speech_recognition_v1/test/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
-cifar100_path = folder_of_data + 'all_data//dataCifar100/'
-stl100_path = folder_of_data +'all_data/dataSTL10'   
-safe_driver_path = folder_of_data + 'all_data/safe_driver/train/'
-dataset_path_MLT = folder_of_data+'all_data/MLT2017/'
-dataset_path_InstagramHL=folder_of_data + 'all_data/InstagramHL/'
+dataset_path_TF_SPEECH_train = folder_of_data + 'tf_speech_recognition_v1/train/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+dataset_path_TF_SPEECH_test = folder_of_data + 'tf_speech_recognition_v1/test/audio/' # or v2, which is tf_speech_recognition_v2/train/audio/'
+cifar100_path = folder_of_data + '/dataCifar100/'
+stl100_path = folder_of_data +'dataSTL10'   
+safe_driver_path = folder_of_data + 'safe_driver/train/'
+dataset_path_MLT = folder_of_data+'MLT2017/'
+dataset_path_InstagramHL=folder_of_data + 'InstagramHL/'
 
 language_hash_code = {'Arabic': '1234', 'Bangla': 'govu9',  'English': '9872',  'French': 'zxyw3',
                   'German': '5609',  'Italian': 'pqkso'}  # this is only used for script identification, the purpose of the hashcode is to introduce variance in the PHOC representation
