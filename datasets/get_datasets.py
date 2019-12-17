@@ -233,7 +233,7 @@ def get_datasets(cf, image_transform):
         train_set_sf_drive, test_per_data['test_set_safe_driver'] = get_safe_driver(cf, image_transform)
         
         train_set_imdb, test_per_data['test_set_imdb']  = get_imdb(cf, image_transform)
-        train_set_cub2011, test_per_data['cub2011'] = get_cub2011(cf, image_transform)  
+       #  train_set_cub2011, test_per_data['cub2011'] = get_cub2011(cf, image_transform)  
         train_set_MLT, test_per_data['test_set_MLT'] = get_mlt(cf, image_transform)  
         
         train_set = torch.utils.data.ConcatDataset( [train_set_cifar100, 
@@ -241,20 +241,21 @@ def get_datasets(cf, image_transform):
                                                      train_set_tfspch, 
                                                      train_set_iam_ifn, 
                                                      train_set_sf_drive, 
-                                                     train_set_cub2011, 
+         #                                            train_set_cub2011, 
                                                      train_set_MLT] )
         test_set = torch.utils.data.ConcatDataset( [test_per_data['test_set_cifar100'], 
                                                     test_per_data['test_set_imdb'],
                                                     test_set_tfspch, 
                                                     test_set_iam_ifn, 
                                                     test_per_data['test_set_safe_driver'],
-                                                    test_per_data['cub2011'],
+          #                                          test_per_data['cub2011'],
                                                     test_per_data['test_set_MLT']
                                                     ] )
        
         del train_set_cifar100, train_set_tfspch, test_set_tfspch, 
         train_set_iam_ifn, test_set_iam_ifn, train_set_sf_drive, 
-        train_set_imdb, train_set_cub2011, train_set_MLT     
+        train_set_imdb, train_set_MLT     
+        # del train_set_cub2011
     
     elif cf.dataset_name == 'MLT':
         train_set, test_set = get_mlt(cf, image_transform)           
